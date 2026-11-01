@@ -1196,12 +1196,7 @@ $("#shop").addEventListener("pointerdown",()=>{ editAtDown=(editId||addAt||mkEdi
 $("#shop").addEventListener("click",async e=>{
   /* Label im Bearbeiten an-/abwählen: sofort speichern, Feld behält den Fokus */
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb&&lbb.closest(".mkpick")){ if(!mkEdit) return;
-    const s2=new Set(mkEdit.lb), k=lbb.dataset.lb; s2.has(k)?s2.delete(k):s2.add(k); mkEdit.lb=sortLb([...s2]);
-    lbb.classList.toggle("on",s2.has(k)); lbb.setAttribute("aria-pressed",s2.has(k));
-    const ch=$("#shop .mkchip.mked"); ch.querySelectorAll(".lbb").forEach(b=>b.remove()); ch.insertAdjacentHTML("beforeend",mkEdit.lb.map(badge).join(""));
-    const nm=ch.querySelector(".mkname"); if(document.activeElement!==nm) nm.focus();
-    return }
+  if(lbb&&lbb.closest(".mkpick")){ if(mkEdit) toggleLb(mkEdit,lbb,$("#shop .mkchip.mked .mkname")); return }
   if(lbb){ const f=lbb.closest(".edit"), it=items.find(x=>x.id===f?.dataset.id); if(!it) return;
     const s=new Set(it.labels||[]), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k);
     it.labels=sortLb([...s]); lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
@@ -1286,24 +1281,23 @@ $("#shop").addEventListener("keydown",e=>{
 /* ---------- Vorschlag lange drücken (450 ms): Name im Chip ändern, darunter Labels wählen (1.11.) ----------
    Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
    Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
-/* Langer Druck (450 ms) auf einen Vorschlag öffnet ihn zum Ändern (1.11.); Stichwörter der Zuordnung öffnen schon beim Antippen */
 let lpPress=null;
-const chipEditing=()=>!!(mkEdit||kwEdit);
-function longPress(e,c,start){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; start(c); onRelease(c,e.pointerType) },450)} }
 /* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
    Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
    erreicht window nicht mehr – deshalb direkt dort lauschen. Ein Wartezustand für „das nächste Loslassen“ hätte sonst
    den folgenden Tipp (z. B. auf ein Logo) verschluckt (1.11.). */
 function onRelease(c,type){
-  if(type==="mouse") addEventListener("mouseup",()=>focusEnd(),{once:true});
-  else c.addEventListener("touchend",e=>{ e.preventDefault(); focusEnd() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
+  const end=()=>{ const nm=$("#shop .mkchip.mked .mkname"); if(nm) focusEnd(nm) };   /* der Chip wurde beim Öffnen ersetzt */
+  if(type==="mouse") addEventListener("mouseup",end,{once:true});
+  else c.addEventListener("touchend",e=>{ e.preventDefault(); end() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
 }
 addEventListener("pointermove",e=>{ if(lpPress&&Math.hypot(e.clientX-lpPress.x,e.clientY-lpPress.y)>8){clearTimeout(lpPress.t);lpPress=null} },{passive:true});
 addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 $("#shop").addEventListener("pointerdown",e=>{
-  if(!canWrite||chipEditing()||editId||addAt||e.button>0) return;
-  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,startMk);
+  if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
+  const c=e.target.closest(".mkbox button.mkchip"); if(!c) return;
+  lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; startMk(c); onRelease(c,e.pointerType) },450)};
 });
 $("#shop").addEventListener("contextmenu",e=>{ if(e.target.closest(".mkchip")) e.preventDefault() });
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
@@ -1316,19 +1310,26 @@ function startMk(c){
 /* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
 function editText(el){
   fitMk(el); el.addEventListener("input",()=>fitMk(el));
-  focusEnd();
+  focusEnd(el);
 }
 /* Cursor ans Ende des geöffneten Chip-Texts */
-const ED_TEXT="#shop .mkchip.mked .mkname, #zuo-body .kw.ked .kt";
-function focusEnd(){
-  const el=$(ED_TEXT); if(!el) return;
+function focusEnd(el){
   el.focus();   /* ohne preventScroll: sonst rollt iOS das Feld nicht über die Tastatur */
   const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
+}
+/* Getippten Namen bereinigen (\s trifft auch das geschützte Leerzeichen aus contenteditable) */
+const cleanWord=s=>String(s??"").replace(/\s+/g," ").trim();
+/* Logo im geöffneten Chip an-/abwählen: Chip-Logos neu zeichnen, der Text behält den Fokus */
+function toggleLb(m,lbb,txt){
+  const s=new Set(m.lb), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k); m.lb=sortLb([...s]);
+  lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
+  txt.parentElement.querySelectorAll(".lbb").forEach(b=>b.remove()); txt.insertAdjacentHTML("afterend",m.lb.map(badge).join(""));
+  if(document.activeElement!==txt) txt.focus();
 }
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
   const nm=$("#shop .mkchip.mked .mkname");
-  const v=cancel?m.n:String(nm?.innerText??m.n).replace(/\u00a0/g," ").replace(/\s+/g," ").trim()||m.n;
+  const v=cancel?m.n:cleanWord(nm?.innerText??m.n)||m.n;
   const list=cfg.merk[m.S]||[], ok=v===m.n||!list.some(x=>x.toLowerCase()===v.toLowerCase()&&x!==m.n);
   renameMerk(m.S,m.n,ok?v:m.n,cancel?mkLb(m.n):sortLb(m.lb));
   if(!ok) toast(`„${v}“ steht schon in der Liste`);
@@ -1549,13 +1550,11 @@ function showFresh(ids){
 /* ---------- Ansicht „Zuordnung & Einheiten“: alle Listen sichtbar, Stichwörter hinzufügen und entfernen ---------- */
 let zuoPending=false;
 let kwEdit=null;   /* {k, w, lb} solange ein Stichwort geändert wird */
-/* Logos je Stichwort: Merklisten haben eigene (merkLb); Kategorie- und Label-Stichwörter tragen die Labels,
-   in deren Liste dasselbe Stichwort steht – Logo wählen = Stichwort dort ein- bzw. austragen (1.11.) */
-const kwHasLb=k=>/^[mkl]:/.test(k);
-const kwLb=(k,w)=>k.startsWith("m:")?mkLb(w):kwHasLb(k)?LABELS.map(L=>L.k).filter(lk=>(cfg.labels[lk]||[]).includes(w)):[];
+/* Logos tragen nur Merklisten-Stichwörter (merkLb), wie die Vorschläge in der Einkaufsliste */
+const kwHasLb=k=>k.startsWith("m:");
 function zuoBox(key,title,sub,words,opt={}){
   const chip=w=>{
-    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=(ed?kwEdit.lb:kwLb(key,w)).filter(x=>"l:"+x!==key);   /* eigenes Label steht schon in der Überschrift */
+    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=ed?kwEdit.lb:kwHasLb(key)?mkLb(w):[];
     return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}">${ed?`<span class="kt" data-w="${esc(w)}" contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off">${esc(w)}</span>`:`<button type="button" class="kt" data-w="${esc(w)}"${canWrite?"":" disabled"}>${esc(w)}</button>`}${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&kwHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
   return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
     <div class="chips">${[...words].sort((a,b)=>a.localeCompare(b,"de")).map(chip).join("")}
@@ -1593,27 +1592,22 @@ $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .l
    Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
 function startKw(c){
   const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
-  kwEdit={k,w,lb:[...kwLb(k,w)]}; renderZuo(true);
+  kwEdit={k,w,lb:kwHasLb(k)?[...mkLb(w)]:[]}; renderZuo(true);
   const ed=$("#zuo-body .kw.ked .kt"); if(ed) editText(ed);
 }
 $("#zuo-body").addEventListener("click",e=>{
   /* Label beim Ändern eines Merklisten-Stichworts an-/abwählen; das Feld behält den Fokus */
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb){ if(!kwEdit) return;
-    const s2=new Set(kwEdit.lb), lk=lbb.dataset.lb; s2.has(lk)?s2.delete(lk):s2.add(lk); kwEdit.lb=sortLb([...s2]);
-    lbb.classList.toggle("on",s2.has(lk)); lbb.setAttribute("aria-pressed",s2.has(lk));
-    const ch=$("#zuo-body .kw.ked"); ch.querySelectorAll(".lbb").forEach(b=>b.remove());
-    ch.querySelector(".kt").insertAdjacentHTML("afterend",kwEdit.lb.filter(x=>"l:"+x!==kwEdit.k).map(badge).join(""));
-    const kt=ch.querySelector(".kt"); if(document.activeElement!==kt) kt.focus();
-    return }
+  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt")); return }
   const kw=e.target.closest(".kw");
   if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
-  const x=e.target.closest(".kx"); if(!x) return;
-  const k=x.closest(".zg").dataset.k, w=x.dataset.w;
-  /* Entfernen mit Rückgängig (29.10.) */
-  const prev=cfgList(k); cfgSet(k,prev.filter(v=>v!==w)); saveCfg();
-  undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
+  const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
+/* Stichwort entfernen mit Rückgängig (29.10.) */
+function removeKw(k,w){
+  cfgSet(k,cfgList(k).filter(v=>v!==w)); saveCfg();
+  undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
+}
 /* Stichwort übernehmen: mit Enter (Feld bleibt offen) oder beim Verlassen (dann zum neuen Chip rollen); der Chip leuchtet kurz auf */
 /* Zuletzt ergänzter Chip leuchtet 1,6 s; übersteht auch ein Neuzeichnen (Animation läuft an der richtigen Stelle weiter) */
 let lastKw=null;
@@ -1624,7 +1618,7 @@ function flashKw(){
 }
 function addKw(k,raw,leaving){
   /* Merklisten behalten die Schreibweise („Naturjoghurt“), alle anderen Stichwörter klein */
-  let w=String(raw||"").trim().replace(/\s+/g," "); if(!k.startsWith("m:")) w=w.toLowerCase(); if(!w) return false;
+  let w=cleanWord(raw); if(!k.startsWith("m:")) w=w.toLowerCase(); if(!w) return false;
   const have=cfgList(k).find(x=>x.toLowerCase()===w.toLowerCase());
   if(have) w=have; else cfgSet(k,[...cfgList(k),w]);
   saveCfg();   /* zeichnet synchron neu */
@@ -1645,25 +1639,16 @@ function applyLabel(lk,w){
 function commitKw(cancel){
   const m=kwEdit; if(!m) return; kwEdit=null;
   const ed=$("#zuo-body .kw.ked .kt"), merk=m.k.startsWith("m:");
-  let w=cancel?m.w:String(ed?.innerText??m.w).replace(/\u00a0/g," ").trim().replace(/\s+/g," "); if(!merk) w=w.toLowerCase();
+  let w=cancel?m.w:cleanWord(ed?.innerText??m.w); if(!merk) w=w.toLowerCase();
   const list=cfgList(m.k);
-  if(!w){ cfgSet(m.k,list.filter(v=>v!==m.w)); saveCfg();
-    undoBar(`„${m.w}“ entfernt`,()=>{ if(!cfgList(m.k).includes(m.w)) cfgSet(m.k,[...cfgList(m.k),m.w]); return saveCfg() }); return }
+  if(!w) return removeKw(m.k,m.w);
   const dup=list.find(x=>x!==m.w&&x.toLowerCase()===w.toLowerCase());
   if(dup){ toast(`„${dup}“ steht schon in der Liste`); renderZuo(true); return }
-  if(merk){ if(!renameMerk(m.k.slice(2),m.w,w,sortLb(m.lb))){ renderZuo(true); return } renderZuo(true) }
+  if(merk){ const ch=renameMerk(m.k.slice(2),m.w,w,cancel?mkLb(m.w):sortLb(m.lb)); renderZuo(true); if(!ch) return }
   else {
-    const lbOld=kwLb(m.k,m.w), lbNew=cancel?lbOld:sortLb(m.lb);
-    if(w===m.w&&canon(lbNew)===canon(lbOld)){ renderZuo(true); return }
-    if(!m.k.startsWith("l:")) cfgSet(m.k,list.map(x=>x===m.w?w:x));
-    if(kwHasLb(m.k)){
-      /* Label-Listen nachziehen: alter Name raus, neuer Name in jedes gewählte Label */
-      const labels={...cfg.labels};
-      for(const L of LABELS){ const a=(labels[L.k]||[]).filter(x=>x!==m.w); if(lbNew.includes(L.k)&&!a.includes(w)) a.push(w); labels[L.k]=a }
-      cfg.labels=labels;
-    }
-    saveCfg();
-    lbNew.forEach(lk=>applyLabel(lk,w));
+    if(w===m.w){ renderZuo(true); return }
+    cfgSet(m.k,list.map(x=>x===m.w?w:x)); saveCfg();
+    if(m.k.startsWith("l:")) applyLabel(m.k.slice(2),w);
   }
   lastKw={k:m.k,w,t:performance.now()}; flashKw();
 }
