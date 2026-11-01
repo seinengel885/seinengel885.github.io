@@ -77,7 +77,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 #v-zuo .zg h2{font-size:1.05rem;margin:0 0 4px}
 #v-zuo .zg .sub{font-size:.85rem;margin:0 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem}
+.kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* langer Druck öffnet zum Ändern, keine Textauswahl */
 .kw.hard{color:var(--accent);font-weight:600}   /* Stichwort mit ! nur über grüne, fette Schrift erkennbar, kein Rahmen (1.11.) */
 .kx{border:0;background:none;color:var(--muted);font-size:1rem;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
 .kadd{flex:0 0 9.5em;min-width:0}
@@ -1199,7 +1199,7 @@ $("#shop").addEventListener("pointerdown",()=>{ editAtDown=(editId||addAt||mkEdi
 $("#shop").addEventListener("click",async e=>{
   /* Label im Bearbeiten an-/abwählen: sofort speichern, Feld behält den Fokus */
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb&&lbb.closest(".mkpick")){ if(mkEdit) toggleLb(mkEdit,lbb,$("#shop .mkchip.mked .mkname")); return }
+  if(lbb&&lbb.closest(".mkpick")){ if(mkEdit) toggleLb(mkEdit,lbb,$(MK_TEXT)); return }
   if(lbb){ const f=lbb.closest(".edit"), it=items.find(x=>x.id===f?.dataset.id); if(!it) return;
     const s=new Set(it.labels||[]), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k);
     it.labels=sortLb([...s]); lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
@@ -1285,13 +1285,20 @@ $("#shop").addEventListener("keydown",e=>{
    Name im Chip ändern, darunter Logos wählen. Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab,
    leer = entfernen mit Rückgängig. Offene Einträge mit dem alten Namen in dieser Kategorie heißen danach mit.
    Die Logos bekommt der Eintrag, der durch Antippen des Vorschlags entsteht. */
+/* Langer Druck (450 ms) oder Rechtsklick öffnet einen Chip zum Ändern: Vorschläge (Antippen legt dort einen Eintrag an)
+   und Zuordnungen (dort öffnet auch schon Antippen). sel = der Text des geöffneten Chips nach dem Neuzeichnen. */
 let lpPress=null;
+function longPress(e,c,start,sel){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; navigator.vibrate?.(12); start(c); onRelease(c,e.pointerType,sel) },450)} }
+function chipMenu(e,c,start,sel){
+  e.preventDefault(); if(lpPress){clearTimeout(lpPress.t);lpPress=null}
+  start(c); if(e.pointerType==="touch") onRelease(c,"touch",sel);   /* Android meldet den langen Druck auch so */
+}
 /* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
    Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
    erreicht window nicht mehr – deshalb direkt dort lauschen. Ein Wartezustand für „das nächste Loslassen“ hätte sonst
    den folgenden Tipp (z. B. auf ein Logo) verschluckt (1.11.). */
-function onRelease(c,type){
-  const end=()=>{ const nm=$("#shop .mkchip.mked .mkname"); if(nm) focusEnd(nm) };   /* der Chip wurde beim Öffnen ersetzt */
+function onRelease(c,type,sel){
+  const end=()=>{ const el=$(sel); if(el) focusEnd(el) };   /* der Chip wurde beim Öffnen ersetzt */
   if(type==="mouse") addEventListener("mouseup",end,{once:true});
   else c.addEventListener("touchend",e=>{ e.preventDefault(); end() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
 }
@@ -1300,21 +1307,18 @@ addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=n
 addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 $("#shop").addEventListener("pointerdown",e=>{
   if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
-  const c=e.target.closest(".mkbox button.mkchip"); if(!c) return;
-  lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; startMk(c); onRelease(c,e.pointerType) },450)};
+  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,startMk,MK_TEXT);
 });
 $("#shop").addEventListener("contextmenu",e=>{
   const c=e.target.closest(".mkchip"); if(!c) return; e.preventDefault();
-  if(!c.matches(".mkbox button.mkchip")||!canWrite||mkEdit||editId||addAt) return;
-  if(lpPress){clearTimeout(lpPress.t);lpPress=null}
-  startMk(c); if(e.pointerType==="touch") onRelease(c,"touch");   /* Android meldet den langen Druck auch so */
+  if(c.matches(".mkbox button.mkchip")&&canWrite&&!mkEdit&&!editId&&!addAt) chipMenu(e,c,startMk,MK_TEXT);
 });
+const MK_TEXT="#shop .mkchip.mked .mkname", KW_TEXT="#zuo-body .kw.ked .kt";
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
 function startMk(c){
   const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
-  navigator.vibrate?.(12);
   mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
-  const nm=$("#shop .mkchip.mked .mkname"); if(nm) editText(nm);
+  const nm=$(MK_TEXT); if(nm) editText(nm);
 }
 /* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
 function editText(el){
@@ -1337,7 +1341,7 @@ function toggleLb(m,lbb,txt){
 }
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
-  const nm=$("#shop .mkchip.mked .mkname"), list=cfg.merk[m.S]||[], oldK=m.n.toLowerCase();
+  const nm=$(MK_TEXT), list=cfg.merk[m.S]||[], oldK=m.n.toLowerCase();
   const v=cancel?m.n:cleanWord(nm?.innerText??m.n), lb=cancel?mkLb(m.n):sortLb(m.lb);
   if(!v) return removeMerk(m.S,m.n);
   if(v!==m.n&&list.some(x=>x!==m.n&&x.toLowerCase()===v.toLowerCase())){ toast(`„${v}“ steht schon in der Liste`); renderShop(true); return }
@@ -1601,11 +1605,20 @@ $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .l
 function startKw(c){
   const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
   kwEdit={k,w,lb:zuoHasLb(k)?zuoLb(w):[]}; renderZuo(true);
-  const ed=$("#zuo-body .kw.ked .kt"); if(ed) editText(ed);
+  const ed=$(KW_TEXT); if(ed) editText(ed);
 }
+/* Zuordnung lange drücken oder Rechtsklick: öffnet sie wie Antippen */
+$("#zuo-body").addEventListener("pointerdown",e=>{
+  if(!canWrite||e.button>0) return;
+  const c=e.target.closest(".kw:not(.ked)"); if(c&&!e.target.closest(".kx")) longPress(e,c,startKw,KW_TEXT);
+});
+$("#zuo-body").addEventListener("contextmenu",e=>{
+  const c=e.target.closest(".kw"); if(!c) return; e.preventDefault();
+  if(canWrite&&!c.classList.contains("ked")) chipMenu(e,c,startKw,KW_TEXT);
+});
 $("#zuo-body").addEventListener("click",e=>{
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt")); return }
+  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$(KW_TEXT)); return }
   const kw=e.target.closest(".kw");
   if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
   const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
@@ -1648,7 +1661,7 @@ function applyZuoLb(w,lb){
 /* Geänderte Zuordnung übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig */
 function commitKw(cancel){
   const m=kwEdit; if(!m) return; kwEdit=null;
-  const ed=$("#zuo-body .kw.ked .kt"), w=cancel?m.w:cleanWord(ed?.innerText??m.w).toLowerCase(), list=cfgList(m.k);
+  const ed=$(KW_TEXT), w=cancel?m.w:cleanWord(ed?.innerText??m.w).toLowerCase(), list=cfgList(m.k);
   if(!w) return removeKw(m.k,m.w);
   if(list.some(x=>x!==m.w&&x===w)){ toast(`„${w}“ steht schon in der Liste`); renderZuo(true); return }
   const lbOld=zuoHasLb(m.k)?zuoLb(m.w):[], lbNew=cancel?lbOld:sortLb(m.lb);
@@ -1671,7 +1684,7 @@ $("#zuo-body").addEventListener("submit",e=>{
 });
 $("#zuo-body").addEventListener("focusout",e=>{
   /* Wert sofort lesen: ein Tipp auf einen anderen Chip zeichnet die Ansicht neu */
-  if(e.target.matches(".kw.ked .kt")){ setTimeout(()=>{ if(kwEdit&&!document.activeElement?.matches?.("#zuo-body .kw.ked .kt")) commitKw(false) },0); return }
+  if(e.target.matches(".kw.ked .kt")){ setTimeout(()=>{ if(kwEdit&&!document.activeElement?.matches?.(KW_TEXT)) commitKw(false) },0); return }
   const inp=e.target.matches(".kadd input")?e.target:null, k=inp?.closest(".zg")?.dataset.k, v=inp?inp.value:""; if(inp) inp.value="";
   setTimeout(()=>{ if(k&&addKw(k,v,true)) return; if(zuoPending&&!$("#zuo-body").contains(document.activeElement)) renderZuo() },0);
 });
