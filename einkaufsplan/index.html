@@ -1,8 +1,5 @@
-<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+<!doctype html><html lang="de"><head><meta charset="utf-8"><title>Unser Essensplan</title><meta name="theme-color" content="#f6f8f6"><meta name="apple-mobile-web-app-capable" content="yes"><meta name="apple-mobile-web-app-title" content="Einkaufsplan"><link rel="icon" href="../shared/icon.svg"><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
 
-
-<title>Unser Essensplan</title>
-<meta name="claude:viewport-fit-sides" content="cover">
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap">
 <link rel="stylesheet" href="app.css">
@@ -302,6 +299,9 @@ body.dragmode #v-week{padding-bottom:110px}
 </div>
 <div class="toast" id="toast" hidden></div>
 
+<script src="../shared/vendor/supabase-js-2.117.3.js"></script>
+<script src="../shared/config.js"></script>
+<script src="../shared/backend.js" data-app="einkaufsplan"></script>
 <script src="rezepte.js"></script>
 <script src="labels.js"></script>
 <script>
@@ -1543,7 +1543,7 @@ function renderZuo(force){
 async function saveCfg(quiet){
   if(!quiet) renderZuo(true);
   if(!db) return toast("Speichern geht hier gerade nicht.");
-  try{ await db.doc("einstellungen/einkauf").set({...cfg,geaendert:new Date().toISOString(),geaendert_von:"Patrick"}); refreshers.forEach(f=>f()) }catch(err){fail(err)}
+  try{ await db.doc("einstellungen/einkauf").set({...cfg,geaendert:new Date().toISOString(),geaendert_von:(window.backend?.userName||"")}); refreshers.forEach(f=>f()) }catch(err){fail(err)}
 }
 const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:k.startsWith("m:")?(cfg.merk[k.slice(2)]||[]):k.startsWith("l:")?(cfg.labels[k.slice(2)]||[]):cfg.kategorien[k.slice(2)];
 function cfgSet(k,list){
@@ -1656,13 +1656,15 @@ window.Einkauf={
 (async()=>{
   /* Ladezustand mit Zwischenschritten: zeigt, woran es hängt, falls nichts kommt */
   const status=t=>{const el=$("#days"); if(!days.length) el.innerHTML=`<div class="state"><strong>Plan wird geladen …</strong>${esc(t)}</div>`};
-  const use=n=>window.claude?.use?window.claude.use(n):Promise.resolve(null);
-  status(window.claude?.use?"Verbinde mit der Datenbank …":"Keine Verbindung zur Claude-App (window.claude fehlt).");
+  const use=n=>window.backend?.use?window.backend.use(n):Promise.resolve(null);
+  status(window.backend?.use?"Anmeldung …":"Die Verbindung zu Supabase fehlt (backend.js nicht geladen).");
+  if(window.backend) await window.backend.ready;
+  status("Verbinde mit der Datenbank …");
   let gotDays=false;
   const t0=setTimeout(()=>{if(!gotDays) status("Die Datenbank antwortet nicht. Bitte Seite neu laden; hilft das nicht, Claude Bescheid geben.")},12000);
   const [d,u]=await Promise.all([use("db"),use("user")]);
   db=d;
-  if(!db){clearTimeout(t0);$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Öffne den Essensplan angemeldet in der Claude-App.</div>`;$("#shop").innerHTML="";return}
+  if(!db){clearTimeout(t0);$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Bitte neu anmelden und die Seite neu laden.</div>`;$("#shop").innerHTML="";return}
   status("Datenbank verbunden, lade die Tage …");
   /* Live-Abo; lehnt die Plattform es ab (passiert nach dem Zurückkommen von einer Unterseite:
      „Invalid subscription id“), direkt laden und regelmäßig nachladen */

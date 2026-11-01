@@ -1,0 +1,35 @@
+<!doctype html>
+<html lang="de">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<title>Unsere Projekte</title>
+<meta name="robots" content="noindex">
+<link rel="icon" href="shared/icon.svg">
+<style>
+:root{--bg:#f6f8f6;--surface:#fff;--ink:#18261f;--muted:#5f6f66;--line:#dde5df;--accent:#2f7a4a;color-scheme:light}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--bg:#101613;--surface:#18201b;--ink:#e7efe9;--muted:#9aaba1;--line:#2a352f;--accent:#6cc28c;color-scheme:dark}}
+:root[data-theme="dark"]{--bg:#101613;--surface:#18201b;--ink:#e7efe9;--muted:#9aaba1;--line:#2a352f;--accent:#6cc28c;color-scheme:dark}
+*{box-sizing:border-box}
+body{margin:0;background:var(--bg);color:var(--ink);font:16px/1.45 system-ui,-apple-system,"Segoe UI",sans-serif;
+  padding:max(24px,env(safe-area-inset-top)) max(16px,env(safe-area-inset-right)) 32px max(16px,env(safe-area-inset-left))}
+main{max-width:560px;margin:0 auto}
+h1{font-size:1.7rem;margin:0 0 16px}
+ul{list-style:none;margin:0;padding:0;display:flex;flex-direction:column;gap:8px}
+a.card{display:flex;justify-content:space-between;align-items:center;gap:12px;padding:14px 16px;border-radius:14px;
+  background:var(--surface);border:1px solid var(--line);color:inherit;text-decoration:none}
+a.card b{display:block;font-size:1.05rem}
+a.card span{color:var(--muted);font-size:.9rem}
+a.card svg{color:var(--muted);flex:none}
+</style>
+</head>
+<body>
+<main>
+  <h1>Unsere Projekte</h1>
+  <ul>
+    <li><a class="card" href="einkaufsplan/"><div><b>Essensplan</b><span>Woche, Einkauf und Rezepte</span></div>
+      <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a></li>
+  </ul>
+</main>
+</body>
+</html>
