@@ -97,6 +97,8 @@
     if(/rate limit|too many|security purposes/i.test(m)) return "Gerade wurden zu viele Mails verschickt. Bitte etwas später nochmal versuchen.";
     if(/not authorized/i.test(m)) return "An diese Adresse kann Supabase noch keine Mail schicken (eigener Mailserver fehlt).";
     if(/expired|invalid/i.test(m)) return "Der Code stimmt nicht oder ist abgelaufen.";
+    if(/sending .*email|smtp/i.test(m)) return "Die Mail konnte nicht verschickt werden. Bitte die Mail-Einstellungen in Supabase prüfen.";
+    if(/fetch|network/i.test(m)) return "Keine Verbindung. Bitte Internet prüfen.";
     return m || "Das hat nicht geklappt.";
   }
   function hideLogin(){ document.getElementById("auth")?.remove(); }

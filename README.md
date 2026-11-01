@@ -5,7 +5,7 @@ Unsere kleinen Web-Projekte, veröffentlicht über GitHub Pages unter https://se
 | Ordner | Was |
 |---|---|
 | `/` | Startseite mit Links zu den Projekten |
-| `einkaufsplan/` | Essensplan: Woche, Einkaufsliste, Rezepte (vorher ein Claude-Artefakt) |
+| `einkaufsplaner/` | Einkaufsplaner: Woche, Einkaufsliste, Rezepte (vorher ein Claude-Artefakt) |
 | `shared/` | Gemeinsam für alle Projekte: Supabase-Anbindung, Anmeldung, Symbol |
 | `supabase/migrations/` | Datenbankaufbau in Supabase (so wie angewendet) |
 | `tools/backup.mjs` | Sicherung aller Daten ins private Repo `seinengel885/backups` |
@@ -13,7 +13,7 @@ Unsere kleinen Web-Projekte, veröffentlicht über GitHub Pages unter https://se
 ## Daten und Anmeldung
 
 - Daten liegen in Supabase (Projekt „PE's Project“, Frankfurt), Tabelle `public.docs`.
-  Jedes Projekt hat seinen eigenen Wert in der Spalte `app`, z. B. `einkaufsplan`.
+  Jedes Projekt hat seinen eigenen Wert in der Spalte `app`, z. B. `einkaufsplan` (der Einkaufsplaner; der Datenbankname blieb beim Umbenennen gleich).
 - Jede Änderung und Löschung hebt den alten Stand in `public.docs_history` auf.
 - Fotos liegen im privaten Speicher-Bucket `bilder`.
 - Zugriff nur nach Anmeldung, und nur für die Adressen in `public.allowed_users`
