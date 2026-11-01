@@ -87,9 +87,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 @media (prefers-reduced-motion:reduce){.kw.fresh{animation:none}}
 .kadd input::placeholder{color:var(--muted)}
 /* Stichwort antippen = ändern wie ein Eintrag der Einkaufsliste; leer machen entfernt es (1.11.) */
-.kw{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
-.kw .kt{line-height:20px}
-.kw.ked .kt{cursor:text}
+.kw .kt{cursor:text;line-height:20px}
 .kw .lbb{width:16px;height:16px;margin-left:3px}
 /* Beim Ändern bleibt der Chip unverändert, nur der Cursor kommt dazu: Text direkt editierbar, 16px gegen den iOS-Zoom,
    optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() aus (wie .mkname) */
@@ -1286,8 +1284,7 @@ $("#shop").addEventListener("keydown",e=>{
 /* ---------- Vorschlag lange drücken (450 ms): Name im Chip ändern, darunter Labels wählen (1.11.) ----------
    Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
    Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
-/* Langer Druck (450 ms) auf einen Chip öffnet ihn zum Ändern – Vorschläge in der Einkaufsliste und Stichwörter
-   in der Zuordnung nutzen denselben Ablauf (1.11.) */
+/* Langer Druck (450 ms) auf einen Vorschlag öffnet ihn zum Ändern (1.11.); Stichwörter der Zuordnung öffnen schon beim Antippen */
 let lpPress=null, lpAt=0;
 const chipEditing=()=>!!(mkEdit||kwEdit);
 function longPress(e,c,start){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; lpAt=Date.now(); start(c) },450)} }
@@ -1304,12 +1301,12 @@ function startMk(c){
   const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
   navigator.vibrate?.(12);
   mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
-  const nm=$("#shop .mkchip.mked .mkname"); if(nm) editText(nm);
+  const nm=$("#shop .mkchip.mked .mkname"); if(nm){ edFocusAt=Date.now(); editText(nm) }
 }
 /* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
 function editText(el){
   fitMk(el); el.addEventListener("input",()=>fitMk(el));
-  edFocusAt=Date.now(); focusEnd();
+  focusEnd();
 }
 /* Cursor ans Ende. Beim Loslassen des Fingers noch einmal: Nur dort öffnet iOS die Tastatur (Benutzergeste),
    und das Loslassen würde den Cursor sonst an die Fingerstelle setzen (1.11.) */
@@ -1588,15 +1585,10 @@ function cfgSet(k,list){
   buildUnits();
 }
 $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")) e.preventDefault() });
-/* Stichwort lange drücken: Text im Chip ändern, darunter Logos wählen (wie die Vorschläge in der Einkaufsliste) */
-$("#zuo-body").addEventListener("pointerdown",e=>{
-  if(!canWrite||chipEditing()||e.button>0||e.target.closest(".kx")) return;
-  const c=e.target.closest(".kw"); if(c) longPress(e,c,startKw);
-});
-$("#zuo-body").addEventListener("contextmenu",e=>{ if(e.target.closest(".kw")) e.preventDefault() });
+/* Stichwort antippen: Text im Chip ändern, darunter Logos wählen (wie die Vorschläge in der Einkaufsliste).
+   Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
 function startKw(c){
   const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
-  navigator.vibrate?.(12);
   kwEdit={k,w,lb:[...kwLb(k,w)]}; renderZuo(true);
   const ed=$("#zuo-body .kw.ked .kt"); if(ed) editText(ed);
 }
@@ -1610,7 +1602,8 @@ $("#zuo-body").addEventListener("click",e=>{
     ch.querySelector(".kt").insertAdjacentHTML("afterend",kwEdit.lb.filter(x=>"l:"+x!==kwEdit.k).map(badge).join(""));
     const kt=ch.querySelector(".kt"); if(document.activeElement!==kt) kt.focus();
     return }
-  if(e.target.closest(".kw.ked")&&Date.now()-lpAt<1500){ focusEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
+  const kw=e.target.closest(".kw");
+  if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
   const x=e.target.closest(".kx"); if(!x) return;
   const k=x.closest(".zg").dataset.k, w=x.dataset.w;
   /* Entfernen mit Rückgängig (29.10.) */
