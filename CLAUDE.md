@@ -1,6 +1,8 @@
 # Hinweise für Claude
 
 - Sprache mit Patrick: Deutsch. Kerstin ist die zweite Nutzerin.
+- **Sauberer Code:** Bei einem Fehler die Ursache beheben, nicht drumherum bauen. Erst prüfen, ob die native
+  Browser-Funktion reicht; keine zusätzlichen Hilfsskripte, die einen eigenen Fehler ausgleichen.
 - Jedes Projekt ist ein Ordner (`einkaufsplaner/`, später z. B. `todo/`), eingebunden über `shared/backend.js`
   mit eigenem `data-app`. Der Einkaufsplaner liegt in `einkaufsplaner/`, seine Daten aber unter
   `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
@@ -8,7 +10,8 @@
 - **Ablauf:** Claude arbeitet lokal, aktualisiert die Vorschau, Patrick testet. Sagt Patrick eines der Codewörter **„live“, „Freigabe“, „ausrollen“ oder
   „veröffentlichen“**, pusht Claude
   sofort direkt auf `main` (GitHub Pages liefert von `main` aus) – ohne Pull Request, ohne Rückfrage, ohne weitere Branches.
-  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Ohne Codewort wird nichts gepusht;
+  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Ohne Codewort geht nichts auf `main`; den eigenen Arbeitsbranch
+  darf Claude jederzeit pushen (Sicherung), er wird beim Codewort mit gemergt;
   „passt“ bestätigt nur eine Änderung und ist **kein** Codewort.
 - **Vorschau vor dem Push:** Patrick prüft Änderungen in einer klickbaren Vorschau im Chat, bevor sie live gehen.
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau` baut die Seite mit `shared/demo-backend.js`
