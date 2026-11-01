@@ -43,5 +43,5 @@
   Einkaufsliste (`cfg.merk`, Logos in `cfg.merkLb`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
   offen auf der Liste steht); ändern per langem Druck oder Rechtsklick. *Zuordnungen* = Chips auf der Seite Zuordnung
   (Stichwörter der Kategorien, dazu „Immer im Haus“ und Mengeneinheiten). Sie wirken beim Eingeben eines Eintrags;
-  Antippen öffnet sie direkt zum Ändern. Die Zuordnungen der Kategorien tragen Logos (`cfg.zuoLb`): Die Zuordnung, die
+  Antippen öffnet sie direkt zum Ändern. Logos sind eine Eigenschaft der einzelnen Zuordnung einer Kategorie (`cfg.zuoLb[Kategorie][Wort]`): Die Zuordnung, die
   einen neuen Eintrag einsortiert, gibt ihm auch ihre Logos. Vorschläge stehen nicht auf der Seite Zuordnung.
