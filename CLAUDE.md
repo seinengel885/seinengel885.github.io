@@ -5,14 +5,15 @@
   mit eigenem `data-app`. Der Einkaufsplaner liegt in `einkaufsplaner/`, seine Daten aber unter
   `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
   (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
-- **Live gehen = direkt auf `main` pushen** (GitHub Pages liefert von `main` aus). Patrick hat das ausdrücklich erlaubt;
-  kein Pull Request und keine Rückfrage nötig. Vorher `origin/main` in den Arbeitszweig mergen.
+- **Ablauf:** Claude arbeitet lokal, aktualisiert die Vorschau, Patrick testet. Sagt Patrick **„passt“**, pusht Claude
+  sofort direkt auf `main` (GitHub Pages liefert von `main` aus) – ohne Pull Request, ohne Rückfrage, ohne weitere Branches.
+  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Ohne „passt“ wird nichts gepusht.
 - **Vorschau vor dem Push:** Patrick prüft Änderungen in einer klickbaren Vorschau im Chat, bevor sie live gehen.
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau` baut die Seite mit `shared/demo-backend.js`
   (Beispieldaten, keine Anmeldung, nichts geht an Supabase) und gibt die Dateiliste aus. Veröffentlichen mit dem
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
   aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner); in einer neuen Sitzung erst mit
-  `action: "read"` lesen, dann mit `url` veröffentlichen. Erst nach Patricks „passt“ auf `main` pushen.
+  `action: "read"` lesen, dann mit `url` veröffentlichen.
   **Ungefragt:** Vor jeder Antwort, die eine Änderung am Code meldet, die Vorschau neu bauen und veröffentlichen, und den
   Link in der ersten Antwort jeder Sitzung nennen. Patrick kommentiert direkt in der Vorschau; diese Kommentare kommen als
   „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
