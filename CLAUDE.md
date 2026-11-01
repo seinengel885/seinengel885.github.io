@@ -1,6 +1,8 @@
 # Hinweise für Claude
 
 - Sprache mit Patrick: Deutsch. Kerstin ist die zweite Nutzerin.
+- **Vor jeder Arbeit an der Oberfläche** den Skill `artefakt-bau` laden und die passenden Bausteine lesen (z. B. `eingabe-ios.md`:
+  Bearbeiten ohne Rahmen und ohne Größenänderung, 16px; `ios-viewport.md`: Tastatur, kein `preventScroll` beim Fokussieren).
 - **Sauberer Code:** Bei einem Fehler die Ursache beheben, nicht drumherum bauen. Erst prüfen, ob die native
   Browser-Funktion reicht; keine zusätzlichen Hilfsskripte, die einen eigenen Fehler ausgleichen.
 - Jedes Projekt ist ein Ordner (`einkaufsplaner/`, später z. B. `todo/`), eingebunden über `shared/backend.js`

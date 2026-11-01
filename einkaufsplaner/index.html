@@ -85,14 +85,16 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .kadd input{width:100%;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:2px 10px;height:30px;outline:0}
 .kadd input:focus{border-color:var(--accent)}
 .kw.fresh{animation:kwflash 1.6s ease-out}
-@keyframes kwflash{0%,35%{background:var(--accent-soft);border-color:var(--accent)}100%{background:var(--surface)}}
+@keyframes kwflash{0%,35%{background:var(--accent-soft)}100%{background:var(--surface)}}
 @media (prefers-reduced-motion:reduce){.kw.fresh{animation:none}}
 .kadd input::placeholder{color:var(--muted)}
 /* Stichwort antippen = ändern wie ein Eintrag der Einkaufsliste; leer machen entfernt es (1.11.) */
-.kw .kt{cursor:text}
+.kw .kt{cursor:text;line-height:20px}
 .kw .lbb{width:16px;height:16px;margin-left:3px}
-.kedit{flex:0 1 auto;min-width:0;margin:0}
-.kedit input{field-sizing:content;min-width:5em;max-width:100%;font:inherit;font-size:16px;border:1px solid var(--accent);box-shadow:0 0 0 1px var(--accent);border-radius:999px;background:var(--surface);color:var(--ink);padding:2px 10px;height:30px;outline:0}
+/* Beim Ändern bleibt der Chip unverändert, nur der Cursor kommt dazu: Text direkt editierbar, 16px gegen den iOS-Zoom,
+   optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() aus (wie .mkname) */
+.kw.ked .kt{outline:0;white-space:pre;min-width:1ch;display:inline-block;font-size:16px;transform:scale(.88);transform-origin:left center;-webkit-user-select:text;user-select:text}
+.kw.ked .kt:focus,.kw.ked .kt:focus-visible{outline:0;box-shadow:none}
 .row.fresh{animation:fresh 1.6s ease-out}
 @keyframes fresh{0%,35%{background:var(--accent-soft)}100%{background:transparent}}
 @media (prefers-reduced-motion:reduce){.row.fresh{animation:none}}
@@ -174,7 +176,7 @@ body.dragmode .drop.shut .items:has(>.row.dragging)>li:not(.dragging){display:no
 /* Vorschlag lange drücken: Name direkt im Chip ändern, darunter Einkaufs-Labels wählen (1.11.) */
 .mkchip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .mkchip .lbb{width:16px;height:16px;margin-right:-5px}
-.mkchip.mked{cursor:text;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.mkchip.mked{cursor:text}
 /* 16px gegen den iOS-Zoom, optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() per margin-right aus */
 .mkchip .mkname{outline:0;white-space:pre;min-width:1ch;-webkit-user-select:text;user-select:text;display:inline-block;font-size:16px;transform:scale(.88);transform-origin:left center}
 .mkchip .mkname:focus,.mkchip .mkname:focus-visible{outline:0;box-shadow:none}
@@ -1540,18 +1542,21 @@ function showFresh(ids){
 /* ---------- Ansicht „Zuordnung & Einheiten“: alle Listen sichtbar, Stichwörter hinzufügen und entfernen ---------- */
 let zuoPending=false;
 let kwEdit=null;   /* {k, w, lb} solange ein Stichwort geändert wird */
+/* Logos je Stichwort: Merklisten haben eigene (merkLb); Kategorie- und Label-Stichwörter tragen die Labels,
+   in deren Liste dasselbe Stichwort steht – Logo wählen = Stichwort dort ein- bzw. austragen (1.11.) */
+const kwHasLb=k=>/^[mkl]:/.test(k);
+const kwLb=(k,w)=>k.startsWith("m:")?mkLb(w):kwHasLb(k)?LABELS.map(L=>L.k).filter(lk=>(cfg.labels[lk]||[]).includes(w)):[];
 function zuoBox(key,title,sub,words,opt={}){
-  const merk=key.startsWith("m:");
   const chip=w=>{
-    if(kwEdit?.k===key&&kwEdit.w===w) return `<form class="kedit"><input type="text" value="${esc(w)}" aria-label="Stichwort ändern" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"></form>${merk?lbPick(kwEdit.lb," mkpick"):""}`;
-    return `<span class="kw${w.endsWith("!")?" hard":""}"><span class="kt" data-w="${esc(w)}">${esc(w)}</span>${merk?mkLb(w).map(badge).join(""):""}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>` };
+    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=(ed?kwEdit.lb:kwLb(key,w)).filter(x=>"l:"+x!==key);   /* eigenes Label steht schon in der Überschrift */
+    return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}"><span class="kt" data-w="${esc(w)}"${ed?` contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off"`:""}>${esc(w)}</span>${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&kwHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
   return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
     <div class="chips">${[...words].sort((a,b)=>a.localeCompare(b,"de")).map(chip).join("")}
     ${canWrite?`<form class="kadd"><input type="text" placeholder="＋ Stichwort" aria-label="Stichwort zu ${esc(title)}" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"></form>`:""}</div></section>`;
 }
 function renderZuo(force){
   const el=$("#zuo-body"); if(!el) return;
-  if(!force&&el.contains(document.activeElement)&&document.activeElement.matches("input")){zuoPending=true;return}
+  if(!force&&el.contains(document.activeElement)&&(document.activeElement.matches("input")||document.activeElement.isContentEditable)){zuoPending=true;return}
   zuoPending=false;
   el.innerHTML=zuoBox("vorrat","Immer im Haus","Wird nicht aus Rezepten übernommen. Gilt nur als ganzes Wort.",cfg.vorrat)
     +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Wird ein Eintrag in eine andere Kategorie gezogen, kommt sein Name hier als Stichwort dazu.</p></section>`
@@ -1583,13 +1588,17 @@ $("#zuo-body").addEventListener("click",e=>{
   if(lbb){ if(!kwEdit) return;
     const s2=new Set(kwEdit.lb), lk=lbb.dataset.lb; s2.has(lk)?s2.delete(lk):s2.add(lk); kwEdit.lb=sortLb([...s2]);
     lbb.classList.toggle("on",s2.has(lk)); lbb.setAttribute("aria-pressed",s2.has(lk));
-    const inp=$("#zuo-body .kedit input"); if(document.activeElement!==inp) inp?.focus({preventScroll:true});
+    const ch=$("#zuo-body .kw.ked"); ch.querySelectorAll(".lbb").forEach(b=>b.remove());
+    ch.querySelector(".kt").insertAdjacentHTML("afterend",kwEdit.lb.filter(x=>"l:"+x!==kwEdit.k).map(badge).join(""));
+    const kt=ch.querySelector(".kt"); if(document.activeElement!==kt) kt.focus({preventScroll:true});
     return }
   const kt=e.target.closest(".kw .kt, .kw .lbb");
-  if(kt&&canWrite){ const kw=kt.closest(".kw");
-    kwEdit={k:kw.closest(".zg").dataset.k,w:kw.querySelector(".kt").dataset.w}; kwEdit.lb=kwEdit.k.startsWith("m:")?[...mkLb(kwEdit.w)]:[];
-    renderZuo(true);
-    const inp=$("#zuo-body .kedit input"); if(inp){ inp.focus({preventScroll:true}); inp.setSelectionRange(inp.value.length,inp.value.length) }
+  if(kt&&canWrite&&!kt.closest(".ked")){ const kw=kt.closest(".kw"), k=kw.closest(".zg").dataset.k, w=kw.querySelector(".kt").dataset.w;
+    kwEdit={k,w,lb:[...kwLb(k,w)]}; renderZuo(true);
+    /* Normales focus(): iOS rollt das Feld dann selbst über die Tastatur (mit preventScroll nicht) */
+    const ed=$("#zuo-body .kw.ked .kt"); if(!ed) return;
+    fitMk(ed); ed.addEventListener("input",()=>fitMk(ed)); ed.focus();
+    const r=document.createRange(); r.selectNodeContents(ed); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
     return }
   const x=e.target.closest(".kx"); if(!x) return;
   const k=x.closest(".zg").dataset.k, w=x.dataset.w;
@@ -1627,32 +1636,42 @@ function applyLabel(lk,w){
 /* Geändertes Stichwort übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig */
 function commitKw(cancel){
   const m=kwEdit; if(!m) return; kwEdit=null;
-  const inp=$("#zuo-body .kedit input"), merk=m.k.startsWith("m:");
-  let w=cancel?m.w:String(inp?.value??m.w).trim().replace(/\s+/g," "); if(!merk) w=w.toLowerCase();
+  const ed=$("#zuo-body .kw.ked .kt"), merk=m.k.startsWith("m:");
+  let w=cancel?m.w:String(ed?.innerText??m.w).replace(/\u00a0/g," ").trim().replace(/\s+/g," "); if(!merk) w=w.toLowerCase();
   const list=cfgList(m.k);
   if(!w){ cfgSet(m.k,list.filter(v=>v!==m.w)); saveCfg();
     undoBar(`„${m.w}“ entfernt`,()=>{ if(!cfgList(m.k).includes(m.w)) cfgSet(m.k,[...cfgList(m.k),m.w]); return saveCfg() }); return }
   const dup=list.find(x=>x!==m.w&&x.toLowerCase()===w.toLowerCase());
   if(dup){ toast(`„${dup}“ steht schon in der Liste`); renderZuo(true); return }
-  if(merk){ if(!renameMerk(m.k.slice(2),m.w,w,sortLb(m.lb))){ renderZuo(true); return } }
-  else if(w!==m.w){ cfgSet(m.k,list.map(x=>x===m.w?w:x)); saveCfg(); if(m.k.startsWith("l:")) applyLabel(m.k.slice(2),w) }
-  else { renderZuo(true); return }
-  if(merk) renderZuo(true);
+  if(merk){ if(!renameMerk(m.k.slice(2),m.w,w,sortLb(m.lb))){ renderZuo(true); return } renderZuo(true) }
+  else {
+    const lbOld=kwLb(m.k,m.w), lbNew=cancel?lbOld:sortLb(m.lb);
+    if(w===m.w&&canon(lbNew)===canon(lbOld)){ renderZuo(true); return }
+    if(!m.k.startsWith("l:")) cfgSet(m.k,list.map(x=>x===m.w?w:x));
+    if(kwHasLb(m.k)){
+      /* Label-Listen nachziehen: alter Name raus, neuer Name in jedes gewählte Label */
+      const labels={...cfg.labels};
+      for(const L of LABELS){ const a=(labels[L.k]||[]).filter(x=>x!==m.w); if(lbNew.includes(L.k)&&!a.includes(w)) a.push(w); labels[L.k]=a }
+      cfg.labels=labels;
+    }
+    saveCfg();
+    lbNew.forEach(lk=>applyLabel(lk,w));
+  }
   lastKw={k:m.k,w,t:performance.now()}; flashKw();
 }
 $("#zuo-body").addEventListener("keydown",e=>{
-  if(!e.target.matches(".kedit input")) return;
-  if(e.key==="Escape") commitKw(true);
+  if(!e.target.matches(".kw.ked .kt")) return;
+  if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); commitKw(false) }
+  else if(e.key==="Escape") commitKw(true);
 });
 $("#zuo-body").addEventListener("submit",e=>{
   e.preventDefault();
-  if(e.target.classList.contains("kedit")) return commitKw(false);
   const inp=e.target.querySelector("input"), k=e.target.closest(".zg").dataset.k, v=inp.value; inp.value="";
   if(addKw(k,v,false)) $(`#zuo-body .zg[data-k="${CSS.escape(k)}"] .kadd input`)?.focus();
 });
 $("#zuo-body").addEventListener("focusout",e=>{
   /* Wert sofort lesen: ein Tipp auf einen anderen Chip zeichnet die Ansicht neu */
-  if(e.target.matches(".kedit input")){ setTimeout(()=>{ if(kwEdit&&!document.activeElement?.matches?.("#zuo-body .kedit input")) commitKw(false) },0); return }
+  if(e.target.matches(".kw.ked .kt")){ setTimeout(()=>{ if(kwEdit&&!document.activeElement?.matches?.("#zuo-body .kw.ked .kt")) commitKw(false) },0); return }
   const inp=e.target.matches(".kadd input")?e.target:null, k=inp?.closest(".zg")?.dataset.k, v=inp?inp.value:""; if(inp) inp.value="";
   setTimeout(()=>{ if(k&&addKw(k,v,true)) return; if(zuoPending&&!$("#zuo-body").contains(document.activeElement)) renderZuo() },0);
 });
