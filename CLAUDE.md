@@ -38,3 +38,9 @@
 - Sicherung auf Zuruf: Dokumente aus `public.docs` (und Fotos) ins private Repo `seinengel885/backups`
   im Format von `tools/backup.mjs`.
 - Rezept-Regeln stehen in `einkaufsplaner/regeln.html`.
+- **Begriffe im Einkaufsplaner:** *Vorschläge* = Chips der Merkliste unter dem Listen-Symbol einer Kategorie in der
+  Einkaufsliste (`cfg.merk`, Logos in `cfg.merkLb`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
+  offen auf der Liste steht); ändern per langem Druck oder Rechtsklick. *Zuordnungen* = Chips auf der Seite Zuordnung
+  (Stichwörter der Kategorien und Labels). Sie wirken beim Eingeben eines Eintrags; Antippen öffnet sie direkt zum Ändern.
+  Logo einer Zuordnung = das Wort steht in der Stichwortliste dieses Labels (`cfg.labels`). Vorschläge stehen nicht auf
+  der Seite Zuordnung, und ihre Logos gelten nur beim Antippen.

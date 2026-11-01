@@ -941,10 +941,10 @@ function learnKw(name,S){
   cfg.kategorien[S]=[...own,w]; if(guessSec(name)===S) return w;
   cfg.kategorien[S]=[...own,w+"!"]; return w+"!";
 }
-/* Labels aus der Zuordnung: Stichwort trifft den Namen (gleiche Regeln wie bei den Kategorien), dazu die Logos
-   des gleichnamigen Merklisten-Eintrags – egal ob getippt, aus dem Rezept oder per Vorschlag (1.11.) */
+/* Logos aus den Zuordnungen: ein Stichwort eines Labels trifft den Namen (gleiche Regeln wie bei den Kategorien).
+   Gilt für jeden neuen Eintrag – getippt, aus dem Rezept oder per Vorschlag. */
 const sortLb=ks=>LABELS.map(L=>L.k).filter(k=>ks.includes(k));
-const autoLabels=name=>{ const n=String(name||""); return sortLb([...LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(n,w))).map(L=>L.k),...mkLb(n.trim())]) };
+const autoLabels=name=>LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(String(name||""),w))).map(L=>L.k);
 /* order für eine neue Zeile unter „after“ (zwischen ihr und der nächsten), ohne after am Ende des Bereichs */
 function orderAfter(L,S,after){
   const os=items.filter(i=>secOf(i)===S).map(i=>i.order??0);
@@ -1100,7 +1100,7 @@ $("#shop").addEventListener("change",e=>{
 });
 /* Neuer Vorschlag in der Merkliste einer Kategorie; gleiche Schreibweise wie getippt */
 function addMerk(S,raw,refocus){
-  const n=String(raw||"").replace(/\s+/g," ").trim(); if(!n) return false;
+  const n=cleanWord(raw); if(!n) return false;
   const list=cfg.merk[S]||[];
   if(!list.some(x=>x.toLowerCase()===n.toLowerCase())){ cfg.merk={...cfg.merk,[S]:[...list,n]}; saveCfg(true) }
   renderShop(true);
@@ -1214,7 +1214,7 @@ $("#shop").addEventListener("click",async e=>{
   if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
     if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
     const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
-    if(have) removeItem(have); else addItem(LIST,S,n,"");
+    if(have) removeItem(have); else addItem(LIST,S,n,"",{labels:mkLb(n)});
     renderShop(true); return }
   const sh=e.target.closest(".sh .tg");
   if(sh&&Date.now()-editAtDown<1500){ editAtDown=0; return }   /* Überschrift nicht auf-/zuklappen */
@@ -1279,9 +1279,10 @@ $("#shop").addEventListener("keydown",e=>{
   if(changed) save("shopping/"+it.id,{name,qty,due},"Geändert");
 });
 
-/* ---------- Vorschlag lange drücken (450 ms): Name im Chip ändern, darunter Labels wählen (1.11.) ----------
-   Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
-   Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
+/* ---------- Vorschlag ändern: lange drücken (450 ms) oder Rechtsklick (1.11.) ----------
+   Name im Chip ändern, darunter Logos wählen. Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab,
+   leer = entfernen mit Rückgängig. Offene Einträge mit dem alten Namen in dieser Kategorie heißen danach mit.
+   Die Logos bekommt der Eintrag, der durch Antippen des Vorschlags entsteht. */
 let lpPress=null;
 /* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
    Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
@@ -1300,7 +1301,12 @@ $("#shop").addEventListener("pointerdown",e=>{
   const c=e.target.closest(".mkbox button.mkchip"); if(!c) return;
   lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; startMk(c); onRelease(c,e.pointerType) },450)};
 });
-$("#shop").addEventListener("contextmenu",e=>{ if(e.target.closest(".mkchip")) e.preventDefault() });
+$("#shop").addEventListener("contextmenu",e=>{
+  const c=e.target.closest(".mkchip"); if(!c) return; e.preventDefault();
+  if(!c.matches(".mkbox button.mkchip")||!canWrite||mkEdit||editId||addAt) return;
+  if(lpPress){clearTimeout(lpPress.t);lpPress=null}
+  startMk(c); if(e.pointerType==="touch") onRelease(c,"touch");   /* Android meldet den langen Druck auch so */
+});
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
 function startMk(c){
   const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
@@ -1320,32 +1326,36 @@ function focusEnd(el){
 }
 /* Getippten Namen bereinigen (\s trifft auch das geschützte Leerzeichen aus contenteditable) */
 const cleanWord=s=>String(s??"").replace(/\s+/g," ").trim();
-/* Logo im geöffneten Chip an-/abwählen: Chip-Logos neu zeichnen, der Text behält den Fokus */
-function toggleLb(m,lbb,txt){
+/* Logo im geöffneten Chip (Vorschlag oder Zuordnung) an-/abwählen: Chip-Logos neu zeichnen, der Text behält den Fokus.
+   own: Logo, das schon in der Überschrift steht und am Chip nicht wiederholt wird */
+function toggleLb(m,lbb,txt,own){
   const s=new Set(m.lb), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k); m.lb=sortLb([...s]);
   lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
-  txt.parentElement.querySelectorAll(".lbb").forEach(b=>b.remove()); txt.insertAdjacentHTML("afterend",m.lb.map(badge).join(""));
+  txt.parentElement.querySelectorAll(".lbb").forEach(b=>b.remove()); txt.insertAdjacentHTML("afterend",m.lb.filter(x=>x!==own).map(badge).join(""));
   if(document.activeElement!==txt) txt.focus();
 }
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
-  const nm=$("#shop .mkchip.mked .mkname");
-  const v=cancel?m.n:cleanWord(nm?.innerText??m.n)||m.n;
-  const list=cfg.merk[m.S]||[], ok=v===m.n||!list.some(x=>x.toLowerCase()===v.toLowerCase()&&x!==m.n);
-  renameMerk(m.S,m.n,ok?v:m.n,cancel?mkLb(m.n):sortLb(m.lb));
-  if(!ok) toast(`„${v}“ steht schon in der Liste`);
+  const nm=$("#shop .mkchip.mked .mkname"), list=cfg.merk[m.S]||[], oldK=m.n.toLowerCase();
+  const v=cancel?m.n:cleanWord(nm?.innerText??m.n), lb=cancel?mkLb(m.n):sortLb(m.lb);
+  if(!v) return removeMerk(m.S,m.n);
+  if(v!==m.n&&list.some(x=>x!==m.n&&x.toLowerCase()===v.toLowerCase())){ toast(`„${v}“ steht schon in der Liste`); renderShop(true); return }
+  if(v!==m.n||canon(lb)!==canon(mkLb(m.n))){
+    const ml={...cfg.merkLb}; delete ml[oldK]; if(lb.length) ml[v.toLowerCase()]=lb;
+    cfg.merk={...cfg.merk,[m.S]:list.map(x=>x===m.n?v:x)}; cfg.merkLb=ml;
+    if(v!==m.n) items.filter(i=>!i.checked&&secOf(i)===m.S&&String(i.name||"").toLowerCase()===oldK).forEach(i=>{ i.name=v; save("shopping/"+i.id,{name:v}) });
+    saveCfg(true);
+  }
   renderShop(true);
 }
-/* Vorschlag umbenennen und/oder Labels ändern (Einkaufsliste und Zuordnung). Offene Einträge mit dem alten Namen
-   in dieser Kategorie heißen mit. Gibt zurück, ob sich etwas geändert hat. */
-function renameMerk(S,old,name,lbNew){
-  const list=cfg.merk[S]||[], oldK=old.toLowerCase(), newK=name.toLowerCase();
-  if(name===old&&canon(lbNew)===canon(mkLb(old))) return false;
-  const ml={...cfg.merkLb}; delete ml[oldK]; if(lbNew.length) ml[newK]=lbNew;
-  cfg.merk={...cfg.merk,[S]:list.map(x=>x===old?name:x)}; cfg.merkLb=ml;
-  if(name!==old) items.filter(i=>!i.checked&&secOf(i)===S&&String(i.name||"").toLowerCase()===oldK).forEach(i=>{ i.name=name; save("shopping/"+i.id,{name}) });
-  saveCfg(true);
-  return true;
+/* Vorschlag entfernen mit Rückgängig (Logos kommen mit zurück) */
+function removeMerk(S,n){
+  const k=n.toLowerCase(), lb=mkLb(n), ml={...cfg.merkLb}; delete ml[k];
+  cfg.merk={...cfg.merk,[S]:(cfg.merk[S]||[]).filter(x=>x!==n)}; cfg.merkLb=ml; saveCfg(true); renderShop(true);
+  undoBar(`„${n}“ entfernt`,()=>{
+    if(!(cfg.merk[S]||[]).includes(n)) cfg.merk={...cfg.merk,[S]:[...(cfg.merk[S]||[]),n]};
+    if(lb.length) cfg.merkLb={...cfg.merkLb,[k]:lb};
+    renderShop(true); return saveCfg(true) });
 }
 
 /* Ziehen wie in den ToDos (SortableJS-Werte): Touch 280 ms lange drücken, 6 px Wackeln erlaubt; Maus ab 3 px sofort */
@@ -1550,13 +1560,17 @@ function showFresh(ids){
 }
 /* ---------- Ansicht „Zuordnung & Einheiten“: alle Listen sichtbar, Stichwörter hinzufügen und entfernen ---------- */
 let zuoPending=false;
-let kwEdit=null;   /* {k, w, lb} solange ein Stichwort geändert wird */
-/* Logos tragen nur Merklisten-Stichwörter (merkLb), wie die Vorschläge in der Einkaufsliste */
-const kwHasLb=k=>k.startsWith("m:");
+let kwEdit=null;   /* {k, w, lb} solange eine Zuordnung geändert wird */
+/* Zuordnungen = Stichwörter auf dieser Seite; sie wirken, wenn ein Eintrag eingegeben wird. Logos tragen die
+   Zuordnungen der Kategorien und der Labels: Logo einer Zuordnung = das Wort steht in der Stichwortliste dieses Labels
+   (cfg.labels), so bekommt jeder neue Eintrag mit diesem Wort das Logo (autoLabels). Vorschläge (Merkliste) stehen
+   nur in der Einkaufsliste und haben eigene Logos (merkLb). */
+const zuoHasLb=k=>/^[kl]:/.test(k);
+const zuoLb=w=>LABELS.map(L=>L.k).filter(lk=>(cfg.labels[lk]||[]).includes(w));
 function zuoBox(key,title,sub,words,opt={}){
   const chip=w=>{
-    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=ed?kwEdit.lb:kwHasLb(key)?mkLb(w):[];
-    return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}">${ed?`<span class="kt" data-w="${esc(w)}" contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off">${esc(w)}</span>`:`<button type="button" class="kt" data-w="${esc(w)}"${canWrite?"":" disabled"}>${esc(w)}</button>`}${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&kwHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
+    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=(ed?kwEdit.lb:zuoHasLb(key)?zuoLb(w):[]).filter(x=>"l:"+x!==key);   /* eigenes Label steht schon in der Überschrift */
+    return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}">${ed?`<span class="kt" data-w="${esc(w)}" contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off">${esc(w)}</span>`:`<button type="button" class="kt" data-w="${esc(w)}"${canWrite?"":" disabled"}>${esc(w)}</button>`}${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&zuoHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
   return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
     <div class="chips">${[...words].sort((a,b)=>a.localeCompare(b,"de")).map(chip).join("")}
     ${canWrite?`<form class="kadd"><input type="text" placeholder="＋ Stichwort" aria-label="Stichwort zu ${esc(title)}" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"></form>`:""}</div></section>`;
@@ -1568,8 +1582,6 @@ function renderZuo(force){
   el.innerHTML=zuoBox("vorrat","Immer im Haus","Wird nicht aus Rezepten übernommen. Gilt nur als ganzes Wort.",cfg.vorrat)
     +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Wird ein Eintrag in eine andere Kategorie gezogen, kommt sein Name hier als Stichwort dazu.</p></section>`
     +CHECK.map(S=>zuoBox("k:"+S,S,S==="Sonstiges"?"Alles ohne Treffer.":"",cfg.kategorien[S])).join("")
-    +`<section class="zg"><h2>Merklisten</h2><p class="sub">Gute Lebensmittel je Kategorie, zum schnellen Ergänzen über das Listen-Symbol in der Einkaufsliste.</p></section>`
-    +SECTIONS.map(S=>zuoBox("m:"+S,S,"",cfg.merk[S]||[])).join("")
     +`<section class="zg"><h2>Labels</h2><p class="sub">Neue Einträge, deren Name ein Stichwort enthält, bekommen das Label automatisch – auch Einträge, die schon offen auf der Liste stehen.</p></section>`
     +LABELS.map(L=>zuoBox("l:"+L.k,L.n,"",cfg.labels[L.k]||[],{icon:badge(L.k)})).join("")
     +zuoBox("einheiten","Mengeneinheiten","Werden nach einer Zahl erkannt, z. B. „2 Dosen Mais“.",cfg.einheiten);
@@ -1580,31 +1592,29 @@ async function saveCfg(quiet){
   if(!db) return toast("Speichern geht hier gerade nicht.");
   try{ await db.doc("einstellungen/einkauf").set({...cfg,geaendert:new Date().toISOString(),geaendert_von:(window.backend?.userName||"")}); refreshers.forEach(f=>f()) }catch(err){fail(err)}
 }
-const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:k.startsWith("m:")?(cfg.merk[k.slice(2)]||[]):k.startsWith("l:")?(cfg.labels[k.slice(2)]||[]):cfg.kategorien[k.slice(2)];
+const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:k.startsWith("l:")?(cfg.labels[k.slice(2)]||[]):cfg.kategorien[k.slice(2)];
 function cfgSet(k,list){
   if(k==="vorrat") cfg.vorrat=list; else if(k==="einheiten") cfg.einheiten=list;
-  else if(k.startsWith("m:")) cfg.merk={...cfg.merk,[k.slice(2)]:list};
   else if(k.startsWith("l:")) cfg.labels={...cfg.labels,[k.slice(2)]:list};
   else cfg.kategorien[k.slice(2)]=list;
   buildUnits();
 }
 $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")) e.preventDefault() });
-/* Stichwort antippen: Text im Chip ändern, darunter Logos wählen (wie die Vorschläge in der Einkaufsliste).
-   Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
+/* Zuordnung antippen: Text im Chip ändern, darunter Logos wählen (wie beim Vorschlag nach langem Druck).
+   Antippen reicht, weil eine Zuordnung sonst nichts tut. Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
 function startKw(c){
   const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
-  kwEdit={k,w,lb:kwHasLb(k)?[...mkLb(w)]:[]}; renderZuo(true);
+  kwEdit={k,w,lb:zuoHasLb(k)?zuoLb(w):[]}; renderZuo(true);
   const ed=$("#zuo-body .kw.ked .kt"); if(ed) editText(ed);
 }
 $("#zuo-body").addEventListener("click",e=>{
-  /* Label beim Ändern eines Merklisten-Stichworts an-/abwählen; das Feld behält den Fokus */
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt")); return }
+  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt"),kwEdit.k.startsWith("l:")?kwEdit.k.slice(2):null); return }
   const kw=e.target.closest(".kw");
   if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
   const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
-/* Stichwort entfernen mit Rückgängig (29.10.) */
+/* Zuordnung entfernen mit Rückgängig (29.10.) */
 function removeKw(k,w){
   cfgSet(k,cfgList(k).filter(v=>v!==w)); saveCfg();
   undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
@@ -1618,8 +1628,7 @@ function flashKw(){
   if(chip){ chip.style.animationDelay=`-${Math.round(el)}ms`; chip.classList.add("fresh") }
 }
 function addKw(k,raw,leaving){
-  /* Merklisten behalten die Schreibweise („Naturjoghurt“), alle anderen Stichwörter klein */
-  let w=cleanWord(raw); if(!k.startsWith("m:")) w=w.toLowerCase(); if(!w) return false;
+  let w=cleanWord(raw).toLowerCase(); if(!w) return false;
   const have=cfgList(k).find(x=>x.toLowerCase()===w.toLowerCase());
   if(have) w=have; else cfgSet(k,[...cfgList(k),w]);
   saveCfg();   /* zeichnet synchron neu */
@@ -1636,21 +1645,25 @@ function applyLabel(lk,w){
     i.labels=sortLb([...(i.labels||[]),lk]); save("shopping/"+i.id,{labels:i.labels});
   });
 }
-/* Geändertes Stichwort übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig */
+/* Geänderte Zuordnung übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig.
+   Logos: das Wort aus den Stichwortlisten der abgewählten Labels nehmen, in die der gewählten eintragen. Wird bei einer
+   Label-Zuordnung das eigene Logo abgewählt, verschwindet sie aus diesem Label – das ist Abwählen. */
 function commitKw(cancel){
   const m=kwEdit; if(!m) return; kwEdit=null;
-  const ed=$("#zuo-body .kw.ked .kt"), merk=m.k.startsWith("m:");
-  let w=cancel?m.w:cleanWord(ed?.innerText??m.w); if(!merk) w=w.toLowerCase();
-  const list=cfgList(m.k);
+  const ed=$("#zuo-body .kw.ked .kt"), w=cancel?m.w:cleanWord(ed?.innerText??m.w).toLowerCase(), list=cfgList(m.k);
   if(!w) return removeKw(m.k,m.w);
-  const dup=list.find(x=>x!==m.w&&x.toLowerCase()===w.toLowerCase());
+  const dup=list.find(x=>x!==m.w&&x===w);
   if(dup){ toast(`„${dup}“ steht schon in der Liste`); renderZuo(true); return }
-  if(merk){ const ch=renameMerk(m.k.slice(2),m.w,w,cancel?mkLb(m.w):sortLb(m.lb)); renderZuo(true); if(!ch) return }
-  else {
-    if(w===m.w){ renderZuo(true); return }
-    cfgSet(m.k,list.map(x=>x===m.w?w:x)); saveCfg();
-    if(m.k.startsWith("l:")) applyLabel(m.k.slice(2),w);
+  const hasLb=zuoHasLb(m.k), lbOld=hasLb?zuoLb(m.w):[], lbNew=cancel||!hasLb?lbOld:sortLb(m.lb);
+  if(w===m.w&&canon(lbNew)===canon(lbOld)){ renderZuo(true); return }
+  if(!m.k.startsWith("l:")) cfgSet(m.k,list.map(x=>x===m.w?w:x));
+  if(hasLb){
+    const labels={...cfg.labels};
+    for(const L of LABELS){ const a=(labels[L.k]||[]).filter(x=>x!==m.w); if(lbNew.includes(L.k)&&!a.includes(w)) a.push(w); labels[L.k]=a }
+    cfg.labels=labels;
   }
+  saveCfg();
+  lbNew.forEach(lk=>applyLabel(lk,w));
   lastKw={k:m.k,w,t:performance.now()}; flashKw();
 }
 $("#zuo-body").addEventListener("keydown",e=>{
