@@ -1,0 +1,148 @@
+{
+  "id": "jaegerpfanne",
+  "name": "Jägerpfanne mit Pute",
+  "tags": [
+    "Mit Fleisch"
+  ],
+  "kcal": 700,
+  "portionen": 2,
+  "minuten": 35,
+  "kurz": "Putengeschnetzeltes und Champignons in leichter Pilzrahmsauce mit grünen Bohnen, dazu Spätzle. Die Sauce kommt mit leichter Kochsahne und Gemüsebrühe aus.",
+  "beilageHinweis": "",
+  "beilagen": [],
+  "zutaten": [
+    {
+      "menge": "400 g",
+      "text": "Putengeschnetzeltes"
+    },
+    {
+      "menge": "400 g",
+      "text": "Champignons"
+    },
+    {
+      "menge": "2",
+      "text": "Zwiebeln"
+    },
+    {
+      "menge": "300 g",
+      "text": "grüne Bohnen (TK)"
+    },
+    {
+      "menge": "300 g",
+      "text": "Spätzle, frisch"
+    },
+    {
+      "menge": "200 ml",
+      "text": "leichte Kochsahne (7 % Fett)"
+    },
+    {
+      "menge": "100 ml",
+      "text": "Gemüsebrühe"
+    },
+    {
+      "menge": "1 EL",
+      "text": "Mehl"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Öl"
+    },
+    {
+      "menge": "4 Stiele",
+      "text": "Petersilie"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Preiselbeeren aus dem Glas"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**400 g Champignons** putzen und in Scheiben schneiden, **2 Zwiebeln** würfeln"
+        },
+        {
+          "text": "**400 g Putengeschnetzeltes** trocken tupfen"
+        },
+        {
+          "text": "**4 Stiele Petersilie** abzupfen und hacken"
+        }
+      ]
+    },
+    {
+      "titel": "Bohnen & Spätzle",
+      "schritte": [
+        {
+          "text": "**300 g TK-Bohnen** in Salzwasser ca. **8–10 Minuten** garen, abgießen und beiseitestellen"
+        },
+        {
+          "text": "**300 g Spätzle** nach Packungsanweisung erhitzen, warm halten"
+        }
+      ]
+    },
+    {
+      "titel": "Anbraten",
+      "schritte": [
+        {
+          "text": "**2 EL Öl** in einer großen Pfanne erhitzen"
+        },
+        {
+          "text": "Das Geschnetzelte rundherum ca. **5 Minuten** anbraten, mit Salz und Pfeffer würzen, herausnehmen"
+        },
+        {
+          "text": "Zwiebeln und Champignons im Bratfett ca. **8 Minuten** kräftig anbraten"
+        }
+      ]
+    },
+    {
+      "titel": "Pilzrahmsauce",
+      "schritte": [
+        {
+          "text": "**1 EL Mehl** über die Pilze stäuben und kurz anschwitzen"
+        },
+        {
+          "text": "Mit **100 ml Gemüsebrühe** und **200 ml Kochsahne** ablöschen, aufkochen und ca. **5 Minuten** köcheln lassen"
+        },
+        {
+          "text": "Fleisch und Bohnen zurück in die Pfanne geben und kurz miterhitzen"
+        },
+        {
+          "text": "Mit Salz und Pfeffer abschmecken"
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "Mit Petersilie bestreuen, **2 EL Preiselbeeren** obenauf geben und mit den Spätzle servieren"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Noch leichter",
+      "text": "Weniger Spätzle (200 g) und dafür mehr Bohnen nehmen"
+    },
+    {
+      "titel": "Sauce zu dünn",
+      "text": "Etwas länger ohne Deckel einköcheln lassen oder 1 TL Speisestärke in kaltem Wasser anrühren und einrühren"
+    },
+    {
+      "titel": "Original",
+      "text": "Die Quelle nimmt 500 g Hähnchenfilet, Porree, 200 g Kräuterfrischkäse und 250 g Sahne, dazu Baguette"
+    },
+    {
+      "titel": "Reste",
+      "text": "Geschnetzeltes ohne Spätzle hält sich 2 Tage im Kühlschrank, Spätzle frisch erhitzen"
+    }
+  ],
+  "quelle": "Grundlage: lecker.de „Schnelle Jäger-Pfanne“ (35 Min., 584 kcal pro Person laut Quelle, Portionen nicht angegeben). Angepasst: Pute statt Hähnchen, ohne Porree, Mengen grob auf 2 Personen umgerechnet, Pilzrahmsauce mit leichter Kochsahne statt Sahne und Frischkäse, TK-Bohnen und Spätzle statt Baguette (Wünsche von Patrick). Die Mehl-Bindung ist abgeleitet aus lecker.de „Jäger-Pilzpfanne mit Spätzle“. Kalorien (ca. 700 pro Portion) und Mengen sind geschätzt."
+}

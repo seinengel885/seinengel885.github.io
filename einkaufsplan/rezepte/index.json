@@ -1,0 +1,104 @@
+{
+  "rezepte": [
+    {
+      "id": "shakshuka",
+      "name": "Shakshuka",
+      "tags": [
+        "Vegetarisch"
+      ],
+      "kcal": 250,
+      "portionen": 2,
+      "minuten": 35
+    },
+    {
+      "id": "chili-con-carne",
+      "name": "Chili con Carne",
+      "tags": [
+        "Mit Fleisch"
+      ],
+      "kcal": 475,
+      "portionen": 4,
+      "minuten": 40
+    },
+    {
+      "id": "ofenhaehnchen-ofengemuese",
+      "name": "Ofenhähnchen mit Ofengemüse",
+      "tags": [
+        "Mit Fleisch"
+      ],
+      "kcal": 700,
+      "portionen": 2,
+      "minuten": 60
+    },
+    {
+      "id": "tuerkische-linsensuppe",
+      "name": "Türkische Linsensuppe (Mercimek Çorbası)",
+      "tags": [
+        "Vegetarisch"
+      ],
+      "kcal": 350,
+      "portionen": 4,
+      "minuten": 35
+    },
+    {
+      "id": "serbische-bohnensuppe",
+      "name": "Serbische Bohnensuppe",
+      "tags": [
+        "Mit/ohne Fleisch"
+      ],
+      "kcal": 320,
+      "portionen": 4,
+      "minuten": 40
+    },
+    {
+      "id": "indische-moehrensuppe",
+      "name": "Indische Möhrensuppe",
+      "tags": [
+        "Vegetarisch"
+      ],
+      "kcal": 280,
+      "portionen": 2,
+      "minuten": 30
+    },
+    {
+      "id": "bauerntopf",
+      "name": "Bauerntopf mit Würstchen",
+      "tags": [
+        "Mit Fleisch"
+      ],
+      "kcal": 440,
+      "portionen": 3,
+      "minuten": 60
+    },
+    {
+      "id": "jaegerpfanne",
+      "name": "Jägerpfanne mit Pute",
+      "tags": [
+        "Mit Fleisch"
+      ],
+      "kcal": 700,
+      "portionen": 2,
+      "minuten": 35
+    },
+    {
+      "id": "vesper",
+      "name": "Vesper",
+      "tags": [
+        "Mit/ohne Fleisch"
+      ],
+      "kcal": 950,
+      "portionen": 2,
+      "minuten": 15
+    },
+    {
+      "id": "toasty-fix",
+      "name": "Toasty Fix",
+      "tags": [
+        "Mit Fleisch"
+      ],
+      "kcal": 650,
+      "portionen": 2,
+      "minuten": 15
+    }
+  ]
+}

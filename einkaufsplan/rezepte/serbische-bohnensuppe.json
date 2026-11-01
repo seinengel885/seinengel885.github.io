@@ -1,0 +1,159 @@
+{
+  "id": "serbische-bohnensuppe",
+  "name": "Serbische Bohnensuppe",
+  "tags": [
+    "Mit/ohne Fleisch"
+  ],
+  "kcal": 320,
+  "portionen": 4,
+  "minuten": 40,
+  "kurz": "Kräftig-würzige Suppe mit weißen Bohnen und Schinkenspeck: deftig, sättigend und kalorienarm. Schmeckt aufgewärmt noch besser.",
+  "beilageHinweis": "",
+  "beilagen": [],
+  "zutaten": [
+    {
+      "menge": "2 Dosen",
+      "text": "weiße Bohnen (à 400 g, abgetropft ca. 480 g)"
+    },
+    {
+      "menge": "150 g",
+      "text": "Schinkenspeck (mager, gewürfelt)"
+    },
+    {
+      "menge": "1",
+      "text": "Zwiebel (ca. 100 g)"
+    },
+    {
+      "menge": "2",
+      "text": "Knoblauchzehen"
+    },
+    {
+      "menge": "1",
+      "text": "rote Paprika (ca. 150 g)"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Tomatenmark (ca. 30 g)"
+    },
+    {
+      "menge": "1 TL",
+      "text": "Paprikapulver edelsüß"
+    },
+    {
+      "menge": "1 TL",
+      "text": "geräuchertes Paprikapulver"
+    },
+    {
+      "menge": "½ TL",
+      "text": "Kümmel"
+    },
+    {
+      "menge": "800 ml",
+      "text": "Gemüse- oder Fleischbrühe"
+    },
+    {
+      "menge": "1 EL",
+      "text": "Öl"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Sauerrahm zum Servieren",
+      "optional": true
+    },
+    {
+      "menge": "",
+      "text": "frische Petersilie",
+      "optional": true
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**1 Zwiebel (100 g)** fein hacken"
+        },
+        {
+          "text": "**2 Knoblauchzehen** fein hacken"
+        },
+        {
+          "text": "**1 rote Paprika (150 g)** in kleine Würfel schneiden"
+        },
+        {
+          "text": "**2 Dosen weiße Bohnen** abgießen und abspülen"
+        },
+        {
+          "text": "**150 g Schinkenspeck** bei Bedarf in kleine Würfel schneiden"
+        }
+      ]
+    },
+    {
+      "titel": "Anbraten",
+      "schritte": [
+        {
+          "text": "**1 EL Öl** in einem großen Topf erhitzen"
+        },
+        {
+          "text": "**150 g Schinkenspeck** bei mittlerer Hitze ca. **3 Min.** leicht knusprig ausbraten"
+        },
+        {
+          "text": "Zwiebel und Knoblauch dazugeben und ca. **3 Min.** glasig dünsten"
+        },
+        {
+          "text": "**2 EL Tomatenmark**, **1 TL Paprikapulver**, **1 TL geräuchertes Paprikapulver** und **½ TL Kümmel** einrühren und **1–2 Min.** mitrösten"
+        }
+      ]
+    },
+    {
+      "titel": "Köcheln",
+      "schritte": [
+        {
+          "text": "Paprikawürfel und Bohnen in den Topf geben und kurz umrühren"
+        },
+        {
+          "text": "Mit **800 ml Brühe** aufgießen und aufkochen lassen"
+        },
+        {
+          "text": "Hitze reduzieren und **20–25 Min.** bei niedriger Hitze köcheln lassen"
+        },
+        {
+          "text": "Mit Salz und Pfeffer abschmecken"
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "In tiefe Teller füllen"
+        },
+        {
+          "text": "Optional: einen Klecks **Sauerrahm** und frische Petersilie darüber"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Vegetarisch",
+      "text": "Schinkenspeck weglassen, dafür 1 TL mehr geräuchertes Paprikapulver für Tiefe"
+    },
+    {
+      "titel": "Noch deftiger",
+      "text": "Zusätzlich 1 Lorbeerblatt mitköcheln, vor dem Servieren entfernen"
+    },
+    {
+      "titel": "Vorkochen",
+      "text": "Hält 4–5 Tage im Kühlschrank, einfrieren problemlos möglich"
+    },
+    {
+      "titel": "Konsistenz",
+      "text": "Für dickere Suppe ein paar Bohnen mit einer Gabel zerdrücken"
+    }
+  ],
+  "quelle": "Übernommen aus der Notion-Speisekarte am 25.10.2026."
+}

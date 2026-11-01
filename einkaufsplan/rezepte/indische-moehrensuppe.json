@@ -1,0 +1,131 @@
+{
+  "id": "indische-moehrensuppe",
+  "name": "Indische Möhrensuppe",
+  "tags": [
+    "Vegetarisch"
+  ],
+  "kcal": 280,
+  "portionen": 2,
+  "minuten": 30,
+  "kurz": "Cremige ayurvedische Möhrensuppe mit wärmenden Gewürzen: bekömmlich für alle Doshas, schnell zubereitet und wohltuend.",
+  "beilageHinweis": "Die Suppe ist kalorienarm und enthält kaum Kohlenhydrate. Eine kleine Beilage verhindert Gelüste nach 30–60 Min.",
+  "beilagen": [
+    {
+      "name": "Vollkornbrot",
+      "text": "1–2 Scheiben, ca. 80–160 kcal"
+    },
+    {
+      "name": "Pellkartoffeln",
+      "text": "2–3 Stück (ca. 150 g), ca. 120 kcal"
+    },
+    {
+      "name": "Hülsenfrüchte",
+      "text": "Kleine Portion, z. B. Linsen als einfache Beilage"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "500 g",
+      "text": "Möhren"
+    },
+    {
+      "menge": "200 g",
+      "text": "Bio-Sahne"
+    },
+    {
+      "menge": "750 ml",
+      "text": "Wasser"
+    },
+    {
+      "menge": "1 EL",
+      "text": "Ghee (ca. 15 g)"
+    },
+    {
+      "menge": "1 Prise",
+      "text": "Steinsalz"
+    },
+    {
+      "menge": "1 TL",
+      "text": "gemahlener Koriander"
+    },
+    {
+      "menge": "½ TL",
+      "text": "Muskatnuss"
+    },
+    {
+      "menge": "½ TL",
+      "text": "Wacholderbeeren (gemahlen oder im Mörser zerstoßen)"
+    },
+    {
+      "menge": "1 Prise",
+      "text": "gemahlener Ingwer"
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**500 g Möhren** schälen und in grobe Würfel schneiden"
+        }
+      ]
+    },
+    {
+      "titel": "Gewürze & Möhren anrösten",
+      "schritte": [
+        {
+          "text": "**1 EL Ghee** in einem Topf bei mittlerer Hitze erhitzen"
+        },
+        {
+          "text": "**1 Prise Steinsalz**, **1 TL Koriander**, **½ TL Muskatnuss**, **½ TL Wacholderbeeren** und **1 Prise Ingwer** darin **1–2 Min.** anrösten, bis es duftet"
+        },
+        {
+          "text": "Möhrenwürfel dazugeben und ca. **2 Min.** mitrösten"
+        }
+      ]
+    },
+    {
+      "titel": "Köcheln & Pürieren",
+      "schritte": [
+        {
+          "text": "**750 ml Wasser** angießen und aufkochen lassen"
+        },
+        {
+          "text": "Hitze reduzieren und **20 Min.** köcheln lassen, bis die Möhren weich sind"
+        },
+        {
+          "text": "Topf vom Herd nehmen und mit dem Stabmixer cremig pürieren"
+        },
+        {
+          "text": "**200 g Sahne** einrühren und kurz erwärmen, nicht mehr kochen lassen"
+        },
+        {
+          "text": "Mit Steinsalz abschmecken"
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "Heiß in Schüsseln oder tiefe Teller füllen und sofort servieren"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Leichter",
+      "text": "Sahne durch Kokosmilch oder Haferdrink ersetzen, spart Kalorien und macht die Suppe vegan"
+    },
+    {
+      "titel": "Schärfer",
+      "text": "Eine Prise Cayennepfeffer oder frisch geriebenen Ingwer beim Anrösten dazugeben"
+    },
+    {
+      "titel": "Vorkochen",
+      "text": "Hält 3–4 Tage im Kühlschrank; die Sahne erst beim Aufwärmen einrühren, dann hält sie besser"
+    }
+  ],
+  "quelle": "Übernommen aus der Notion-Speisekarte am 25.10.2026. Ursprünglich aus Blink „Ayurveda-Routinen für jeden Tag“."
+}

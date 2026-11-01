@@ -1,0 +1,52 @@
+{
+  "id": "toasty-fix",
+  "name": "Toasty Fix",
+  "tags": [
+    "Mit Fleisch"
+  ],
+  "kcal": 650,
+  "portionen": 2,
+  "minuten": 15,
+  "kurz": "Schnelles Feierabend-Gericht in 15 Minuten: Tiefkühlgemüse mit körnigem Frischkäse, Kartoffelpüree aus dem Beutel und Toasty Chicken aus dem Toaster.",
+  "beilageHinweis": "",
+  "beilagen": [],
+  "zutaten": [
+    {
+      "menge": "500 g",
+      "text": "TK-Gemüse"
+    },
+    {
+      "menge": "1 Beutel",
+      "text": "Kartoffelpüree, dazu die Zutaten laut Packung"
+    },
+    {
+      "menge": "100 g",
+      "text": "körniger Frischkäse"
+    },
+    {
+      "menge": "3",
+      "text": "Toasty Chicken"
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Zubereiten",
+      "schritte": [
+        {
+          "text": "**500 g TK-Gemüse** nach Packungsbeilage zubereiten"
+        },
+        {
+          "text": "Zutaten für **1 Beutel Kartoffelpüree** richten"
+        },
+        {
+          "text": "**100 g körnigen Frischkäse** zum Gemüse geben"
+        },
+        {
+          "text": "**3 Toasty Chicken** in den Toaster geben"
+        }
+      ]
+    }
+  ],
+  "tipps": [],
+  "quelle": "Von Patrick am 28.10.2026 diktiert, am selben Tag gekocht. Kalorien (ca. 650 pro Person) grob geschätzt."
+}
