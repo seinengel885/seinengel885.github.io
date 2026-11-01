@@ -29,7 +29,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .day.jfree .dayhead{cursor:default}
 #days{overflow-anchor:none}   /* Sicht beim Nachladen hält loadOlder selbst; Browser-Anker würde doppelt verschieben */
 .day.fresh{animation:fresh 1.6s ease-out}
-.dayhead{display:grid;grid-template-columns:4rem 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:8px 12px;color:inherit;font:inherit;cursor:pointer}
+.dayhead{display:grid;grid-template-columns:4rem 1fr auto;gap:12px;align-items:center;width:100%;min-height:4.25rem;text-align:left;background:none;border:0;padding:8px 12px;color:inherit;font:inherit;cursor:pointer}
 .date{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
 .wd{font-family:var(--display);font-weight:700;font-size:1.15rem}
 .wd.jk{font-size:.88rem;color:var(--muted)}
@@ -37,7 +37,7 @@ button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline
 .today .wd{color:var(--accent)}
 .dish{font-weight:600;font-size:1.02rem;overflow-wrap:anywhere}
 .dish.empty{color:var(--muted);font-weight:500;font-style:italic}
-.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.meta{display:flex;flex-wrap:wrap;align-items:baseline;gap:6px;margin-top:5px}
 .chip{font-size:.74rem;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
 .chip.prep{background:var(--pepper-soft);color:var(--pepper)}
 .verdict{font-size:.74rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
