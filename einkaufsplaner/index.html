@@ -88,6 +88,8 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .kadd input::placeholder{color:var(--muted)}
 /* Stichwort antippen = ändern wie ein Eintrag der Einkaufsliste; leer machen entfernt es (1.11.) */
 .kw .kt{cursor:text;line-height:20px}
+/* Das Wort ist ein Knopf wie das ×: sonst lenkt die Fingertipp-Korrektur des Browsers einen Tipp auf ein kurzes Wort („tk“) zum × um */
+.kw button.kt{font:inherit;color:inherit;background:none;border:0;padding:0;margin:0;-webkit-tap-highlight-color:transparent}
 .kw .lbb{width:16px;height:16px;margin-left:3px}
 /* Beim Ändern bleibt der Chip unverändert, nur der Cursor kommt dazu: Text direkt editierbar, 16px gegen den iOS-Zoom,
    optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() aus (wie .mkname) */
@@ -1212,7 +1214,7 @@ $("#shop").addEventListener("click",async e=>{
     mkRoll(d.querySelector(".mkbox"),open); return }
   /* Vorschlag antippen: kommt in diese Kategorie auf die Liste; nochmal antippen nimmt ihn wieder herunter */
   const mc=e.target.closest(".mkbox .mkchip");
-  if(mc&&(mc.classList.contains("mked")||Date.now()-lpAt<700)){ if(Date.now()-lpAt<1500) focusEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
+  if(mc?.classList.contains("mked")) return;
   if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
     if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
     const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
@@ -1285,9 +1287,17 @@ $("#shop").addEventListener("keydown",e=>{
    Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
    Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
 /* Langer Druck (450 ms) auf einen Vorschlag öffnet ihn zum Ändern (1.11.); Stichwörter der Zuordnung öffnen schon beim Antippen */
-let lpPress=null, lpAt=0;
+let lpPress=null;
 const chipEditing=()=>!!(mkEdit||kwEdit);
-function longPress(e,c,start){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; lpAt=Date.now(); start(c) },450)} }
+function longPress(e,c,start){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; start(c); onRelease(c,e.pointerType) },450)} }
+/* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
+   Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
+   erreicht window nicht mehr – deshalb direkt dort lauschen. Ein Wartezustand für „das nächste Loslassen“ hätte sonst
+   den folgenden Tipp (z. B. auf ein Logo) verschluckt (1.11.). */
+function onRelease(c,type){
+  if(type==="mouse") addEventListener("mouseup",()=>focusEnd(),{once:true});
+  else c.addEventListener("touchend",e=>{ e.preventDefault(); focusEnd() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
+}
 addEventListener("pointermove",e=>{ if(lpPress&&Math.hypot(e.clientX-lpPress.x,e.clientY-lpPress.y)>8){clearTimeout(lpPress.t);lpPress=null} },{passive:true});
 addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
@@ -1301,26 +1311,20 @@ function startMk(c){
   const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
   navigator.vibrate?.(12);
   mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
-  const nm=$("#shop .mkchip.mked .mkname"); if(nm){ edFocusAt=Date.now(); editText(nm) }
+  const nm=$("#shop .mkchip.mked .mkname"); if(nm) editText(nm);
 }
 /* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
 function editText(el){
   fitMk(el); el.addEventListener("input",()=>fitMk(el));
   focusEnd();
 }
-/* Cursor ans Ende. Beim Loslassen des Fingers noch einmal: Nur dort öffnet iOS die Tastatur (Benutzergeste),
-   und das Loslassen würde den Cursor sonst an die Fingerstelle setzen (1.11.) */
+/* Cursor ans Ende des geöffneten Chip-Texts */
 const ED_TEXT="#shop .mkchip.mked .mkname, #zuo-body .kw.ked .kt";
-let edFocusAt=0;
 function focusEnd(){
   const el=$(ED_TEXT); if(!el) return;
   el.focus();   /* ohne preventScroll: sonst rollt iOS das Feld nicht über die Tastatur */
   const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }
-addEventListener("pointerup",e=>{ if(chipEditing()&&Date.now()-edFocusAt<3000){ if(e.pointerType!=="touch") edFocusAt=0; focusEnd() } });
-/* Maus-Ersatzereignisse nach dem langen Druck würden den Cursor an die Fingerstelle setzen */
-document.addEventListener("mousedown",e=>{ if(chipEditing()&&Date.now()-lpAt<1500&&e.target.closest?.(".mkchip.mked, .kw.ked")) e.preventDefault() },true);
-addEventListener("touchend",e=>{ if(chipEditing()&&Date.now()-edFocusAt<3000){ edFocusAt=0; e.preventDefault(); focusEnd() } },{passive:false});
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
   const nm=$("#shop .mkchip.mked .mkname");
@@ -1552,7 +1556,7 @@ const kwLb=(k,w)=>k.startsWith("m:")?mkLb(w):kwHasLb(k)?LABELS.map(L=>L.k).filte
 function zuoBox(key,title,sub,words,opt={}){
   const chip=w=>{
     const ed=kwEdit?.k===key&&kwEdit.w===w, lb=(ed?kwEdit.lb:kwLb(key,w)).filter(x=>"l:"+x!==key);   /* eigenes Label steht schon in der Überschrift */
-    return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}"><span class="kt" data-w="${esc(w)}"${ed?` contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off"`:""}>${esc(w)}</span>${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&kwHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
+    return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}">${ed?`<span class="kt" data-w="${esc(w)}" contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off">${esc(w)}</span>`:`<button type="button" class="kt" data-w="${esc(w)}"${canWrite?"":" disabled"}>${esc(w)}</button>`}${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&kwHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
   return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
     <div class="chips">${[...words].sort((a,b)=>a.localeCompare(b,"de")).map(chip).join("")}
     ${canWrite?`<form class="kadd"><input type="text" placeholder="＋ Stichwort" aria-label="Stichwort zu ${esc(title)}" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"></form>`:""}</div></section>`;
