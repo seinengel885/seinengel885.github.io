@@ -77,7 +77,8 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 #v-zuo .zg h2{font-size:1.05rem;margin:0 0 4px}
 #v-zuo .zg .sub{font-size:.85rem;margin:0 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
-.kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem;-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* langer Druck öffnet zum Ändern, keine Textauswahl */
+.kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem}
+.kw:has(button.kt:enabled){-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}   /* langer Druck öffnet zum Ändern, keine Textauswahl; ohne Schreibrecht bleibt der Text markierbar */
 .kw.hard{color:var(--accent);font-weight:600}   /* Stichwort mit ! nur über grüne, fette Schrift erkennbar, kein Rahmen (1.11.) */
 .kx{border:0;background:none;color:var(--muted);font-size:1rem;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
 .kadd{flex:0 0 9.5em;min-width:0}
@@ -1286,32 +1287,38 @@ $("#shop").addEventListener("keydown",e=>{
    leer = entfernen mit Rückgängig. Offene Einträge mit dem alten Namen in dieser Kategorie heißen danach mit.
    Die Logos bekommt der Eintrag, der durch Antippen des Vorschlags entsteht. */
 /* Langer Druck (450 ms) oder Rechtsklick öffnet einen Chip zum Ändern: Vorschläge (Antippen legt dort einen Eintrag an)
-   und Zuordnungen (dort öffnet auch schon Antippen). sel = der Text des geöffneten Chips nach dem Neuzeichnen. */
+   und Zuordnungen (dort öffnet auch schon Antippen). open(c) prüft selbst, ob gerade ein anderer Chip offen ist, und
+   meldet, ob es geöffnet hat; sel = der Text des geöffneten Chips nach dem Neuzeichnen. */
 let lpPress=null;
-function longPress(e,c,start,sel){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; navigator.vibrate?.(12); start(c); onRelease(c,e.pointerType,sel) },450)} }
-function chipMenu(e,c,start,sel){
-  e.preventDefault(); if(lpPress){clearTimeout(lpPress.t);lpPress=null}
-  start(c); if(e.pointerType==="touch") onRelease(c,"touch",sel);   /* Android meldet den langen Druck auch so */
+function longPress(e,c,open,sel){
+  lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; if(c.isConnected) opened(c,open,e.pointerType,sel) },450)};   /* inzwischen neu gezeichnet: Chip gibt es so nicht mehr */
 }
+function chipMenu(e,c,open,sel){
+  e.preventDefault(); if(lpPress){clearTimeout(lpPress.t);lpPress=null}
+  opened(c,open,e.pointerType==="touch"?"touch":null,sel);   /* Android meldet den langen Druck auch so */
+}
+function opened(c,open,type,sel){ if(!open(c)) return; navigator.vibrate?.(12); if(type) onRelease(c,type,sel) }
 /* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
    Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
    erreicht window nicht mehr – deshalb direkt dort lauschen. Ein Wartezustand für „das nächste Loslassen“ hätte sonst
    den folgenden Tipp (z. B. auf ein Logo) verschluckt (1.11.). */
 function onRelease(c,type,sel){
   const end=()=>{ const el=$(sel); if(el) focusEnd(el) };   /* der Chip wurde beim Öffnen ersetzt */
-  if(type==="mouse") addEventListener("mouseup",end,{once:true});
-  else c.addEventListener("touchend",e=>{ e.preventDefault(); end() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
+  if(type==="touch") c.addEventListener("touchend",e=>{ e.preventDefault(); end() },{once:true,passive:false});   /* verhindert auch den Klick auf den Vorschlag */
+  else addEventListener("pointerup",end,{once:true});   /* Maus und Stift (Apple Pencil meldet kein touchend) */
 }
 addEventListener("pointermove",e=>{ if(lpPress&&Math.hypot(e.clientX-lpPress.x,e.clientY-lpPress.y)>8){clearTimeout(lpPress.t);lpPress=null} },{passive:true});
 addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
+/* Vorschlag öffnen, solange nichts anderes in Bearbeitung ist */
+const openMk=c=>{ if(!canWrite||mkEdit||editId||addAt) return false; startMk(c); return true };
 $("#shop").addEventListener("pointerdown",e=>{
   if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
-  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,startMk,MK_TEXT);
+  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,openMk,MK_TEXT);
 });
 $("#shop").addEventListener("contextmenu",e=>{
   const c=e.target.closest(".mkchip"); if(!c) return; e.preventDefault();
-  if(c.matches(".mkbox button.mkchip")&&canWrite&&!mkEdit&&!editId&&!addAt) chipMenu(e,c,startMk,MK_TEXT);
+  if(c.matches(".mkbox button.mkchip")) chipMenu(e,c,openMk,MK_TEXT);
 });
 const MK_TEXT="#shop .mkchip.mked .mkname", KW_TEXT="#zuo-body .kw.ked .kt";
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
@@ -1607,20 +1614,20 @@ function startKw(c){
   kwEdit={k,w,lb:zuoHasLb(k)?zuoLb(w):[]}; renderZuo(true);
   const ed=$(KW_TEXT); if(ed) editText(ed);
 }
-/* Zuordnung lange drücken oder Rechtsklick: öffnet sie wie Antippen */
+/* Zuordnung öffnen (Antippen, lange drücken, Rechtsklick); ist eine andere offen, wird sie zuerst übernommen */
+const openKw=c=>{ if(!canWrite) return false; if(kwEdit) commitKw(false); startKw(c); return true };
+/* Der Chip unter dem Finger/Zeiger, der sich öffnen lässt: nicht der offene (dort gilt das Textmenü des Browsers), nicht das × */
+const kwTarget=e=>canWrite&&!e.target.closest(".kx")?e.target.closest(".kw:not(.ked)"):null;
 $("#zuo-body").addEventListener("pointerdown",e=>{
-  if(!canWrite||e.button>0) return;
-  const c=e.target.closest(".kw:not(.ked)"); if(c&&!e.target.closest(".kx")) longPress(e,c,startKw,KW_TEXT);
+  const c=e.button>0?null:kwTarget(e); if(c) longPress(e,c,openKw,KW_TEXT);
 });
 $("#zuo-body").addEventListener("contextmenu",e=>{
-  const c=e.target.closest(".kw"); if(!c) return; e.preventDefault();
-  if(canWrite&&!c.classList.contains("ked")) chipMenu(e,c,startKw,KW_TEXT);
+  const c=kwTarget(e); if(c) chipMenu(e,c,openKw,KW_TEXT);
 });
 $("#zuo-body").addEventListener("click",e=>{
   const lbb=e.target.closest(".lbpick .lbb");
   if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$(KW_TEXT)); return }
-  const kw=e.target.closest(".kw");
-  if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
+  const kw=kwTarget(e); if(kw){ openKw(kw); return }
   const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
 /* Zuordnung entfernen mit Rückgängig (29.10.) */
