@@ -19,7 +19,7 @@ mkdirSync(join(ziel, "shared"), { recursive: true });
 
 /* Projektdateien ohne Icons/Manifest übernehmen */
 cpSync(src, ziel, { recursive: true, filter: p => !/\/icons(\/|$)|manifest\.webmanifest$/.test(p) });
-for(const f of ["version.js", "footer.js", "tastatur.js", "demo-backend.js"]) cpSync(join(root, "shared", f), join(ziel, "shared", f));
+for(const f of ["version.js", "footer.js", "demo-backend.js"]) cpSync(join(root, "shared", f), join(ziel, "shared", f));
 
 /* Beispieldaten */
 const heute = new Date();

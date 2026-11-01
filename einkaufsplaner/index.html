@@ -304,7 +304,6 @@ body.dragmode #v-week{padding-bottom:110px}
 <script src="../shared/backend.js" data-app="einkaufsplan"></script>
 <script src="../shared/version.js"></script>
 <script src="../shared/footer.js"></script>
-<script src="../shared/tastatur.js"></script>
 <script src="rezepte.js"></script>
 <script src="labels.js"></script>
 <script>
@@ -998,9 +997,10 @@ function spring(v0){ stopSpr(); const t0=performance.now();
   const step=()=>{const t=performance.now()-t0; if(t>900||touching){setY(0);spr=0;return}
     setY(-v0*t*Math.exp(-W*t)); spr=requestAnimationFrame(step)};
   spr=requestAnimationFrame(step); }
-/* Beim Tippen keine eigene Grenze: iOS rollt das Feld über die Tastatur (shared/tastatur.js hilft nach) und braucht
-   dafür Platz unter dem Inhalt. Nach dem Tippen bleibt die Stelle stehen wie nach einem Zuklappen (keepY). */
-const limY=()=>window.imEingabefeld?.()?Infinity:Math.max(normalMax(),keepY);
+/* Beim Tippen keine eigene Grenze: iOS rollt das Feld selbst über die Tastatur und braucht dafür Platz unter dem
+   Inhalt. Nach dem Tippen bleibt die Stelle stehen wie nach einem Zuklappen (keepY). */
+const tippt=()=>{const a=document.activeElement; return !!a&&(a.isContentEditable||a.matches("textarea,input[type=text],input[type=email],input:not([type])"))};
+const limY=()=>tippt()?Infinity:Math.max(normalMax(),keepY);
 document.addEventListener("focusout",()=>{ keepY=Math.max(keepY,scrollY) },true);
 addEventListener("scroll",()=>{
   const now=performance.now(), y=scrollY, lim=limY();
