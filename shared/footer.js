@@ -23,13 +23,17 @@
     const nrB = f.querySelector(".site-nr"), ol = f.querySelector("ol");
     nrB.onclick = () => { ol.hidden = !ol.hidden; nrB.setAttribute("aria-expanded", !ol.hidden); };
     document.body.appendChild(f);
-    fetch(vUrl, { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
+    /* Beim Start und jedes Mal, wenn die Seite wieder in den Vordergrund kommt: Die Home-Bildschirm-App
+       lädt beim Zurückholen nicht neu, sonst bliebe der Hinweis aus. */
+    const check = () => fetch(vUrl, { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
       const m = t.match(/nr:\s*(\d+)/);
       if(m && v.nr && +m[1] > v.nr){
         f.querySelector(".site-new").innerHTML = ` · Version ${m[1]} ist online – <button type="button">neu laden</button>`;
         f.querySelector(".site-new button").onclick = () => location.reload();
       }
     }).catch(() => {});
+    check();
+    document.addEventListener("visibilitychange", () => { if(document.visibilityState === "visible") check(); });
   }
   document.body ? render() : addEventListener("DOMContentLoaded", render);
 })();
