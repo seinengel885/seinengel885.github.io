@@ -11,7 +11,11 @@
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau` baut die Seite mit `shared/demo-backend.js`
   (Beispieldaten, keine Anmeldung, nichts geht an Supabase) und gibt die Dateiliste aus. Veröffentlichen mit dem
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
-  aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner). Erst nach Patricks „passt“ auf `main` pushen.
+  aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner); in einer neuen Sitzung erst mit
+  `action: "read"` lesen, dann mit `url` veröffentlichen. Erst nach Patricks „passt“ auf `main` pushen.
+  **Ungefragt:** Vor jeder Antwort, die eine Änderung am Code meldet, die Vorschau neu bauen und veröffentlichen, und den
+  Link in der ersten Antwort jeder Sitzung nennen. Patrick kommentiert direkt in der Vorschau; diese Kommentare kommen als
+  „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
   Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
 - **Bei jedem Push auf `main`, der live gehen soll: `shared/version.js` aktualisieren**: `nr` um 1 erhöhen,
   `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt „Version nr“
