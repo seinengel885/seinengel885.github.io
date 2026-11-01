@@ -1287,20 +1287,27 @@ $("#shop").addEventListener("keydown",e=>{
    leer = entfernen mit Rückgängig. Offene Einträge mit dem alten Namen in dieser Kategorie heißen danach mit.
    Die Logos bekommt der Eintrag, der durch Antippen des Vorschlags entsteht. */
 /* Langer Druck (450 ms) oder Rechtsklick öffnet einen Chip zum Ändern: Vorschläge (Antippen legt dort einen Eintrag an)
-   und Zuordnungen (dort öffnet auch schon Antippen). open(c) prüft selbst, ob gerade ein anderer Chip offen ist, und
-   meldet, ob es geöffnet hat; sel = der Text des geöffneten Chips nach dem Neuzeichnen. */
+   und Zuordnungen (dort öffnet auch schon Antippen). kind beschreibt die Chip-Art:
+     key(c)   liest beim Drücken ab, WELCHER Eintrag gemeint ist (Schlüssel aus den Daten, z. B. {k,w}),
+     open(key) öffnet ihn, prüft selbst, ob er noch existiert und ob gerade etwas anderes offen ist, und meldet, ob es geöffnet hat,
+     sel      ist der Text des geöffneten Chips nach dem Neuzeichnen.
+   Grundsatz (1.11.): Jede Änderung zeichnet die Liste per innerHTML neu, alte Chip-Elemente hängen danach nirgends mehr.
+   Deshalb merkt sich nichts ein Element über eine Wartezeit oder ein Neuzeichnen hinweg, sondern nur den Schlüssel;
+   geprüft wird an den Daten, nicht am DOM. Einzige Ausnahme ist das touchend in onRelease (siehe dort). */
 let lpPress=null;
-function longPress(e,c,open,sel){
-  lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; if(c.isConnected) opened(c,open,e.pointerType,sel) },450)};   /* inzwischen neu gezeichnet: Chip gibt es so nicht mehr */
+function longPress(e,c,kind){
+  const key=kind.key(c);
+  lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; opened(c,key,kind,e.pointerType) },450)};
 }
-function chipMenu(e,c,open,sel){
+function chipMenu(e,c,kind){
   e.preventDefault(); if(lpPress){clearTimeout(lpPress.t);lpPress=null}
-  opened(c,open,e.pointerType==="touch"?"touch":null,sel);   /* Android meldet den langen Druck auch so */
+  opened(c,kind.key(c),kind,e.pointerType==="touch"?"touch":null);   /* Android meldet den langen Druck auch so */
 }
-function opened(c,open,type,sel){ if(!open(c)) return; navigator.vibrate?.(12); if(type) onRelease(c,type,sel) }
+function opened(c,key,kind,type){ if(!kind.open(key)) return; navigator.vibrate?.(12); if(type) onRelease(c,type,kind.sel) }
 /* Beim Loslassen des Fingers den Cursor noch einmal ans Ende: Nur dort öffnet iOS die Tastatur (Benutzergeste), und das
    Loslassen würde ihn sonst an die Fingerstelle setzen. Das touchend geht an den alten, beim Öffnen ersetzten Chip und
-   erreicht window nicht mehr – deshalb direkt dort lauschen. Ein Wartezustand für „das nächste Loslassen“ hätte sonst
+   erreicht window nicht mehr – deshalb direkt dort lauschen (ein Touch bleibt bis zum Loslassen an dem Element, auf dem er
+   begann; darum braucht nur dieser Listener das alte Element, und nur bis zum Loslassen). Ein Wartezustand für „das nächste Loslassen“ hätte sonst
    den folgenden Tipp (z. B. auf ein Logo) verschluckt (1.11.). */
 function onRelease(c,type,sel){
   const end=()=>{ const el=$(sel); if(el) focusEnd(el) };   /* der Chip wurde beim Öffnen ersetzt */
@@ -1310,20 +1317,22 @@ function onRelease(c,type,sel){
 addEventListener("pointermove",e=>{ if(lpPress&&Math.hypot(e.clientX-lpPress.x,e.clientY-lpPress.y)>8){clearTimeout(lpPress.t);lpPress=null} },{passive:true});
 addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
-/* Vorschlag öffnen, solange nichts anderes in Bearbeitung ist */
-const openMk=c=>{ if(!canWrite||mkEdit||editId||addAt) return false; startMk(c); return true };
+const MK_TEXT="#shop .mkchip.mked .mkname", KW_TEXT="#zuo-body .kw.ked .kt";
+/* Vorschlag: Schlüssel {S,n}; öffnen nur, solange er noch in der Merkliste steht und nichts anderes in Bearbeitung ist */
+const MK_CHIP={
+  key:c=>({S:c.closest(".mkbox").dataset.sec,n:c.dataset.n}),
+  open:({S,n})=>{ if(!canWrite||mkEdit||editId||addAt||!(cfg.merk[S]||[]).includes(n)) return false; startMk(S,n); return true },
+  sel:MK_TEXT };
 $("#shop").addEventListener("pointerdown",e=>{
   if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
-  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,openMk,MK_TEXT);
+  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,MK_CHIP);
 });
 $("#shop").addEventListener("contextmenu",e=>{
   const c=e.target.closest(".mkchip"); if(!c) return; e.preventDefault();
-  if(c.matches(".mkbox button.mkchip")) chipMenu(e,c,openMk,MK_TEXT);
+  if(c.matches(".mkbox button.mkchip")) chipMenu(e,c,MK_CHIP);
 });
-const MK_TEXT="#shop .mkchip.mked .mkname", KW_TEXT="#zuo-body .kw.ked .kt";
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
-function startMk(c){
-  const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
+function startMk(S,n){
   mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
   const nm=$(MK_TEXT); if(nm) editText(nm);
 }
@@ -1609,25 +1618,29 @@ function cfgSet(k,list){
 $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")) e.preventDefault() });
 /* Zuordnung antippen: Text im Chip ändern, darunter Logos wählen (wie beim Vorschlag nach langem Druck).
    Antippen reicht, weil eine Zuordnung sonst nichts tut. Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
-function startKw(c){
-  const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
+function startKw(k,w){
   kwEdit={k,w,lb:zuoHasLb(k)?zuoLb(w):[]}; renderZuo(true);
   const ed=$(KW_TEXT); if(ed) editText(ed);
 }
-/* Zuordnung öffnen (Antippen, lange drücken, Rechtsklick); ist eine andere offen, wird sie zuerst übernommen */
-const openKw=c=>{ if(!canWrite) return false; if(kwEdit) commitKw(false); startKw(c); return true };
+/* Zuordnung: Schlüssel {k,w}. Öffnen per Antippen, langem Druck oder Rechtsklick; ist eine andere offen, wird sie zuerst
+   übernommen. Danach an den Daten prüfen, ob es die Zuordnung noch gibt (Neuzeichnen und Speichern ändern nur das DOM bzw.
+   eine andere Zuordnung, der Schlüssel bleibt gültig). */
+const KW_CHIP={
+  key:c=>({k:c.closest(".zg").dataset.k,w:c.querySelector(".kt").dataset.w}),
+  open:({k,w})=>{ if(!canWrite) return false; if(kwEdit) commitKw(false); if(!(cfgList(k)||[]).includes(w)) return false; startKw(k,w); return true },
+  sel:KW_TEXT };
 /* Der Chip unter dem Finger/Zeiger, der sich öffnen lässt: nicht der offene (dort gilt das Textmenü des Browsers), nicht das × */
 const kwTarget=e=>canWrite&&!e.target.closest(".kx")?e.target.closest(".kw:not(.ked)"):null;
 $("#zuo-body").addEventListener("pointerdown",e=>{
-  const c=e.button>0?null:kwTarget(e); if(c) longPress(e,c,openKw,KW_TEXT);
+  const c=e.button>0?null:kwTarget(e); if(c) longPress(e,c,KW_CHIP);
 });
 $("#zuo-body").addEventListener("contextmenu",e=>{
-  const c=kwTarget(e); if(c) chipMenu(e,c,openKw,KW_TEXT);
+  const c=kwTarget(e); if(c) chipMenu(e,c,KW_CHIP);
 });
 $("#zuo-body").addEventListener("click",e=>{
   const lbb=e.target.closest(".lbpick .lbb");
   if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$(KW_TEXT)); return }
-  const kw=kwTarget(e); if(kw){ openKw(kw); return }
+  const kw=kwTarget(e); if(kw){ KW_CHIP.open(KW_CHIP.key(kw)); return }
   const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
 /* Zuordnung entfernen mit Rückgängig (29.10.) */
