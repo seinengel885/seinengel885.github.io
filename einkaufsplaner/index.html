@@ -941,9 +941,10 @@ function learnKw(name,S){
   cfg.kategorien[S]=[...own,w]; if(guessSec(name)===S) return w;
   cfg.kategorien[S]=[...own,w+"!"]; return w+"!";
 }
-/* Labels aus der Zuordnung: Stichwort trifft den Namen (gleiche Regeln wie bei den Kategorien) */
-const autoLabels=name=>LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(String(name||""),w))).map(L=>L.k);
+/* Labels aus der Zuordnung: Stichwort trifft den Namen (gleiche Regeln wie bei den Kategorien), dazu die Logos
+   des gleichnamigen Merklisten-Eintrags – egal ob getippt, aus dem Rezept oder per Vorschlag (1.11.) */
 const sortLb=ks=>LABELS.map(L=>L.k).filter(k=>ks.includes(k));
+const autoLabels=name=>{ const n=String(name||""); return sortLb([...LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(n,w))).map(L=>L.k),...mkLb(n.trim())]) };
 /* order für eine neue Zeile unter „after“ (zwischen ihr und der nächsten), ohne after am Ende des Bereichs */
 function orderAfter(L,S,after){
   const os=items.filter(i=>secOf(i)===S).map(i=>i.order??0);
@@ -1169,7 +1170,7 @@ function commitNew(f,next){
 const newId=p=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 function addItem(L,S,name,qty,extra={},order){
   if(order==null) order=orderAfter(L,S,null);
-  const lb=sortLb([...new Set([...(extra.labels||[]),...autoLabels(name)])]);
+  const lb=sortLb([...(extra.labels||[]),...autoLabels(name)]);
   const id=newId("i"), body={name,qty,section:S,list:LIST,checked:false,order,...extra,...(lb.length?{labels:lb}:{})};
   items.push({id,...body});
   if(db) db.doc("shopping/"+id).set(body).then(()=>refreshers.forEach(f=>f())).catch(fail);
@@ -1213,7 +1214,7 @@ $("#shop").addEventListener("click",async e=>{
   if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
     if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
     const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
-    if(have) removeItem(have); else addItem(LIST,S,n,"",mkLb(n).length?{labels:mkLb(n)}:{});
+    if(have) removeItem(have); else addItem(LIST,S,n,"");
     renderShop(true); return }
   const sh=e.target.closest(".sh .tg");
   if(sh&&Date.now()-editAtDown<1500){ editAtDown=0; return }   /* Überschrift nicht auf-/zuklappen */
