@@ -17,7 +17,8 @@
   --warn:#e0b04a; --bad:#f2766b; color-scheme:dark }
 *{box-sizing:border-box}
 a{color:var(--accent)}
-:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+/* Fokusring nur für Tastatur-Bedienung von Knöpfen und Links; Eingaben und bearbeitbarer Text nie mit Rahmen (1.11.) */
+button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
 
 .top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
 .back{display:inline-flex;align-items:center;gap:6px;font:600 1rem var(--body);text-decoration:none;color:var(--accent);padding:6px 0;background:none;border:0;cursor:pointer}
@@ -68,7 +69,6 @@ a{color:var(--accent)}
 /* Rezeptliste */
 /* Suche: 16px Schrift, damit iOS beim Antippen nicht zoomt */
 .search{display:flex;align-items:center;gap:8px;margin-top:4px;padding:0 6px 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--muted)}
-.search:focus-within{border-color:var(--accent)}
 .search svg{flex:none}
 .search input{flex:1;min-width:0;font:16px var(--body);color:var(--ink);background:none;border:0;padding:11px 0;outline:0;-webkit-appearance:none;appearance:none}
 .search input::-webkit-search-cancel-button{display:none}
@@ -186,7 +186,6 @@ body.cooking{overflow:hidden}
 /* Eigenes Foto: rundes Kamera-Symbol unten rechts im Rezeptbild (28.10.) */
 .upl{position:absolute;right:10px;bottom:10px;z-index:2;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
 .upl input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
-.upl:focus-within{outline:2px solid var(--accent);outline-offset:2px}
 .upl.busy{cursor:default}
 .upl.busy svg{animation:upl 1s linear infinite;opacity:.6}
 @keyframes upl{to{transform:rotate(360deg)}}
