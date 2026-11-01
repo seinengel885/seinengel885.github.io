@@ -1,0 +1,142 @@
+{
+  "id": "ofenhaehnchen-ofengemuese",
+  "name": "Ofenhähnchen mit Ofengemüse",
+  "tags": [
+    "Mit Fleisch"
+  ],
+  "kcal": 700,
+  "portionen": 2,
+  "minuten": 60,
+  "kurz": "Knusprige Hähnchenschenkel auf einem großen Blech Gemüse mit Süßkartoffeln, alles aus dem Ofen. Viel Protein und viel Volumen, der Ofen macht die Arbeit. Es kommen 4 Schenkel aufs Blech: 1 pro Person, 2 bleiben für den nächsten Tag.",
+  "beilageHinweis": "Die Süßkartoffeln liefern die langsamen Kohlenhydrate, Brokkoli und Zucchini die Ballaststoffe. Eine weitere Sättigungsbeilage braucht es nicht.",
+  "beilagen": [
+    {
+      "name": "Naturjoghurt mit Knoblauch",
+      "text": "Als schneller Dip zu Hähnchen und Gemüse"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "4 (ca. 1 kg)",
+      "text": "Hähnchenschenkel"
+    },
+    {
+      "menge": "300 g",
+      "text": "Süßkartoffeln (ca. 1½ Stück)"
+    },
+    {
+      "menge": "2",
+      "text": "Zucchini (ca. 400 g)"
+    },
+    {
+      "menge": "2",
+      "text": "Paprika (ca. 300 g)"
+    },
+    {
+      "menge": "1",
+      "text": "Brokkoli (ca. 400 g)"
+    },
+    {
+      "menge": "2",
+      "text": "Zwiebeln"
+    },
+    {
+      "menge": "3",
+      "text": "Knoblauchzehen"
+    },
+    {
+      "menge": "3 EL",
+      "text": "Öl"
+    },
+    {
+      "menge": "2 TL",
+      "text": "Paprika edelsüß"
+    },
+    {
+      "menge": "1 TL",
+      "text": "Rosmarin oder Thymian, getrocknet"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "Ofen auf **200 °C** Umluft vorheizen, ein großes Blech mit Backpapier auslegen"
+        },
+        {
+          "text": "**3 Knoblauchzehen** fein hacken und mit **2 EL Öl**, **2 TL Paprika edelsüß**, **1 TL Rosmarin oder Thymian**, Salz und Pfeffer verrühren"
+        },
+        {
+          "text": "**4 Hähnchenschenkel** trocken tupfen und rundum mit der Hälfte der Würzmischung einreiben"
+        },
+        {
+          "text": "**300 g Süßkartoffeln** schälen und in 2 cm große Würfel schneiden"
+        }
+      ]
+    },
+    {
+      "titel": "Erster Ofengang",
+      "schritte": [
+        {
+          "text": "Süßkartoffeln mit der restlichen Würzmischung mischen und auf dem Blech verteilen"
+        },
+        {
+          "text": "Die Schenkel mit der Hautseite nach oben dazwischen legen und **20 Minuten** backen"
+        }
+      ]
+    },
+    {
+      "titel": "Gemüse dazu",
+      "schritte": [
+        {
+          "text": "Währenddessen **2 Zucchini** in Halbmonde, **2 Paprika** in Streifen, **2 Zwiebeln** in Spalten schneiden und **1 Brokkoli** in Röschen teilen"
+        },
+        {
+          "text": "Das Gemüse mit **1 EL Öl**, Salz und Pfeffer mischen"
+        },
+        {
+          "text": "Blech herausnehmen, das Gemüse rund um die Schenkel verteilen und weitere **25 Minuten** backen, bis die Haut knusprig und das Gemüse gebräunt ist"
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "Prüfen, ob das Hähnchen gar ist: an der dicksten Stelle einstechen, der Saft muss klar sein"
+        },
+        {
+          "text": "Pro Person **1 Schenkel** mit einer großen Portion Gemüse anrichten, **2 Schenkel** abkühlen lassen und in den Kühlschrank stellen"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Kalorienärmer",
+      "text": "Die Haut vor dem Essen abziehen, das spart pro Schenkel rund 100 kcal"
+    },
+    {
+      "titel": "Reste",
+      "text": "Die übrigen Schenkel kalt vom Knochen lösen, dann passen sie auf einen großen Salat oder in einen Wrap. Im Kühlschrank 2 Tage haltbar"
+    },
+    {
+      "titel": "Vegetarisch",
+      "text": "Hähnchen durch 1 Dose abgetropfte Kichererbsen und Feta ersetzen; Kichererbsen gleich am Anfang mit aufs Blech, Feta für die letzten 10 Minuten"
+    },
+    {
+      "titel": "Gemüse tauschen",
+      "text": "Statt Süßkartoffeln gehen auch Kürbis oder Kartoffeln; Kartoffeln brauchen ebenfalls die volle Zeit"
+    },
+    {
+      "titel": "Vorkochen",
+      "text": "Gemüse lässt sich am Vorabend schneiden und in einer Dose im Kühlschrank aufbewahren"
+    }
+  ],
+  "quelle": "Von Claude zusammengestellt nach dem ursprünglichen Wochenplan (Hähnchenschenkel mit Ofengemüse), keine Rezeptvorlage. Zeiten und kcal geschätzt; kcal pro Portion mit 1 Schenkel inkl. Haut."
+}

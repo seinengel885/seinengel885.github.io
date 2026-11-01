@@ -1,0 +1,143 @@
+{
+  "id": "bauerntopf",
+  "name": "Bauerntopf mit Würstchen",
+  "tags": [
+    "Mit Fleisch"
+  ],
+  "kcal": 440,
+  "portionen": 3,
+  "minuten": 60,
+  "kurz": "Herzhafter One-Pot-Eintopf mit Kartoffeln, Möhren, Paprika und Wiener Würstchen in Tomatensoße. Ohne Hack und ohne Speck, einfach und gut vorzukochen.",
+  "beilageHinweis": "Kartoffeln liefern langsame Kohlenhydrate, Möhren und Paprika Ballaststoffe, die Würstchen Protein. Eine zusätzliche Sättigungsbeilage braucht es nicht.",
+  "beilagen": [
+    {
+      "name": "Vollkornbrot",
+      "text": "1 Scheibe dazu, falls es nach 30–60 Min. wieder Hunger gibt"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "500 g",
+      "text": "Kartoffeln"
+    },
+    {
+      "menge": "2",
+      "text": "Möhren (ca. 150 g)"
+    },
+    {
+      "menge": "2",
+      "text": "bunte Paprikaschoten (ca. 250 g)"
+    },
+    {
+      "menge": "4",
+      "text": "Wiener Würstchen (ca. 200 g)"
+    },
+    {
+      "menge": "1 EL",
+      "text": "Öl"
+    },
+    {
+      "menge": "400 g",
+      "text": "stückige Tomaten aus der Dose"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Tomatenmark"
+    },
+    {
+      "menge": "300 ml",
+      "text": "Gemüsebrühe, z. B. instant"
+    },
+    {
+      "menge": "1 TL, gehäuft",
+      "text": "Zucker"
+    },
+    {
+      "menge": "",
+      "text": "Salz"
+    },
+    {
+      "menge": "",
+      "text": "Schmand nach Belieben",
+      "optional": true
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**500 g Kartoffeln** und **2 Möhren** schälen und in kleine Stücke schneiden"
+        },
+        {
+          "text": "**2 bunte Paprikaschoten** klein schneiden"
+        },
+        {
+          "text": "**4 Wiener Würstchen** in Scheiben schneiden"
+        }
+      ]
+    },
+    {
+      "titel": "Ansetzen",
+      "schritte": [
+        {
+          "text": "**1 EL Öl** in einem großen Topf erhitzen"
+        },
+        {
+          "text": "Mit **400 g stückigen Tomaten**, **2 EL Tomatenmark** und **300 ml Gemüsebrühe** ablöschen"
+        },
+        {
+          "text": "Kartoffeln, Möhren und Paprika dazugeben"
+        }
+      ]
+    },
+    {
+      "titel": "Köcheln",
+      "schritte": [
+        {
+          "text": "Alles zugedeckt ca. **40 Minuten** bei mittlerer Hitze köcheln lassen"
+        },
+        {
+          "text": "Zum Reduzieren bei Bedarf zusätzlich ca. **10 Minuten** ohne Deckel köcheln"
+        },
+        {
+          "text": "In den letzten **10 Minuten** die Würstchenscheiben unterrühren und miterhitzen"
+        }
+      ]
+    },
+    {
+      "titel": "Fertigstellen",
+      "schritte": [
+        {
+          "text": "Mit **1 TL Zucker** und Salz abschmecken"
+        },
+        {
+          "text": "Nach Belieben **Schmand** unterrühren oder als Klecks obenauf geben, danach nochmal abschmecken"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Aufwärmen",
+      "text": "Im Kühlschrank bis zu 3 Tage haltbar, langsam wieder erwärmen. Am zweiten Tag schmeckt er noch besser"
+    },
+    {
+      "titel": "Mit Hack",
+      "text": "Original: 500 g Hackfleisch vor dem Ablöschen in 1 EL Öl krümelig anbraten, dann statt der Würstchen"
+    },
+    {
+      "titel": "Tomatiger",
+      "text": "Schmand weglassen, dann schmeckt er aromatisch-würzig"
+    },
+    {
+      "titel": "Resteküche",
+      "text": "Zucchini, Sellerie oder Lauch passen ebenfalls hinein"
+    },
+    {
+      "titel": "Vegetarisch",
+      "text": "Würstchen weglassen oder durch vegetarische Würstchen ersetzen"
+    }
+  ],
+  "quelle": "Grundlage: Chefkoch.de „Bauerntopf“ von Lizzbaby (3 Portionen, Original mit 500 g Hackfleisch ca. 571 kcal pro Portion). Angepasst: ohne Hack, mit 4 Wiener Würstchen (Menge von Patrick). Die Kalorien (ca. 440 pro Portion) sind grob geschätzt. Die Würstchen kommen erst am Ende in den Topf."
+}

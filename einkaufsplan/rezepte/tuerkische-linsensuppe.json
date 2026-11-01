@@ -1,0 +1,183 @@
+{
+  "id": "tuerkische-linsensuppe",
+  "name": "Türkische Linsensuppe (Mercimek Çorbası)",
+  "tags": [
+    "Vegetarisch"
+  ],
+  "kcal": 350,
+  "portionen": 4,
+  "minuten": 35,
+  "kurz": "Cremige, würzige Suppe auf türkische Art, komplett ohne Sahne, nur durch Pürieren sämig. Vegetarisch, kalorienarm und reich an Eiweiß und Ballaststoffen.",
+  "beilageHinweis": "",
+  "beilagen": [
+    {
+      "name": "Vollkornbrot oder Fladenbrot",
+      "text": "Eine Scheibe dazu macht die Suppe sättigender"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "250 g",
+      "text": "rote Linsen"
+    },
+    {
+      "menge": "1",
+      "text": "Zwiebel (ca. 100 g)"
+    },
+    {
+      "menge": "2",
+      "text": "Knoblauchzehen"
+    },
+    {
+      "menge": "2",
+      "text": "Karotten (ca. 150 g)"
+    },
+    {
+      "menge": "1",
+      "text": "Kartoffel (ca. 150 g)"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Tomatenmark (ca. 30 g)"
+    },
+    {
+      "menge": "1 TL",
+      "text": "Kreuzkümmel"
+    },
+    {
+      "menge": "1 TL",
+      "text": "Paprikapulver edelsüß"
+    },
+    {
+      "menge": "½ TL",
+      "text": "Kurkuma"
+    },
+    {
+      "menge": "1 L",
+      "text": "Gemüsebrühe"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Olivenöl"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    },
+    {
+      "menge": "1",
+      "text": "Zitrone (Saft zum Servieren)"
+    },
+    {
+      "menge": "",
+      "text": "getrocknete Minze",
+      "optional": true
+    },
+    {
+      "menge": "1 EL",
+      "text": "Butter für das Paprika-Butter-Topping",
+      "optional": true
+    },
+    {
+      "menge": "½ TL",
+      "text": "Paprikapulver für das Paprika-Butter-Topping",
+      "optional": true
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**1 Zwiebel (100 g)** fein hacken"
+        },
+        {
+          "text": "**2 Knoblauchzehen** fein hacken"
+        },
+        {
+          "text": "**2 Karotten (150 g)** schälen und grob würfeln"
+        },
+        {
+          "text": "**1 Kartoffel (150 g)** schälen und grob würfeln"
+        },
+        {
+          "text": "**250 g rote Linsen** in ein Sieb geben und unter fließendem Wasser abspülen, bis es nicht mehr schäumt"
+        }
+      ]
+    },
+    {
+      "titel": "Anbraten",
+      "schritte": [
+        {
+          "text": "**2 EL Olivenöl** in einem großen Topf erhitzen"
+        },
+        {
+          "text": "Zwiebel und Knoblauch bei mittlerer Hitze ca. **3 Min.** glasig dünsten"
+        },
+        {
+          "text": "Karotten und Kartoffel dazugeben und ca. **2 Min.** mitbraten"
+        },
+        {
+          "text": "**2 EL Tomatenmark**, **1 TL Kreuzkümmel**, **1 TL Paprikapulver** und **½ TL Kurkuma** einrühren und **1–2 Min.** mitrösten"
+        }
+      ]
+    },
+    {
+      "titel": "Köcheln",
+      "schritte": [
+        {
+          "text": "**250 g rote Linsen** in den Topf geben und umrühren"
+        },
+        {
+          "text": "Mit **1 L Gemüsebrühe** aufgießen und aufkochen lassen"
+        },
+        {
+          "text": "Hitze reduzieren und **20 Min.** bei niedriger Hitze köcheln lassen, bis Linsen und Gemüse weich sind"
+        }
+      ]
+    },
+    {
+      "titel": "Pürieren & Abschmecken",
+      "schritte": [
+        {
+          "text": "Topf vom Herd nehmen und mit dem Stabmixer vollständig cremig pürieren"
+        },
+        {
+          "text": "Mit Salz, Pfeffer und dem **Saft von 1 Zitrone** abschmecken"
+        },
+        {
+          "text": "Bei Bedarf etwas Wasser oder Brühe dazugeben, bis die Konsistenz passt"
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "In tiefe Teller füllen"
+        },
+        {
+          "text": "Optional: getrocknete Minze und einen Spritzer Zitronensaft darüber"
+        },
+        {
+          "text": "Optional Topping: **1 EL Butter** in einer kleinen Pfanne schmelzen, **½ TL Paprikapulver** kurz anrösten und über die Suppe träufeln"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Konsistenz",
+      "text": "Für dickere Suppe weniger Brühe nehmen; beim Aufwärmen dickt sie ein, dann etwas Wasser dazugeben"
+    },
+    {
+      "titel": "Vorkochen",
+      "text": "Hält 3–4 Tage im Kühlschrank, einfrieren bis 3 Monate problemlos möglich"
+    },
+    {
+      "titel": "Schärfe",
+      "text": "Pul Biber (türkische Chiliflocken) für eine würzigere Variante"
+    }
+  ],
+  "quelle": "Übernommen aus der Notion-Speisekarte am 25.10.2026."
+}

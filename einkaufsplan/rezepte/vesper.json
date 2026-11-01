@@ -1,0 +1,111 @@
+{
+  "id": "vesper",
+  "name": "Vesper",
+  "tags": [
+    "Mit/ohne Fleisch"
+  ],
+  "kcal": 950,
+  "portionen": 2,
+  "minuten": 15,
+  "kurz": "Kaltes Abendessen mit Vollkornbrot, Käse, Aufschnitt, Frischkäse, hartgekochten Eiern und viel rohem Gemüse. Kein Kochen außer den Eiern, schnell auf dem Tisch.",
+  "beilageHinweis": "",
+  "beilagen": [],
+  "zutaten": [
+    {
+      "menge": "6 Scheiben",
+      "text": "Vollkornbrot (ca. 300 g)"
+    },
+    {
+      "menge": "200 g",
+      "text": "Käse in Scheiben"
+    },
+    {
+      "menge": "150 g",
+      "text": "Wurstaufschnitt oder Schinken"
+    },
+    {
+      "menge": "150 g",
+      "text": "Frischkäse"
+    },
+    {
+      "menge": "4",
+      "text": "Eier"
+    },
+    {
+      "menge": "1",
+      "text": "Gurke"
+    },
+    {
+      "menge": "1 Bund",
+      "text": "Radieschen"
+    },
+    {
+      "menge": "250 g",
+      "text": "Cherrytomaten"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Eier kochen",
+      "schritte": [
+        {
+          "text": "**4 Eier** in kochendem Wasser **10 Minuten** hart kochen"
+        },
+        {
+          "text": "Eier kalt abschrecken, pellen und halbieren"
+        }
+      ]
+    },
+    {
+      "titel": "Gemüse vorbereiten",
+      "schritte": [
+        {
+          "text": "**1 Gurke** waschen und in Scheiben schneiden"
+        },
+        {
+          "text": "**1 Bund Radieschen** waschen, putzen und in Scheiben schneiden"
+        },
+        {
+          "text": "**250 g Cherrytomaten** waschen und halbieren"
+        }
+      ]
+    },
+    {
+      "titel": "Anrichten",
+      "schritte": [
+        {
+          "text": "**6 Scheiben Vollkornbrot** schneiden und in einen Korb oder auf ein Brett legen"
+        },
+        {
+          "text": "**200 g Käse**, **150 g Aufschnitt** und **150 g Frischkäse** auf Brettern oder Tellern anrichten"
+        },
+        {
+          "text": "Gemüse und Eier dazustellen, Eier mit Salz und Pfeffer würzen"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Vorbereiten",
+      "text": "Eier am Vorabend kochen, dann ist das Vesper in 5 Minuten fertig"
+    },
+    {
+      "titel": "Kalorienärmer",
+      "text": "Frischkäse light und nur 100 g Käse nehmen, dafür mehr Gemüse. Spart ca. 250 kcal pro Person"
+    },
+    {
+      "titel": "Vegetarisch",
+      "text": "Aufschnitt weglassen und dafür Eier und Käse etwas aufstocken"
+    },
+    {
+      "titel": "Reste",
+      "text": "Übriges Brot und Aufschnitt reichen fürs Frühstück oder die Brotdose am nächsten Tag"
+    }
+  ],
+  "quelle": "Von Claude zusammengestellt, die Zutatenliste hat Patrick bestätigt. Keine Rezeptvorlage. Mengen sind für 2 Personen gedacht, Kalorien (ca. 950 pro Person, wenn alles gegessen wird) grob geschätzt."
+}

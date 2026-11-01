@@ -1,0 +1,170 @@
+{
+  "id": "shakshuka",
+  "name": "Shakshuka",
+  "tags": [
+    "Vegetarisch"
+  ],
+  "kcal": 250,
+  "portionen": 2,
+  "minuten": 35,
+  "kurz": "Klassische Shakshuka mit pochierten Eiern in würziger Tomaten-Paprika-Sauce – vegetarisch, proteinreich und blitzschnell gemacht.",
+  "beilageHinweis": "",
+  "beilagen": [
+    {
+      "name": "Fladenbrot oder Pita (klassisch)",
+      "text": "Zum Eintunken in die Tomatensauce, gehört traditionell dazu"
+    },
+    {
+      "name": "Baguette",
+      "text": "Gute Alternative, wenn kein Fladenbrot da ist"
+    },
+    {
+      "name": "Bulgur",
+      "text": "Sättigender, passt gut zu Kerstins Volumetrics-Ansatz"
+    },
+    {
+      "name": "Gedünsteter Spinat",
+      "text": "Kohlenhydratärmere Option, erhöht das Volumen ohne viele Kalorien"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "4",
+      "text": "Eier (Gr. M)"
+    },
+    {
+      "menge": "400 g",
+      "text": "gehackte Tomaten"
+    },
+    {
+      "menge": "1",
+      "text": "rote Paprika, in Streifen"
+    },
+    {
+      "menge": "1",
+      "text": "Zwiebel, fein geschnitten"
+    },
+    {
+      "menge": "2",
+      "text": "Knoblauchzehen, gepresst"
+    },
+    {
+      "menge": "1 TL",
+      "text": "Paprikapulver, edelsüß"
+    },
+    {
+      "menge": "½ TL",
+      "text": "Kreuzkümmel (Cumin)"
+    },
+    {
+      "menge": "¼ TL",
+      "text": "Cayennepfeffer (oder nach Geschmack)"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    },
+    {
+      "menge": "1 EL",
+      "text": "Olivenöl"
+    },
+    {
+      "menge": "60 g",
+      "text": "Feta zum Krümeln",
+      "optional": true
+    },
+    {
+      "menge": "",
+      "text": "frischer Koriander oder Petersilie",
+      "optional": true
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**1 Zwiebel** in feine Streifen schneiden, **2 Knoblauchzehen** hacken"
+        },
+        {
+          "text": "**1 rote Paprika** entkernen und in Streifen schneiden"
+        }
+      ]
+    },
+    {
+      "titel": "Sauce kochen",
+      "schritte": [
+        {
+          "text": "**1 EL Olivenöl** in einer großen Pfanne (oder Topf) erhitzen"
+        },
+        {
+          "text": "Zwiebel glasig dünsten (ca. **3 Min.**), Knoblauch kurz mitbraten"
+        },
+        {
+          "text": "Paprikastreifen dazugeben, **4 Minuten** bei mittlerer Hitze schmoren"
+        },
+        {
+          "text": "**1 TL Paprikapulver**, **½ TL Kreuzkümmel**, **¼ TL Cayenne** einstreuen und kurz anrösten (30 Sek.)"
+        },
+        {
+          "text": "**400 g gehackte Tomaten** eingießen und mit Salz und Pfeffer würzen"
+        },
+        {
+          "text": "Bei mittlerer Hitze **15 Minuten** köcheln lassen, bis die Sauce etwas eindickt"
+        }
+      ]
+    },
+    {
+      "titel": "Eier pochieren",
+      "schritte": [
+        {
+          "text": "Mit einem Löffel **4 Mulden** in die Sauce drücken"
+        },
+        {
+          "text": "Je **1 Ei** vorsichtig in jede Mulde gleiten lassen"
+        },
+        {
+          "text": "Pfanne mit Deckel abdecken und **5–8 Minuten** garen",
+          "sub": [
+            "5 Min. = weiches Eigelb",
+            "8 Min. = festes Eigelb"
+          ]
+        }
+      ]
+    },
+    {
+      "titel": "Servieren",
+      "schritte": [
+        {
+          "text": "Optional: **60 g Feta** darüber krümeln"
+        },
+        {
+          "text": "Mit frischen Kräutern bestreuen und direkt aus der Pfanne servieren"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Knoblauch & Kreuzkümmel",
+      "text": "je nach Tagesform weglassen oder reduzieren"
+    },
+    {
+      "titel": "Kalorienärmer",
+      "text": "Feta weglassen spart ca. 50 kcal pro Portion"
+    },
+    {
+      "titel": "Sauce vorbereiten",
+      "text": "Tomatensauce am Vortag kochen, dann nur noch Eier pochieren"
+    },
+    {
+      "titel": "Schärfe",
+      "text": "Cayenne nach Geschmack anpassen oder durch Harissa ersetzen"
+    },
+    {
+      "titel": "Ohne Ofen",
+      "text": "Pfanne einfach mit Deckel abdecken – kein Ofen nötig"
+    }
+  ],
+  "quelle": "Übernommen aus der Notion-Speisekarte am 22.10.2026."
+}

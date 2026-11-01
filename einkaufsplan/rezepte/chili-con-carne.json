@@ -1,0 +1,163 @@
+{
+  "id": "chili-con-carne",
+  "name": "Chili con Carne",
+  "tags": [
+    "Mit Fleisch"
+  ],
+  "kcal": 475,
+  "portionen": 4,
+  "minuten": 40,
+  "kurz": "Würziges Chili mit Rinderhack, Kidneybohnen, Mais und Paprika – viel Protein, Bohnen für lange Sättigung, ideal zum Vorkochen.",
+  "beilageHinweis": "Bohnen und Mais liefern schon langsame Kohlenhydrate und Ballaststoffe, eine Sättigungsbeilage braucht es nicht.",
+  "beilagen": [
+    {
+      "name": "Naturjoghurt oder Schmand",
+      "text": "Ein Klecks obendrauf mildert die Schärfe"
+    },
+    {
+      "name": "Gurke",
+      "text": "In Scheiben dazu, bringt Frische und Volumen"
+    },
+    {
+      "name": "Geriebener Käse",
+      "text": "Optional zum Bestreuen"
+    }
+  ],
+  "zutaten": [
+    {
+      "menge": "500 g",
+      "text": "Rinderhack"
+    },
+    {
+      "menge": "1",
+      "text": "große Zwiebel"
+    },
+    {
+      "menge": "2",
+      "text": "Knoblauchzehen"
+    },
+    {
+      "menge": "2 EL",
+      "text": "Öl"
+    },
+    {
+      "menge": "800 g",
+      "text": "Tomaten aus der Dose"
+    },
+    {
+      "menge": "1",
+      "text": "grüne Paprika"
+    },
+    {
+      "menge": "425 g",
+      "text": "Kidneybohnen"
+    },
+    {
+      "menge": "150 g",
+      "text": "Mais aus der Dose"
+    },
+    {
+      "menge": "125 ml",
+      "text": "Gemüsebrühe"
+    },
+    {
+      "menge": "2 TL",
+      "text": "Kreuzkümmel, gemahlen"
+    },
+    {
+      "menge": "2 TL",
+      "text": "Zucker"
+    },
+    {
+      "menge": "",
+      "text": "Chilipulver nach Geschmack"
+    },
+    {
+      "menge": "",
+      "text": "Salz, Pfeffer"
+    },
+    {
+      "menge": "1 Bund",
+      "text": "frischer Koriander",
+      "optional": true
+    }
+  ],
+  "phasen": [
+    {
+      "titel": "Vorbereiten",
+      "schritte": [
+        {
+          "text": "**1 große Zwiebel** und **2 Knoblauchzehen** fein würfeln"
+        },
+        {
+          "text": "**1 grüne Paprika** entkernen und in Streifen schneiden"
+        },
+        {
+          "text": "**425 g Kidneybohnen** im Sieb abspülen, **150 g Mais** abtropfen lassen"
+        }
+      ]
+    },
+    {
+      "titel": "Anbraten",
+      "schritte": [
+        {
+          "text": "**2 EL Öl** in einem großen Topf erhitzen, Zwiebel und Knoblauch glasig dünsten"
+        },
+        {
+          "text": "**500 g Hack** dazugeben und bei hoher Hitze krümelig braun anbraten"
+        }
+      ]
+    },
+    {
+      "titel": "Köcheln",
+      "schritte": [
+        {
+          "text": "**800 g Tomaten** dazugeben, große Stücke mit dem Kochlöffel zerkleinern"
+        },
+        {
+          "text": "Mit Salz, Pfeffer, **2 TL Zucker**, **2 TL Kreuzkümmel** und Chilipulver nach Geschmack würzen"
+        },
+        {
+          "text": "**125 ml Gemüsebrühe** angießen und bei mittlerer Hitze **10 Minuten** einköcheln lassen"
+        },
+        {
+          "text": "Paprikastreifen dazugeben und weitere **10 Minuten** köcheln"
+        }
+      ]
+    },
+    {
+      "titel": "Fertigstellen",
+      "schritte": [
+        {
+          "text": "Bohnen und Mais unterrühren und kurz miterhitzen"
+        },
+        {
+          "text": "Abschmecken, optional mit **Korianderblättchen** bestreuen"
+        }
+      ]
+    }
+  ],
+  "tipps": [
+    {
+      "titel": "Vorkochen",
+      "text": "Reicht für 4 Portionen, also zwei Abende zu zweit. Abgekühlt im Kühlschrank 2–3 Tage haltbar"
+    },
+    {
+      "titel": "Einfrieren",
+      "text": "Portionsweise einfrieren, dann ist ein Notfallessen im Haus"
+    },
+    {
+      "titel": "Kalorienärmer",
+      "text": "Mais weglassen und mageres Rinderhack nehmen"
+    },
+    {
+      "titel": "Vegetarisch",
+      "text": "Hack durch eine zweite Dose Bohnen oder rote Linsen ersetzen"
+    },
+    {
+      "titel": "Schärfe",
+      "text": "Chilipulver erst sparsam, am Ende nachwürzen"
+    }
+  ],
+  "quelle": "Grundlage: Rezept der Apotheken Umschau (4 Portionen, ca. 475 kcal). Zeitangabe geschätzt."
+}
