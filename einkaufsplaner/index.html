@@ -79,7 +79,6 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 #v-zuo .zg .sub{font-size:.85rem;margin:0 0 8px}
 .chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
 .kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem}
-.kto{color:var(--muted);font-size:.82rem}
 .kw.hard{color:var(--accent);font-weight:600}   /* Stichwort mit ! nur über grüne, fette Schrift erkennbar, kein Rahmen (1.11.) */
 .kx{border:0;background:none;color:var(--muted);font-size:1rem;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
 .kadd{flex:0 0 9.5em;min-width:0}
@@ -824,7 +823,6 @@ const DEF_MERK={
 };
 const DEF_CFG={
   vorrat:["salz","pfeffer","wasser"],
-  gelernt:{},   /* Artikelname → Kategorie, entsteht beim Verschieben eines Eintrags; gilt vor den Stichwörtern */
   einheiten:["kg","g","mg","ml","cl","l","el","tl","msp","prise","prisen","bund","stk","stück","st","stange","stangen","dose","dosen","glas","gläser","pck","packung","packungen","päckchen","becher","flasche","flaschen","scheibe","scheiben","zehe","zehen","kopf","köpfe","netz","netze","beutel","tüte","tüten","schale","schalen","handvoll","liter","gramm","kilo","tasse","tassen"],
   kategorien:{
     "Tiefkühl":["tk","tiefk","gefror"],
@@ -860,11 +858,10 @@ function setCfg(d){
   const dk=d?.kategorien||{}, k={};
   if(!dk.Vorrat&&(dk["Gewürze"]||dk["Konserven & Vorrat"])) dk.Vorrat=[...new Set([...(dk["Gewürze"]||[]),...(dk["Konserven & Vorrat"]||[])])];   /* alte Aufteilung übernehmen */
   for(const S of CHECK) k[S]=Array.isArray(dk[S])?dk[S]:DEF_CFG.kategorien[S];
-  const g={}; for(const [n,S] of Object.entries(d?.gelernt||{})) g[n]=OLD_SEC[S]||S;
   const dm=d?.merk||{}, m={}; for(const S of SECTIONS) m[S]=Array.isArray(dm[S])?dm[S]:(DEF_MERK[S]||[]);
   const dl=d?.labels||{}, l={}; for(const L of LABELS) l[L.k]=Array.isArray(dl[L.k])?dl[L.k]:[];
   const ml={}; for(const [n,ks] of Object.entries(d?.merkLb||{})) if(Array.isArray(ks)) ml[n]=sortLb(ks);
-  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, gelernt:g, merk:m, labels:l, merkLb:ml};
+  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, merk:m, labels:l, merkLb:ml};
   buildUnits();
 }
 /* Tag zum Einkaufen: Feld due (JJJJ-MM-TT), getrennt gespeichert wie qty und name.
@@ -908,8 +905,7 @@ function parseLine(s){
   m=s.match(TRAIL); if(m) return {qty:m[2].trim(),name:m[1].trim()};
   return {qty:"",name:s};
 }
-/* Kategorie raten – dieselbe Logik für eigene Einträge und Rezept-Zutaten:
-   zuerst wie derselbe Artikel schon als eigener Eintrag einsortiert ist, sonst Stichwörter in Prüfreihenfolge.
+/* Kategorie raten – dieselbe Logik für eigene Einträge und Rezept-Zutaten: nur die Stichwörter der Zuordnung (1.11.).
    Bei Rezept-Zutaten wird zuerst der volle Zutatentext geprüft („Tomaten aus der Dose“), dann der Name. */
 /* Treffer eines Stichworts: [hart, Anzahl Wörter] oder null. Mehrere Wörter müssen alle vorkommen, Reihenfolge egal */
 function kwScore(t,w){
@@ -917,10 +913,6 @@ function kwScore(t,w){
   return ws.length&&ws.every(x=>hasWord(t,x))?[hard?1:0,ws.length]:null;
 }
 function guessSec(name,hint){
-  const k=String(name||"").toLowerCase().trim();
-  if(cfg.gelernt[k]&&SECTIONS.includes(cfg.gelernt[k])) return cfg.gelernt[k];   /* einmal verschoben = gelernt */
-  const known=items.find(i=>!i.rezept&&String(i.name||"").toLowerCase()===k);
-  if(known) return secOf(known);
   /* Stichwörter: alle Treffer sammeln, der stärkste gewinnt (29.10.):
      1. mit ! am Ende („dose!“) zieht hart, 2. mehr Wörter schlagen weniger („kolben mais“ vor „mais“),
      3. bei Gleichstand die Prüfreihenfolge. Geprüft wird die ganze Zeile samt Menge („1 Dose Mais“). */
@@ -931,6 +923,17 @@ function guessSec(name,hint){
     if(!best||key[0]>best.key[0]||(key[0]===best.key[0]&&(key[1]>best.key[1]||(key[1]===best.key[1]&&key[2]>best.key[2])))) best={S,key};
   }));
   return best?best.S:"Sonstiges";
+}
+/* In eine andere Kategorie gezogen (1.11.): den Namen als Stichwort in die Zuordnung eintragen, sichtbar und änderbar.
+   Gleiches Stichwort in anderen Kategorien fällt weg; trifft schon ein Stichwort der Zielkategorie, bleibt alles, wie es ist.
+   Zieht danach noch ein stärkeres Stichwort woandershin, bekommt es ein ! am Ende. Gibt das neue Stichwort zurück. */
+function learnKw(name,S){
+  const w=String(name||"").toLowerCase().replace(/\s+/g," ").trim(); if(!w||!CHECK.includes(S)) return "";
+  for(const C of CHECK) if(C!==S) cfg.kategorien[C]=cfg.kategorien[C].filter(x=>x!==w&&x!==w+"!");
+  if(guessSec(name)===S) return "";
+  const own=cfg.kategorien[S].filter(x=>x!==w&&x!==w+"!");
+  cfg.kategorien[S]=[...own,w]; if(guessSec(name)===S) return w;
+  cfg.kategorien[S]=[...own,w+"!"]; return w+"!";
 }
 /* Labels aus der Zuordnung: Stichwort trifft den Namen (gleiche Regeln wie bei den Kategorien) */
 const autoLabels=name=>LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(String(name||""),w))).map(L=>L.k);
@@ -1465,11 +1468,12 @@ async function endDrag(){
   if(k<0) order=(sib.length?(sib[sib.length-1].order??0):0)+1000;
   else { const nx=sib[k].order??0, pv=k>0?(sib[k-1].order??0):nx-2000; order=(pv+nx)/2; }
   const patch={section:tg.sec,order};
-  /* In eine andere Kategorie gezogen: für diesen Artikel merken, gilt künftig auch für Rezept-Zutaten (29.10.) */
-  if(secOf(it)!==tg.sec&&it.name){ cfg.gelernt={...cfg.gelernt,[it.name.toLowerCase().trim()]:tg.sec}; saveCfg(true) }
+  /* In eine andere Kategorie gezogen: Stichwort in die Zuordnung, gilt künftig auch für Rezept-Zutaten */
+  let msg="Verschoben";
+  if(secOf(it)!==tg.sec&&it.name){ const w=learnKw(it.name,tg.sec); saveCfg(true); if(w) msg=`Verschoben · „${w}“ steht jetzt bei ${tg.sec}`; }
   if(it.list!==LIST) patch.list=LIST;
   Object.assign(it,patch); renderShop();
-  await save("shopping/"+it.id,patch,"Verschoben");
+  await save("shopping/"+it.id,patch,msg);
 }
 /* Speicher */
 async function save(path,data,msg){
@@ -1536,9 +1540,7 @@ function renderZuo(force){
   if(!force&&el.contains(document.activeElement)&&document.activeElement.matches("input")){zuoPending=true;return}
   zuoPending=false;
   el.innerHTML=zuoBox("vorrat","Immer im Haus","Wird nicht aus Rezepten übernommen. Gilt nur als ganzes Wort.",cfg.vorrat)
-    +`<section class="zg" data-k="gelernt"><h2>Gelernt</h2><p class="sub">Entsteht, wenn ein Eintrag in eine andere Kategorie gezogen wird. Gilt vor den Stichwörtern.</p><div class="chips">${
-      Object.entries(cfg.gelernt).sort((a,b)=>a[0].localeCompare(b[0],"de")).map(([n,S])=>`<span class="kw">${esc(n)} <span class="kto">→ ${esc(S)}</span>${canWrite?`<button type="button" class="kx" data-w="${esc(n)}" aria-label="${esc(n)} vergessen">×</button>`:""}</span>`).join("")||`<span class="sub">Noch nichts gelernt.</span>`}</div></section>`
-    +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Vorher gelten „Gelernt“ und die Kategorie, in der derselbe Artikel schon als eigener Eintrag steht.</p></section>`
+    +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Wird ein Eintrag in eine andere Kategorie gezogen, kommt sein Name hier als Stichwort dazu.</p></section>`
     +CHECK.map(S=>zuoBox("k:"+S,S,S==="Sonstiges"?"Alles ohne Treffer.":"",cfg.kategorien[S])).join("")
     +`<section class="zg"><h2>Merklisten</h2><p class="sub">Gute Lebensmittel je Kategorie, zum schnellen Ergänzen über das Listen-Symbol in der Einkaufsliste.</p></section>`
     +SECTIONS.map(S=>zuoBox("m:"+S,S,"",cfg.merk[S]||[])).join("")
@@ -1564,8 +1566,6 @@ $("#zuo-body").addEventListener("click",e=>{
   const x=e.target.closest(".kx"); if(!x) return;
   const k=x.closest(".zg").dataset.k, w=x.dataset.w;
   /* Entfernen mit Rückgängig (29.10.) */
-  if(k==="gelernt"){ const prev=cfg.gelernt, g={...prev}; delete g[w]; cfg.gelernt=g; saveCfg();
-    undoBar(`„${w}“ vergessen`,()=>{ cfg.gelernt={...cfg.gelernt,[w]:prev[w]}; return saveCfg() }); return }
   const prev=cfgList(k); cfgSet(k,prev.filter(v=>v!==w)); saveCfg();
   undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
 });
