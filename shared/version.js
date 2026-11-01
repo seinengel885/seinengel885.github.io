@@ -1,3 +1,10 @@
-/* Bei JEDEM Push auf main, der live gehen soll: nr um 1 erhöhen, Zeit (Europe/Berlin) und kurz, was neu ist.
-   Die Fußzeile jeder Seite zeigt „Version nr“ und meldet, wenn auf dem Server schon eine höhere liegt. */
-window.SITE_VERSION = { nr: 4, stand: "2026-11-01 17:00", was: "Versionsnummer in der Fußzeile, Tageskarten gleich hoch" };
+/* Bei JEDEM Push auf main, der live gehen soll: oben einen neuen Eintrag mit der nächsten Nummer einfügen,
+   Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
+   Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
+window.SITE_VERSIONEN = [
+  { nr: 4, stand: "2026-11-01 17:30", was: "Tageskarten gleich hoch, Bewertung auf Chiphöhe, Versionsnummer mit Verlauf in der Fußzeile" },
+  { nr: 3, stand: "2026-11-01 16:45", was: "Anmeldung rutscht auf dem iPhone über die Tastatur" },
+  { nr: 2, stand: "2026-11-01 16:34", was: "Einkaufsplaner mit Icon, Startseite nach Login" },
+  { nr: 1, stand: "2026-11-01 16:33", was: "App-Icons, Startseite nach Login" }
+];
+window.SITE_VERSION = window.SITE_VERSIONEN[0];

@@ -75,6 +75,16 @@
     async delete(id){ urls.delete(id); }
   };
 
+  /* Beispielfoto für die Vorschau: ruhiger Farbverlauf je Rezept, damit man die Bildflächen sieht */
+  function platzhalter(id){
+    let h = 0; for(const c of id) h = (h * 31 + c.charCodeAt(0)) % 360;
+    const svg = `<svg xmlns="http://www.w3.org/2000/svg" width="720" height="480" viewBox="0 0 720 480">
+      <defs><linearGradient id="g" x1="0" y1="0" x2="1" y2="1"><stop offset="0" stop-color="hsl(${h},45%,78%)"/>
+      <stop offset="1" stop-color="hsl(${(h + 40) % 360},40%,62%)"/></linearGradient></defs>
+      <rect width="720" height="480" fill="url(#g)"/>
+      <text x="360" y="252" text-anchor="middle" font-family="system-ui,sans-serif" font-size="30" fill="rgba(0,0,0,.45)">Beispielfoto</text></svg>`;
+    return "data:image/svg+xml;charset=utf-8," + encodeURIComponent(svg);
+  }
   const NAME = "Vorschau";
   const ready = Promise.resolve({ user: { id: "vorschau", email: "vorschau@example.org" } });
   async function use(name){
@@ -86,7 +96,7 @@
   window.backend = {
     app: APP, ready, use, demo: true,
     prefetchBlobs: async () => {},
-    blobUrl: id => urls.get(id) || "",
+    blobUrl: id => urls.get(id) || (String(id).startsWith("platzhalter/") ? platzhalter(id) : ""),
     userName: NAME,
     signOut: async () => {}
   };

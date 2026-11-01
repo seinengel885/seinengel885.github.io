@@ -20,10 +20,10 @@
   Link in der ersten Antwort jeder Sitzung nennen. Patrick kommentiert direkt in der Vorschau; diese Kommentare kommen als
   „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
   Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
-- **Bei jedem Push auf `main`, der live gehen soll: `shared/version.js` aktualisieren**: `nr` um 1 erhöhen,
-  `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt „Version nr“
-  (Datum und Text nur als Tooltip), daran erkennt Patrick, ob GitHub Pages schon ausgeliefert hat.
-  Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
+- **Bei jedem Push auf `main`, der live gehen soll: `shared/version.js` ergänzen**: oben in `SITE_VERSIONEN` einen
+  Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
+  „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt Patrick, ob GitHub Pages schon
+  ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
   Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
   und zusätzlich unter `supabase/migrations/` ablegen; danach den Sicherheitscheck (Advisors) laufen lassen.
