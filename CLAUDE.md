@@ -27,8 +27,8 @@
   Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
   „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt Patrick, ob GitHub Pages schon
   ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
-- **Tastatur:** Das Feld über die iOS-Tastatur schiebt iOS selbst. Eigene Scrollgrenzen (z. B. Nachfedern) dürfen
-  dabei nicht eingreifen und gelten nicht, solange ein Eingabefeld den Fokus hat.
+- **Tastatur:** Das Feld über die iOS-Tastatur schiebt iOS selbst. Eigene Scrollgrenzen (z. B. Nachfedern) rechnen
+  mit `visualViewport.height`, nicht mit `innerHeight` (bleibt auf dem iPhone bei offener Tastatur gleich).
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
   Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
   und zusätzlich unter `supabase/migrations/` ablegen; danach den Sicherheitscheck (Advisors) laufen lassen.
