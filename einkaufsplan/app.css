@@ -1,0 +1,216 @@
+/* Gemeinsame Gestaltung: Farb-Tokens für die ganze App, dazu Rezeptliste, Rezept, Kochmodus und Regeln.
+   Rezept-Ansichten tragen die Klasse .rv, damit ihre Überschriften den Wochenplan nicht verändern. */
+:root{
+  --bg:#f6f8f6; --surface:#ffffff; --ink:#18261f; --muted:#5f6f66; --line:#dde5df;
+  --accent:#2f7a4a; --accent-soft:#e3f0e7; --pepper:#c2410c; --pepper-soft:#fbeadf;
+  --warn:#a16207; --bad:#b42318;
+  --display:"Bricolage Grotesque", "Avenir Next", system-ui, sans-serif;
+  --body:"Figtree", system-ui, -apple-system, "Segoe UI", sans-serif;
+}
+@media (prefers-color-scheme: dark){:root:not([data-theme="light"]){
+  --bg:#101613; --surface:#18201b; --ink:#e7efe9; --muted:#9aaba1; --line:#2a352f;
+  --accent:#6cc28c; --accent-soft:#1f3328; --pepper:#f08a55; --pepper-soft:#3a2418;
+  --warn:#e0b04a; --bad:#f2766b; color-scheme:dark }}
+:root[data-theme="dark"]{
+  --bg:#101613; --surface:#18201b; --ink:#e7efe9; --muted:#9aaba1; --line:#2a352f;
+  --accent:#6cc28c; --accent-soft:#1f3328; --pepper:#f08a55; --pepper-soft:#3a2418;
+  --warn:#e0b04a; --bad:#f2766b; color-scheme:dark }
+*{box-sizing:border-box}
+a{color:var(--accent)}
+:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.top{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:12px 10px;display:flex;align-items:center;justify-content:space-between;gap:10px;border-bottom:1px solid var(--line)}
+.back{display:inline-flex;align-items:center;gap:6px;font:600 1rem var(--body);text-decoration:none;color:var(--accent);padding:6px 0;background:none;border:0;cursor:pointer}
+.toplinks{display:flex;gap:14px;font-size:.9rem}
+.toplinks a,.toplinks button{color:var(--muted);text-decoration:none;font:600 .9rem var(--body);background:none;border:0;padding:6px 0;cursor:pointer}
+.linkbtn{background:none;border:0;padding:4px 0;font:600 .9rem var(--body);color:var(--accent);cursor:pointer}
+.lhead{display:flex;align-items:center;justify-content:space-between;gap:10px;margin-top:2px}
+
+.rv{line-height:1.5}
+.rv h1{font-family:var(--display);font-weight:700;font-size:1.8rem;line-height:1.1;margin:18px 0 6px;letter-spacing:-.01em;text-wrap:balance}
+.rv h2{font-family:var(--display);font-weight:700;font-size:1.2rem;margin:0 0 8px;text-wrap:balance}
+.rv h3{font-size:.76rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:16px 0 6px}
+.rv .sub{color:var(--muted);margin:0}
+.rv section{margin-top:22px}
+#v-detail,#v-rules{padding-bottom:40px}
+
+.facts{display:flex;flex-wrap:wrap;gap:6px;margin:10px 0 8px}
+.fact{font-size:.82rem;font-weight:600;padding:3px 10px;border-radius:999px;border:1px solid var(--line);color:var(--ink);font-variant-numeric:tabular-nums;white-space:nowrap}
+.tags{display:flex;flex-wrap:wrap;gap:6px}
+.tag{font-size:.74rem;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.tag.fleisch{background:var(--pepper-soft);color:var(--pepper)}
+
+.box{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.list{list-style:none;margin:0;padding:0}
+.list li{padding:10px 14px;display:grid;grid-template-columns:5.2rem 1fr;gap:10px;align-items:baseline}
+.list li+li{border-top:1px solid var(--line)}
+.list .m{font-variant-numeric:tabular-nums;font-weight:600;text-align:right}
+.list .opt{color:var(--muted)}
+.list .opt .m{font-weight:500}
+.side li{grid-template-columns:1fr}
+.side b{display:block}
+.side small{color:var(--muted);font-size:.88rem}
+.rv .hint{font-size:.9rem;color:var(--muted);margin:6px 2px 0;text-align:left}
+
+.steps{list-style:none;margin:0;padding:0}
+.step{display:grid;grid-template-columns:auto 1fr;gap:12px;align-items:start;padding:11px 14px;cursor:pointer}
+.steps li+li{border-top:1px solid var(--line)}
+.step input{width:20px;height:20px;margin:2px 0 0;accent-color:var(--accent)}
+.step.done .t{color:var(--muted)}
+.step ul{margin:4px 0 0;padding-left:18px;color:var(--muted);font-size:.92rem}
+.reset{margin-top:10px;font:600 .88rem var(--body);background:none;border:1px solid var(--line);color:var(--muted);border-radius:10px;padding:8px 12px;cursor:pointer}
+
+.tips{list-style:none;margin:0;padding:0}
+.tips li{padding:10px 14px}
+.tips li+li{border-top:1px solid var(--line)}
+.src{font-size:.82rem;color:var(--muted);margin-top:22px}
+
+/* Rezeptliste */
+/* Suche: 16px Schrift, damit iOS beim Antippen nicht zoomt */
+.search{display:flex;align-items:center;gap:8px;margin-top:4px;padding:0 6px 0 12px;background:var(--surface);border:1px solid var(--line);border-radius:12px;color:var(--muted)}
+.search:focus-within{border-color:var(--accent)}
+.search svg{flex:none}
+.search input{flex:1;min-width:0;font:16px var(--body);color:var(--ink);background:none;border:0;padding:11px 0;outline:0;-webkit-appearance:none;appearance:none}
+.search input::-webkit-search-cancel-button{display:none}
+.search input:focus-visible{outline:0}
+.search input::placeholder{color:var(--muted)}
+.search button{flex:none;display:flex;background:none;border:0;color:var(--muted);padding:8px;cursor:pointer;border-radius:8px}
+.card .hit{font-size:.84rem;color:var(--accent);margin-top:3px;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+/* Filter in einer Zeile; reicht der Platz nicht (mehr Tags), wischt man seitlich weiter */
+.filters{display:flex;gap:5px;margin:14px 0 12px;overflow-x:auto;scrollbar-width:none;-webkit-overflow-scrolling:touch;overscroll-behavior-x:contain}
+.filters::-webkit-scrollbar{display:none}
+.filters button{flex:none;white-space:nowrap;-webkit-tap-highlight-color:transparent;font:600 .82rem var(--body);padding:6px 9px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.filters button[aria-pressed="true"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.cards{display:flex;flex-direction:column;gap:8px}
+.card{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center;padding:13px 14px;background:var(--surface);border:1px solid var(--line);border-radius:14px;text-decoration:none;color:inherit}
+.card .n{font-weight:600;font-size:1.05rem}
+.card .k{color:var(--muted);font-size:.86rem;font-variant-numeric:tabular-nums;margin-top:2px}
+.card .tags{margin-top:6px}
+.card svg{color:var(--muted)}
+
+/* Regeln */
+.rules{margin:0;padding:0;list-style:none}
+.rules li{padding:10px 14px}
+.rules li+li{border-top:1px solid var(--line)}
+.rules b{color:var(--ink)}
+code{font-size:.85em;background:var(--accent-soft);color:var(--ink);padding:1px 5px;border-radius:5px;overflow-wrap:anywhere}
+
+/* Bilder: ein Foto pro Rezept, fehlt es, steht eine ruhige Fläche mit dem Namen */
+.hero{margin:16px 0 0;border-radius:16px;overflow:hidden;aspect-ratio:16/10;max-width:100%;background:var(--accent-soft);position:relative}
+/* Foto liegt über dem Platzhalter; der Name zeigt sich nur, wenn kein Foto lädt */
+.hero img,.thumb img{position:absolute;inset:0;z-index:1;width:100%;height:100%;object-fit:cover;display:block}
+.hero .ph,.thumb .ph{position:absolute;inset:0;display:flex;align-items:center;justify-content:center;padding:16px;text-align:center;font-family:var(--display);font-weight:700;font-size:1.5rem;color:var(--accent);opacity:.75}
+.credit{font-size:.75rem;color:var(--muted);margin:6px 2px 0}
+.card{grid-template-columns:7rem 1fr auto;gap:14px;padding:10px 12px 10px 10px}
+.thumb{width:7rem;height:7rem;border-radius:10px;overflow:hidden;background:var(--accent-soft);position:relative;flex:none}
+.thumb .ph{font-size:2rem;padding:0}
+.card>div:nth-child(2){min-width:0}
+
+/* Kochmodus: Vollbild, oben Phasen-Stränge, Mitte ein großer Schritt, unten Daumen-Leiste */
+.zhead{display:flex;align-items:center;gap:8px 8px;flex-wrap:wrap;margin-bottom:4px}
+.rv .zhead h2{margin:0;font-size:1.15rem}
+.cookstart{font:600 .92rem var(--body);background:var(--accent);color:var(--surface);border:0;border-radius:10px;padding:9px 14px;cursor:pointer}
+body.cooking{overflow:hidden}
+.cook{position:fixed;inset:0;z-index:50;background:var(--bg);display:flex;flex-direction:column;
+  padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px);
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px))}
+.cook>*{width:100%;max-width:640px;margin-inline:auto}
+.c-top{display:flex;align-items:center;gap:10px;padding-block:10px 6px}
+.c-title{flex:1;min-width:0;font-family:var(--display);font-weight:700;font-size:1.05rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.c-icon{background:none;border:0;color:var(--ink);padding:6px;margin-left:-6px;cursor:pointer;display:flex}
+.c-ovbtn{font:600 .88rem var(--body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 14px;cursor:pointer}
+.c-phases{display:flex;gap:6px;overflow-x:auto;padding-block:4px 10px;scrollbar-width:none}
+.c-phases::-webkit-scrollbar{display:none}
+.c-ph{flex:none;display:flex;align-items:baseline;gap:6px;font:600 .86rem var(--body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer}
+.c-ph small{color:var(--muted);font-variant-numeric:tabular-nums;font-weight:500}
+.c-ph.on{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.c-ph.on small{color:var(--surface);opacity:.85}
+.c-ph.full:not(.on){border-color:var(--accent);color:var(--accent)}
+.c-body{flex:1;min-height:0;position:relative;display:flex}
+.c-stage{flex:1;display:flex;flex-direction:column;justify-content:center;gap:14px;touch-action:pan-y;user-select:none;-webkit-user-select:none}
+.c-card{flex:none;height:44%;min-height:220px;overflow-y:auto;background:var(--surface);border:1px solid var(--line);border-radius:18px;padding:22px 20px;display:flex;flex-direction:column;justify-content:flex-start;gap:12px}
+.c-card.is-done{border-color:var(--accent)}
+.c-meta{font-size:.78rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted)}
+.c-text{font-size:clamp(1.45rem,6vw,2.1rem);line-height:1.3;font-weight:500;text-wrap:pretty;overflow-wrap:anywhere}
+.c-text strong{color:var(--pepper);font-weight:700}
+.c-sub{margin:0;padding-left:20px;font-size:1.1rem;color:var(--muted)}
+.c-badge{align-self:flex-start;font-size:.78rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase;color:var(--accent);background:var(--accent-soft);padding:4px 10px;border-radius:999px}
+/* Fortschritt: ein Segment pro Schritt; grün = erledigt, rot = offen; Schritte nach der aktuellen Karte nur blass */
+.c-prog{display:flex;gap:3px;height:7px;flex:none;align-items:center}
+.c-prog i{flex:1;height:100%;border-radius:99px;background:var(--line);transition:background-color .2s,transform .2s}
+.c-prog i.ok{background:var(--accent)}
+.c-prog i.no{background:var(--bad)}
+.c-prog i.ahead.ok{background:color-mix(in srgb,var(--accent) 30%,var(--line))}
+.c-prog i.ahead.no{background:color-mix(in srgb,var(--bad) 22%,var(--line))}
+.c-prog i.cur{transform:scaleY(1.7)}
+.c-card{will-change:transform}
+.c-count{flex:none;margin:0;text-align:center;color:var(--muted);font-size:.86rem;font-variant-numeric:tabular-nums}
+.c-finish{display:flex;flex-direction:column;align-items:center;gap:14px;text-align:center}
+.c-ovl{flex:1;overflow-y:auto;padding-bottom:8px;-webkit-overflow-scrolling:touch}
+.c-ovl h4{font-size:.76rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+.c-ovl ul{list-style:none;margin:0;padding:0;background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.c-ovl li+li{border-top:1px solid var(--line)}
+.c-ovi{display:grid;grid-template-columns:1.5rem 1fr;gap:10px;width:100%;text-align:left;background:none;border:0;color:var(--ink);font:inherit;padding:11px 14px;cursor:pointer}
+.c-ovi.on{background:var(--accent-soft)}
+.c-ovi.d{color:var(--muted)}
+.c-chk{width:1.3rem;height:1.3rem;border-radius:6px;border:2px solid var(--line);display:flex;align-items:center;justify-content:center;font-size:.8rem;font-weight:700;color:var(--surface)}
+.c-ovi.d .c-chk{background:var(--accent);border-color:var(--accent)}
+.c-nav{display:grid;grid-template-columns:1fr 1.4fr 1fr;gap:8px;padding-block:10px 12px}
+.c-btn{font:600 1rem var(--body);padding:16px 8px;border-radius:14px;border:1px solid var(--line);background:var(--surface);color:var(--ink);cursor:pointer}
+.c-btn.primary{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.c-btn:disabled{opacity:.4;cursor:default}
+@media (prefers-reduced-motion:reduce){.c-prog i{transition:none}}
+.c-card>*{flex:none}
+.c-stage{min-height:0}
+
+.toplinks{align-items:center}
+
+/* Sprungleiste unter der Kopfleiste: Abschnitte + Kochmodus, klebt beim Scrollen */
+.jump{position:sticky;top:calc(env(safe-area-inset-top,0px) + var(--toph,52px));z-index:4;background:var(--bg);padding-block:6px 10px;margin-top:8px;border-bottom:1px solid var(--line)}
+.jt{font-family:var(--display);font-weight:700;font-size:1.05rem;line-height:1.3;height:1.4rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;margin-bottom:6px}
+.jrow{display:flex;gap:6px;overflow-x:auto;scrollbar-width:none}
+.jrow::-webkit-scrollbar{display:none}
+.jump button{flex:none;font:600 .86rem var(--body);background:var(--surface);color:var(--ink);border:1px solid var(--line);border-radius:999px;padding:7px 12px;cursor:pointer}
+.jump .go{margin-left:auto;background:var(--accent);border-color:var(--accent);color:var(--surface)}
+
+/* Klebende Leisten decken die volle Fensterbreite ab, damit breite Inhalte daneben nicht durchscheinen */
+.top,.jump{box-shadow:0 0 0 100vmax var(--bg);clip-path:inset(0 -100vmax)}
+
+/* Personen neben „Zubereitung“: − Zahl + rechnet die Mengen um; Kochmodus rechts daneben (26.10.) */
+.pers{display:flex;align-items:center;gap:2px;background:var(--surface);border:1px solid var(--line);border-radius:999px;padding:2px}
+.pb{width:28px;height:28px;flex:none;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:transparent;color:var(--accent);font:600 1.2rem/1 var(--body);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.pb:disabled{color:var(--line);cursor:default}
+.pn{min-width:2.4em;display:flex;align-items:center;justify-content:center;gap:3px;font:600 .95rem var(--body);font-variant-numeric:tabular-nums;white-space:nowrap}
+.zhead .cookstart{margin-left:auto;flex:none;padding:8px 11px;font-size:.86rem}
+
+/* Eigenes Foto: rundes Kamera-Symbol unten rechts im Rezeptbild (28.10.) */
+.upl{position:absolute;right:10px;bottom:10px;z-index:2;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.upl input{position:absolute;width:1px;height:1px;opacity:0;pointer-events:none}
+.upl:focus-within{outline:2px solid var(--accent);outline-offset:2px}
+.upl.busy{cursor:default}
+.upl.busy svg{animation:upl 1s linear infinite;opacity:.6}
+@keyframes upl{to{transform:rotate(360deg)}}
+@media (prefers-reduced-motion:reduce){.upl.busy svg{animation:none}}
+
+/* Foto bearbeiten: ein Stift-Knopf; im Modus stehen dort Kamera und Fertig, das Foto folgt dem Finger (28.10.) */
+.edb,.adjb{position:absolute;right:10px;bottom:10px;z-index:2;width:40px;height:40px;display:flex;align-items:center;justify-content:center;border-radius:50%;padding:0;background:color-mix(in srgb,var(--surface) 88%,transparent);color:var(--ink);border:1px solid var(--line);cursor:pointer;-webkit-tap-highlight-color:transparent;backdrop-filter:blur(6px);-webkit-backdrop-filter:blur(6px)}
+.hero:not(.adj) .upl,.hero:not(.adj) .adjb,.hero.adj .edb{display:none}
+.hero.adj .upl{right:58px}
+.hero.adj .adjb{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.hero.adj{box-shadow:0 0 0 2px var(--accent);touch-action:none;cursor:grab;-webkit-user-select:none;user-select:none}
+.hero.adj:active{cursor:grabbing}
+.hero.adj img{pointer-events:none}
+
+/* Zutaten auf die Einkaufsliste: runder Symbol-Knopf ganz rechts in der Kopfzeile „Zutaten“ (29.10.) */
+.zhead .toshop{margin-left:auto;flex:none;width:36px;height:36px;display:flex;align-items:center;justify-content:center;padding:0;border:0;border-radius:50%;background:var(--accent-soft);color:var(--accent);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.zhead .toshop:disabled{opacity:.5;cursor:default}
+.zhead .toshop[hidden]{display:none}
+/* Auswahl am Einkaufswagen: Tag zum Einkaufen und Übernehmen (29.10.) */
+.spop{position:fixed;z-index:40;display:flex;flex-direction:column;gap:8px;padding:10px;background:var(--surface);border:1px solid var(--line);border-radius:14px;box-shadow:0 10px 28px rgba(0,0,0,.18);width:min(320px,calc(100vw - 16px))}
+.sp-row{display:flex;align-items:center;gap:6px}
+.sp-b{flex:none;height:36px;min-width:40px;padding:0 10px;border:1px solid var(--line);border-radius:10px;background:var(--bg);color:var(--ink);font:600 .9rem var(--body);font-variant-numeric:tabular-nums;cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sp-b:disabled{opacity:.4;cursor:default}
+.sp-none[aria-pressed="true"]{background:var(--accent-soft);border-color:var(--accent);color:var(--accent)}
+.sp-date{position:relative;flex:1;min-width:0;height:36px;display:flex;align-items:center;justify-content:center;border:1px solid var(--line);border-radius:10px;background:var(--bg);font:600 .9rem var(--body);font-variant-numeric:tabular-nums;white-space:nowrap;overflow:hidden;cursor:pointer}
+.sp-date input{position:absolute;inset:0;width:100%;height:100%;opacity:0;font-size:16px;border:0;padding:0;margin:0;cursor:pointer}
+.sp-go{height:40px;border:0;border-radius:10px;background:var(--accent);color:var(--surface);font:600 .95rem var(--body);cursor:pointer;-webkit-tap-highlight-color:transparent}

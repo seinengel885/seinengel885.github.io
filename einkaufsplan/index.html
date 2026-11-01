@@ -1,0 +1,1700 @@
+<!doctype html><html><head><meta charset=utf8><meta name=viewport content="width=device-width,initial-scale=1,viewport-fit=cover"><style>:root{color-scheme:light;box-sizing:border-box;padding-top:env(safe-area-inset-top,0px);padding-bottom:env(safe-area-inset-bottom,0px)}html{scroll-padding-top:env(safe-area-inset-top,0px)}body{margin:0;padding:0;font:14px -apple-system,BlinkMacSystemFont,sans-serif;background:#fff;color:#000}img{max-width:100%}[hidden]:not([hidden=until-found i]){display:none!important}</style></head><body>
+
+
+<title>Unser Essensplan</title>
+<meta name="claude:viewport-fit-sides" content="cover">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=Bricolage+Grotesque:opsz,wght@12..96,600;12..96,700&family=Figtree:wght@400;500;600&display=swap">
+<link rel="stylesheet" href="app.css">
+<style>
+/* Layout: ein Küchenblock fürs Handy – sticky Kopf mit drei Reitern (Woche / Einkauf / Rezepte), darunter eine Spalte.
+   Farb-Tokens stehen in app.css. Rezept, Kochmodus und Regeln sind Ansichten derselben Seite (kein Seitenwechsel). */
+*{box-sizing:border-box}
+body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16px;line-height:1.45;
+  padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
+body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
+.wrap{max-width:560px;margin:0 auto}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:16px 10px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 0 100vmax var(--bg);clip-path:inset(0 -100vmax)}
+h1{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
+.sub{color:var(--muted);font-size:.9rem;margin:0}
+.tabs{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--line);border-radius:12px;padding:3px;gap:3px}
+.tabs button{font:600 .95rem var(--body);border:0;border-radius:9px;padding:9px;background:transparent;color:var(--muted);cursor:pointer;text-align:center}
+.reclink{display:flex;align-items:center;justify-content:space-between;gap:10px;padding:11px 14px;border-radius:10px;background:var(--accent-soft);color:var(--accent);font-weight:600;text-decoration:none}
+.reclink span{font-size:.82rem;font-weight:500;color:var(--muted)}
+.chip.rec{background:transparent;border:1px solid var(--accent);color:var(--accent)}
+.tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
+button:focus-visible,input:focus-visible{outline:2px solid var(--accent);outline-offset:2px}
+
+.days{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.day{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
+.day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+.day.newday{border-style:dashed;background:transparent}
+.day.jfree .dayhead{cursor:default}
+#days{overflow-anchor:none}   /* Sicht beim Nachladen hält loadOlder selbst; Browser-Anker würde doppelt verschieben */
+.day.fresh{animation:fresh 1.6s ease-out}
+.dayhead{display:grid;grid-template-columns:4rem 1fr auto;gap:12px;align-items:center;width:100%;text-align:left;background:none;border:0;padding:8px 12px;color:inherit;font:inherit;cursor:pointer}
+.date{display:flex;flex-direction:column;align-items:flex-start;line-height:1.1}
+.wd{font-family:var(--display);font-weight:700;font-size:1.15rem}
+.wd.jk{font-size:.88rem;color:var(--muted)}
+.dm{font-size:.78rem;color:var(--muted);font-variant-numeric:tabular-nums}
+.today .wd{color:var(--accent)}
+.dish{font-weight:600;font-size:1.02rem;overflow-wrap:anywhere}
+.dish.empty{color:var(--muted);font-weight:500;font-style:italic}
+.meta{display:flex;flex-wrap:wrap;gap:6px;margin-top:5px}
+.chip{font-size:.74rem;font-weight:600;letter-spacing:.02em;padding:2px 8px;border-radius:999px;background:var(--accent-soft);color:var(--accent);white-space:nowrap}
+.chip.prep{background:var(--pepper-soft);color:var(--pepper)}
+.verdict{font-size:.74rem;font-weight:700;letter-spacing:.04em;text-transform:uppercase}
+.verdict.gut{color:var(--accent)} .verdict.ok{color:var(--warn)} .verdict.nein{color:var(--bad)}
+.chev{color:var(--muted);transition:transform .2s}
+.day.open .chev{transform:rotate(90deg)}
+.panel{border-top:1px solid var(--line);padding:10px 12px 12px;display:flex;flex-direction:column;gap:10px;background:var(--bg)}
+.note{color:var(--muted);font-size:.92rem;margin:0}
+label.lbl{font-size:.74rem;font-weight:600;letter-spacing:.06em;text-transform:uppercase;color:var(--muted);display:block;margin-bottom:5px}
+input[type=text],textarea{width:100%;font:inherit;font-size:16px;color:var(--ink);background:var(--surface);border:0;border-radius:8px;padding:8px 10px}
+textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + Innenabstand */
+.rate{display:grid;grid-template-columns:repeat(3,1fr);gap:6px}
+.rate button{font:600 .88rem var(--body);padding:9px 4px;border-radius:10px;border:1px solid var(--line);background:var(--bg);color:var(--ink);cursor:pointer}
+.rate button[aria-pressed="true"][data-v="gut"]{background:var(--accent);border-color:var(--accent);color:var(--surface)}
+.rate button[aria-pressed="true"][data-v="ok"]{background:var(--warn);border-color:var(--warn);color:var(--surface)}
+.rate button[aria-pressed="true"][data-v="nein"]{background:var(--bad);border-color:var(--bad);color:var(--surface)}
+
+/* Listen-Look wie in den ToDos: Kopfzeile zum Auf-/Zuklappen, eine Karte je Abschnitt, flache 38-px-Zeilen, kaum Rahmen */
+.group{margin-top:18px}
+.lh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
+.lh h2,.group h2{font-family:var(--display);font-weight:700;font-size:1.15rem;margin:0}
+.lh .gsub,.group .gsub{color:var(--muted);font-size:.85rem;margin:0}
+.sec{font-size:.74rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
+/* Abschnittsüberschrift wie bisher, nur zum Auf-/Zuklappen (▶ davor) */
+.sh{margin:14px 0 6px}
+.sh .tg{display:flex;align-items:center;gap:4px;width:100%;background:none;border:0;padding:2px 0;margin:0;color:var(--muted);font:600 .74rem var(--body);letter-spacing:.07em;text-transform:uppercase;cursor:pointer;text-align:left}
+.sh .tg::before{content:"\25B6\FE0E";display:inline-flex;align-items:center;justify-content:center;width:1.1em;font-size:.85em;transition:transform .15s}
+.drop:not(.shut) .sh .tg::before{transform:rotate(90deg)}
+.sh .tg{-webkit-tap-highlight-color:transparent;-webkit-user-select:none;user-select:none}
+.sh .tg:focus:not(:focus-visible){outline:0}
+#foldpad{height:100vh;pointer-events:none}
+.drop.emptysec .sh{opacity:.7}
+.drop.shut .items{display:none}
+.doneblk{margin-top:18px}
+.quiet{text-align:center;margin:28px 0 0}
+.quiet .linkbtn{color:var(--muted);font-weight:500;font-size:.85rem}
+#v-zuo .zg{margin-top:20px}
+#v-zuo .zg h2{font-size:1.05rem;margin:0 0 4px}
+#v-zuo .zg .sub{font-size:.85rem;margin:0 0 8px}
+.chips{display:flex;flex-wrap:wrap;gap:6px;align-items:center}
+.kw{display:inline-flex;align-items:center;gap:2px;padding:3px 4px 3px 10px;border-radius:999px;background:var(--surface);border:1px solid var(--line);font-size:.88rem}
+.kto{color:var(--muted);font-size:.82rem}
+.kw.hard{color:var(--accent);font-weight:600}   /* Stichwort mit ! nur über grüne, fette Schrift erkennbar, kein Rahmen (1.11.) */
+.kx{border:0;background:none;color:var(--muted);font-size:1rem;line-height:1;width:22px;height:22px;border-radius:50%;cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.kadd{flex:0 0 9.5em;min-width:0}
+.kadd input{width:100%;font:inherit;font-size:16px;border:1px solid var(--line);border-radius:999px;background:var(--surface);color:var(--ink);padding:2px 10px;height:30px;outline:0}
+.kadd input:focus{border-color:var(--accent)}
+.kw.fresh{animation:kwflash 1.6s ease-out}
+@keyframes kwflash{0%,35%{background:var(--accent-soft);border-color:var(--accent)}100%{background:var(--surface)}}
+@media (prefers-reduced-motion:reduce){.kw.fresh{animation:none}}
+.kadd input::placeholder{color:var(--muted)}
+.row.fresh{animation:fresh 1.6s ease-out}
+@keyframes fresh{0%,35%{background:var(--accent-soft)}100%{background:transparent}}
+@media (prefers-reduced-motion:reduce){.row.fresh{animation:none}}
+.sh{display:flex;align-items:center;gap:8px}
+.sh .tg{flex:1;min-width:0;width:auto;white-space:nowrap}
+.sh .cf{flex:none;display:flex;align-items:center;gap:6px;margin:-6px 0;font-size:.85rem;color:var(--muted)}
+.sh .cf button{font:600 .82rem var(--body);padding:5px 10px;border-radius:8px;cursor:pointer;-webkit-tap-highlight-color:transparent}
+.sh .cf-yes{background:var(--bad);border:1px solid var(--bad);color:var(--surface)}
+.sh .cf-no{background:none;border:1px solid var(--line);color:var(--muted)}
+.sh .clr{flex:none;display:flex;align-items:center;justify-content:center;width:30px;height:26px;margin:-4px -4px -4px 0;padding:0;border:0;border-radius:8px;background:none;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent}
+.doneblk .items{opacity:.85}
+.items{background:var(--surface);border:1px solid var(--line);border-radius:10px;list-style:none;margin:0;padding:0;overflow:hidden}
+.items li+li{border-top:1px solid var(--line)}
+.item{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px 0 10px}
+.item input[type=checkbox],.edit.ex input[type=checkbox]{-webkit-appearance:none;appearance:none;width:20px;height:20px;flex:none;margin:0;border-radius:50%;border:1.8px solid var(--muted);position:relative;cursor:pointer;background:none}
+.item input[type=checkbox]:checked,.edit.ex input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
+.item input[type=checkbox]:checked::after,.edit.ex input[type=checkbox]:checked::after{content:"";position:absolute;left:5.5px;top:2px;width:5px;height:10px;border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(45deg)}
+.item .nm{flex:1;min-width:0;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+.item.done .nm{text-decoration:line-through;color:var(--muted)}
+.item .q{font-weight:600;font-variant-numeric:tabular-nums}
+.item .due{flex:none;color:var(--muted);opacity:.8;font-size:.82rem;font-variant-numeric:tabular-nums}
+.item .due.late{color:var(--bad);opacity:1}
+/* Rezeptfarben (nur bei mehreren Rezepten) */
+:root{--rc0:#2f7a4a;--rc1:#2563eb;--rc2:#c2410c;--rc3:#7c3aed;--rc4:#be185d;--rc5:#0f766e}
+@media (prefers-color-scheme:dark){:root:not([data-theme="light"]){--rc0:#6cc28c;--rc1:#7aa7ff;--rc2:#f08a55;--rc3:#b794f6;--rc4:#f472b6;--rc5:#4fd1c5}}
+:root[data-theme="dark"]{--rc0:#6cc28c;--rc1:#7aa7ff;--rc2:#f08a55;--rc3:#b794f6;--rc4:#f472b6;--rc5:#4fd1c5}
+.item .orig.rc0{color:var(--rc0)}.item .orig.rc1{color:var(--rc1)}.item .orig.rc2{color:var(--rc2)}.item .orig.rc3{color:var(--rc3)}.item .orig.rc4{color:var(--rc4)}.item .orig.rc5{color:var(--rc5)}
+.item .orig[class*="rc"][aria-expanded="true"]{background:color-mix(in srgb,currentColor 14%,transparent)}
+.edit.ex{padding:0 12px 0 10px;gap:10px}
+/* Herkunft aus einem Rezept: kleiner Knopf am Zeilenende; erster Tipp zeigt die Blase, zweiter öffnet das Rezept (29.10.) */
+.item .orig{flex:none;width:30px;height:30px;margin-right:-7px;display:flex;align-items:center;justify-content:center;border:0;border-radius:50%;background:none;color:var(--muted);cursor:pointer;padding:0;-webkit-tap-highlight-color:transparent}
+.item .orig[aria-expanded="true"]{color:var(--accent);background:var(--accent-soft)}
+#srcpop{position:fixed;z-index:26;transform:translateY(-50%);display:flex;align-items:center;gap:6px;max-width:calc(100vw - 90px);padding:6px 10px;border-radius:8px;background:var(--ink);color:var(--bg);font-size:.85rem;box-shadow:0 4px 14px rgba(0,0,0,.18);cursor:pointer;-webkit-tap-highlight-color:transparent}
+#srcpop span:first-child{white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+#srcpop::after{content:"";position:absolute;right:-5px;top:50%;margin-top:-5px;border:5px solid transparent;border-right:0;border-left-color:var(--ink)}
+.add{display:flex;align-items:center;gap:4px;margin-top:8px;background:var(--surface);border:1px solid var(--line);border-radius:10px;height:40px;padding:0 12px 0 10px}
+.add input{flex:1;min-width:0}
+.btn{font:600 .9rem var(--body);border-radius:10px;padding:9px 14px;border:1px solid var(--accent);background:var(--accent);color:var(--surface);cursor:pointer;white-space:nowrap}
+.btn.ghost{background:transparent;color:var(--muted);border-color:var(--line)}
+.btn.danger{background:var(--bad);border-color:var(--bad)}
+.tools{display:flex;flex-wrap:wrap;gap:8px;align-items:center;margin-top:10px}
+.state{background:var(--surface);border:1px dashed var(--line);border-radius:14px;padding:22px 18px;color:var(--muted);text-align:center;margin-top:10px}
+.state strong{display:block;color:var(--ink);font-family:var(--display);font-size:1.1rem;margin-bottom:4px}
+.toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:.9rem;z-index:20}
+/* Eingaben in Zeilen ohne Feldrahmen, nur Cursor – Zeile bleibt gleich hoch */
+.edit{display:flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 40px;position:relative}
+.edit.new::before,.add::before{content:"＋";color:var(--muted);flex:none;width:20px;text-align:center}
+.edit.new::before{position:absolute;left:10px}
+.edit input,.add input{background:transparent;border:0;border-radius:0;padding:0;height:36px;font:inherit;font-size:16px;color:var(--ink);outline:0}
+.edit input:focus-visible,.add input:focus-visible{outline:0}
+.edit .ei{flex:1;min-width:0}
+.edit input::placeholder,.add input::placeholder{color:var(--muted)}
+.row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.item .nm{cursor:text}
+.toast{width:max-content;max-width:calc(100vw - 32px)}
+.item{cursor:default}
+.row.dragging{opacity:.35;background:var(--accent-soft)}
+/* Ziehen wie in den ToDos (SortableJS-Look, 1.11.): Kopie mit Schatten am Finger, der Eintrag selbst steht blass
+   schon an seinem künftigen Platz, die anderen rücken in 150 ms nach. Keine Rahmen um Ziel-Kategorien. */
+.row.ghost{position:fixed;left:0;top:0;z-index:30;list-style:none;pointer-events:none;background:var(--surface);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
+.items .ph{padding:0 12px;line-height:38px;color:var(--muted);font-size:.88rem;font-style:italic}
+.drop.emptysec .sec{opacity:.7}
+/* Leere Kategorien stehen immer da, ihre Karte erscheint erst, wenn der gezogene Eintrag hineinrückt;
+   eine beim Ziehen leer gewordene Karte verschwindet (29.10., 1.11.) */
+.drop.emptysec .items{display:none}
+body.dragmode .drop .items:has(>.row.dragging){display:block}
+body.dragmode .items:not(:has(>.row)){display:none}
+body.dragmode .items .ph{display:none}
+/* Zugeklappte Kategorie als Ziel: nur der gezogene Eintrag wird sichtbar */
+body.dragmode .drop.shut .items:has(>.row.dragging)>li:not(.dragging){display:none}
+/* Merkliste je Kategorie: Listen-Symbol rechts in der Überschrift, darunter Vorschläge zum Antippen (29.10., Symbol 1.11.) */
+.sh .mkinfo{flex:none;width:28px;height:24px;margin:-4px -4px -4px 0;padding:0;display:flex;align-items:center;justify-content:center;border:0;border-radius:7px;background:none;color:var(--muted);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.sh .mkinfo[aria-expanded="true"]{background:var(--accent-soft);color:var(--accent)}
+.mkbox{display:flex;flex-wrap:wrap;gap:6px;align-items:center;padding:2px 0 8px}
+.mkbox[hidden]{display:none}
+.mkchip{display:inline-flex;align-items:center;gap:4px;height:30px;padding:0 11px;border-radius:999px;border:1px solid var(--line);background:var(--surface);color:var(--ink);font:500 .88rem var(--body);cursor:pointer;-webkit-tap-highlight-color:transparent;touch-action:manipulation}
+.mkchip.mkon{background:var(--accent-soft);border-color:var(--accent);color:var(--accent);font-weight:600}
+.mkchip.mkon::before{content:"✓";font-size:.8em}
+/* Vorschlag lange drücken: Name direkt im Chip ändern, darunter Einkaufs-Labels wählen (1.11.) */
+.mkchip{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.mkchip .lbb{width:16px;height:16px;margin-right:-5px}
+.mkchip.mked{cursor:text;border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
+/* 16px gegen den iOS-Zoom, optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() per margin-right aus */
+.mkchip .mkname{outline:0;white-space:pre;min-width:1ch;-webkit-user-select:text;user-select:text;display:inline-block;font-size:16px;transform:scale(.88);transform-origin:left center}
+.mkchip .mkname:focus,.mkchip .mkname:focus-visible{outline:0;box-shadow:none}
+.lbpick.mkpick{padding:2px 0 4px}
+.mkadd{flex:0 0 8.5em;min-width:0;margin:0}
+.mkadd input[type=text]{width:100%;height:30px;padding:0 10px;font:inherit;font-size:16px;border:1px dashed var(--line);border-radius:999px;background:transparent;color:var(--ink);outline:0}
+.mkadd input[type=text]:focus{border-style:solid;border-color:var(--accent)}
+.mkadd input::placeholder{color:var(--muted)}
+/* Labels: kleine runde Abzeichen rechts in der Zeile; im Bearbeiten darunter zum An-/Abwählen (29.10.) */
+.lbset{flex:none;display:flex;align-items:center;gap:3px;cursor:text}
+.lbb{flex:none;width:18px;height:18px;border-radius:50%;display:inline-flex;align-items:center;justify-content:center;background:var(--c);color:var(--f,#fff);font:800 8.5px/1 var(--body);letter-spacing:-.03em;padding:0;border:0;-webkit-user-select:none;user-select:none}
+.lbb svg{width:62%;height:62%}
+/* Geschäfte mit Original-Logo (1.11.): das Logo füllt das ganze Rund */
+.lbb.lg{background:none}
+.lbb.lg svg{width:100%;height:100%;display:block}
+.item.done .lbset{opacity:.55}
+.edit.ex.lbon{flex-wrap:wrap;height:auto;min-height:38px;align-content:flex-start}
+.edit.ex.lbon>input[type=checkbox]{margin-block:9px}
+.lbpick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:7px;padding:0 0 10px 30px}
+.lbpick .lbb{width:28px;height:28px;font-size:11px;cursor:pointer;opacity:.3;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .12s}
+.lbpick .lbb.on{opacity:1;box-shadow:0 0 0 2px var(--surface),0 0 0 3.5px var(--c)}
+.zg h2 .lbb{width:20px;height:20px;font-size:9px;vertical-align:-3px;margin-right:6px}
+body.dragmode{overscroll-behavior:none}
+body.dragmode #shop{padding-bottom:110px}
+#bin{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25;display:flex;align-items:center;gap:8px;padding:14px 22px;border-radius:999px;background:var(--surface);color:var(--bad);border:2px dashed var(--bad);font-weight:600;box-shadow:0 6px 20px rgba(0,0,0,.15);transition:transform .12s,background .12s}
+#bin.over{background:var(--bad);color:var(--surface);border-style:solid;transform:translateX(-50%) scale(1.08)}
+.exp .items li{padding:9px 12px}.exp .et{font-weight:600}.exp .ex{color:var(--muted);font-size:.92rem;margin:3px 0 0}
+.exp .items li .verdict{margin-left:8px}
+.hint{color:var(--muted);font-size:.82rem;text-align:center;margin:14px 0 0}
+.planbtn{display:flex;align-items:center;color:var(--accent)!important;padding:6px 4px!important;-webkit-tap-highlight-color:transparent}
+.toast .undo{margin-left:10px;font:600 .9rem var(--body);background:none;border:0;color:var(--bg);text-decoration:underline;cursor:pointer;padding:0}
+/* Woche umplanen: Gericht auf einen anderen Tag ziehen (26.10.) */
+.dayhead{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none;-webkit-tap-highlight-color:transparent}
+/* Links Tag (bleibt stehen), rechts das Gericht (wird gezogen) */
+.slot,.meal{display:block;min-width:0}
+.date .ks{font-size:.7rem;color:var(--muted);margin-top:4px;white-space:nowrap}
+.meal.placeholder{opacity:.35}
+body.dragmode .day{overflow:visible}
+.meal-ghost{position:fixed;left:0;top:0;z-index:30;pointer-events:none;background:var(--surface);border-radius:12px;padding:8px 12px;box-shadow:0 8px 24px rgba(0,0,0,.18);-webkit-user-select:none;user-select:none}
+body.dragmode #v-week{padding-bottom:110px}
+#park{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(18px + env(safe-area-inset-bottom,0px));z-index:25;padding:14px 22px;border-radius:999px;background:var(--surface);color:var(--accent);border:2px dashed var(--accent);font-weight:600;white-space:nowrap;box-shadow:0 6px 20px rgba(0,0,0,.15);transition:transform .12s,background .12s}
+#park.over{background:var(--accent);color:var(--surface);border-style:solid;transform:translateX(-50%) scale(1.08)}
+@media (prefers-reduced-motion:reduce){.chev{transition:none}}
+</style>
+
+<div class="wrap">
+  <header id="mainhead">
+    <div>
+      <h1>Unser Essensplan</h1>
+    </div>
+    <div class="tabs" role="tablist">
+      <button role="tab" id="t-week" aria-selected="true" aria-controls="v-week" data-nav="week">Woche</button>
+      <button role="tab" id="t-shop" aria-selected="false" aria-controls="v-shop" data-nav="shop">Einkauf</button>
+      <button role="tab" id="t-rec" aria-selected="false" aria-controls="v-list" data-nav="list">Rezepte</button>
+    </div>
+  </header>
+
+  <section id="v-week" role="tabpanel" aria-labelledby="t-week">
+    <div class="days" id="days">
+      <div class="state"><strong>Plan wird geladen …</strong>Hier erscheinen die Gerichte der Woche. Neue Wochen plant ihr mit Claude im Chat.</div>
+    </div>
+    <p class="hint"><button class="btn ghost" data-nav="exp">Erfahrungen ansehen</button></p>
+  </section>
+
+  <section id="v-shop" role="tabpanel" aria-labelledby="t-shop" hidden>
+    <div id="shop">
+      <div class="state"><strong>Einkaufsliste wird geladen …</strong>Hier erscheinen die Zutaten zum Abhaken.</div>
+    </div>
+  </section>
+
+  <!-- Rezepte: Ansichten derselben Seite, Inhalt kommt aus rezepte.js -->
+  <section id="v-list" class="rv" role="tabpanel" aria-labelledby="t-rec" hidden></section>
+
+  <div id="v-detail" class="rv" hidden>
+    <div class="top">
+      <button class="back" id="d-back" data-nav="list">← Alle Rezepte</button>
+      <nav class="toplinks"><button id="d-plan" class="planbtn" type="button" aria-label="Auf den Plan setzen" title="Auf den Plan setzen"><svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><rect x="3.5" y="5" width="17" height="15" rx="2"/><path d="M3.5 10h17M8 3v4M16 3v4M12 13v5M9.5 15.5h5"/></svg></button><button id="d-alt" data-nav="week">Wochenplan</button></nav>
+    </div>
+    <main id="r-main"></main>
+  </div>
+
+  <div id="v-exp" class="rv exp" hidden>
+    <div class="top">
+      <button class="back" data-nav="week">← Wochenplan</button>
+    </div>
+    <h1>Erfahrungen</h1>
+    <p class="sub">Was wir aus den Wochen gelernt haben. Claude nutzt das beim Planen.</p>
+    <div id="exp-body"></div>
+  </div>
+
+  <div id="v-zuo" class="rv" hidden>
+    <div class="top">
+      <button class="back" data-nav="shop">← Einkauf</button>
+    </div>
+    <h1>Zuordnung &amp; Einheiten</h1>
+    <p class="sub">So erkennt die Einkaufsliste Einträge und sortiert sie ein.</p>
+    <div id="zuo-body"></div>
+  </div>
+
+  <div id="v-rules" class="rv" hidden>
+    <div class="top">
+      <button class="back" data-nav="list">← Alle Rezepte</button>
+      <nav class="toplinks"><button data-nav="week">Wochenplan</button></nav>
+    </div>
+    <div id="rules-body"></div>
+  </div>
+</div>
+
+<!-- Kochmodus: ein Schritt pro Bildschirm, oben die Phasen als Stränge zum Wechseln -->
+<div class="cook" id="cook" role="dialog" aria-modal="true" aria-label="Kochmodus" hidden>
+  <div class="c-top">
+    <button class="c-icon" id="c-close" aria-label="Kochmodus beenden"><svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
+    <span class="c-title" id="c-title"></span>
+    <button class="c-ovbtn" id="c-ov" aria-expanded="false">Übersicht</button>
+  </div>
+  <nav class="c-phases" id="c-phases" aria-label="Phasen"></nav>
+  <div class="c-body">
+    <div class="c-stage" id="c-stage" aria-live="polite"></div>
+    <div class="c-ovl" id="c-ovl" hidden></div>
+  </div>
+  <div class="c-nav">
+    <button class="c-btn" id="c-prev" aria-label="Vorheriger Schritt">‹ Zurück</button>
+    <button class="c-btn primary" id="c-done">Erledigt</button>
+    <button class="c-btn" id="c-next" aria-label="Nächster Schritt">Weiter ›</button>
+  </div>
+</div>
+<div class="toast" id="toast" hidden></div>
+
+<script src="rezepte.js"></script>
+<script src="labels.js"></script>
+<script>
+const SHIFT = {"Früh":"ab 7","Mittel":"ab 8","Spät":"ab 9"};
+const VERDICT = {gut:"Gut", ok:"Okay", nein:"Nicht nochmal"};
+const SECTIONS = ["Gemüse & Obst","Vorrat","Kühlregal","Tiefkühl","Drogerie","Sonstiges"];   /* Drogerie seit 1.11. nach Tiefkühl */   /* Gewürze und Konserven sind seit 29.10. „Vorrat“ */   /* Fleisch & Fisch gehört seit 26.10. ins Kühlregal */
+let db = null, canWrite = true;
+let days = [], items = [], exps = [], openDay = null;
+const refreshers = [];
+/* Live-Abos sauber beenden, wenn die Seite verlassen wird (z. B. Wechsel zu den Rezepten).
+   Sonst bleiben sie beim Host registriert, und nach der Rückkehr lehnt er neue Abos ab. */
+const unsubs = [];
+addEventListener("pagehide",()=>{ while(unsubs.length){ try{unsubs.pop()()}catch(e){} } });
+addEventListener("pageshow",e=>{ if(e.persisted) location.reload() });   /* Nachlade-Funktionen, nur aktiv wenn das Live-Abo abgelehnt wurde */
+const $ = s => document.querySelector(s);
+const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+
+function parse(d){const [y,m,dd]=d.split("-").map(Number);return new Date(y,m-1,dd)}
+function todayStr(){const t=new Date();return `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,"0")}-${String(t.getDate()).padStart(2,"0")}`}
+function toast(msg){const t=$("#toast");t.textContent=msg;t.hidden=false;clearTimeout(toast.h);toast.h=setTimeout(()=>t.hidden=true,2200)}
+
+/* ---------- Navigation zwischen den Ansichten (eine Seite, kein Seitenwechsel) ----------
+   Jede Ansicht hat eine Sprungmarke, damit Zurück am Handy und Links wie #rezept-shakshuka funktionieren. */
+const VIEWS = {week:"#v-week", shop:"#v-shop", list:"#v-list", detail:"#v-detail", rules:"#v-rules", exp:"#v-exp", zuo:"#v-zuo"};
+const TABS = {week:"#t-week", shop:"#t-shop", list:"#t-rec"};
+const HASH = {week:"woche", shop:"einkauf", list:"rezepte", rules:"regeln", exp:"erfahrungen", zuo:"zuordnung"};
+let view = null, viewArg = null; const scrollPos = {};
+const hashFor = (v,a) => "#" + (v==="detail" ? "rezept-"+a : HASH[v]);
+function parseHash(h){
+  h = (h||"").replace(/^#/,"");
+  if(h.startsWith("rezept-")) return ["detail", h.slice(7)];
+  const v = Object.keys(HASH).find(k => HASH[k]===h);
+  return v ? [v, null] : null;
+}
+/* Rezept: links geht es dorthin zurück, woher man kam (Wochenplan oder Rezeptliste), rechts steht die andere Möglichkeit.
+   Die Herkunft steht im Verlaufseintrag, damit Zurück am Handy sie wiederherstellt. */
+let origin = "list";
+const ORIGIN = {week:"Wochenplan", list:"Alle Rezepte", shop:"Einkauf"};
+function setOrigin(o){
+  origin = ORIGIN[o] ? o : "list";
+  const other = origin === "week" ? "list" : "week";
+  const b = $("#d-back"), alt = $("#d-alt");
+  b.dataset.nav = origin; b.textContent = "← " + ORIGIN[origin];
+  alt.dataset.nav = other; alt.textContent = ORIGIN[other];
+}
+function nav(v, a=null, {push=true, restore=false, from=null}={}){
+  if(!VIEWS[v]) v = "week";
+  window.Rezepte?.closeCook();
+  if(view) scrollPos[view+(viewArg||"")] = scrollY;
+  if(v === "detail") setOrigin(from ?? (view === "detail" ? origin : view));
+  view = v; viewArg = a;
+  for(const [k,sel] of Object.entries(VIEWS)) $(sel).hidden = k!==v;
+  $("#mainhead").hidden = !(v in TABS);
+  for(const [k,sel] of Object.entries(TABS)) $(sel).setAttribute("aria-selected", k===v);
+  if(v in TABS){ try{localStorage.setItem("tab",v)}catch(e){} }
+  if(push){ try{history.pushState({v,a,o:origin},"",hashFor(v,a))}catch(e){} }
+  if(v==="list") Rezepte.showList();
+  if(v==="detail") Rezepte.showRecipe(a);
+  if(v==="rules") Rezepte.showRules();
+  if(v==="exp") renderExp();
+  if(v==="zuo") renderZuo();
+  if(v==="week"&&!restore){ histBack=3; anchorPending=true; if(days.length) renderDays() }
+  requestAnimationFrame(() => { if(v==="week"&&!restore&&!anchorPending) return; scrollTo(0, restore ? (scrollPos[v+(a||"")]||0) : 0) });
+}
+window.nav = nav;
+document.addEventListener("click", e => {
+  const b = e.target.closest("[data-nav]"); if(!b) return;
+  e.preventDefault(); nav(b.dataset.nav, b.dataset.arg||null);
+});
+addEventListener("popstate", e => {
+  const s = e.state||{}; const p = s.v ? [s.v, s.a??null] : (parseHash(location.hash)||["week",null]);
+  nav(p[0], p[1], {push:false, restore:true, from:s.o??null});
+});
+
+
+/* Woche */
+/* Angezeigte Tage (ohne Joker): Die Woche öffnet mit gestern oben; darüber liegen histBack ältere Tage,
+   die man durch Hochscrollen sieht (erst 3, beim weiteren Hochscrollen je 7 mehr). Alte Tage bleiben in der Datenbank. */
+let histBack=3, anchorPending=true;
+const histFrom=()=>addDays(todayStr(),-1-histBack);
+function shownDays(){ const from=histFrom(); return days.filter(d=>!d.joker&&d.date>=from) }
+/* Gestern (bzw. den ersten Tag ab gestern) direkt unter den Kopf rollen. keepY erlaubt die Position,
+   auch wenn darunter weniger als eine Bildschirmhöhe Inhalt steht (foldpad gibt den Platz). */
+function anchorYesterday(){
+  const y=addDays(todayStr(),-1);
+  const art=[...$("#days").querySelectorAll(".day:not(.spare)")].find(a=>a.dataset.id&&(days.find(d=>d.id===a.dataset.id)?.date||"")>=y);
+  if(!art){scrollTo(0,0);return}
+  const head=$("#mainhead").getBoundingClientRect().bottom;
+  const top=Math.max(0,Math.round(art.getBoundingClientRect().top+scrollY-head-8));
+  keepY=Math.max(keepY,top); scrollTo(0,top);
+}
+/* Nahe am oberen Rand: 7 ältere Tage davor hängen und die Sicht stehen lassen.
+   Erst wenn das Scrollen steht (kein Finger, kein Schwung, kein Gummiband): Ein scrollTo mitten im iOS-Schwung
+   wird vom weiterlaufenden Schwung überschrieben, dann springt die Liste (Patrick, 29.10.). Neue Tage blenden kurz ein. */
+let olderT=0;
+const scheduleOlder=()=>{ clearTimeout(olderT); olderT=setTimeout(loadOlder,200) };
+function loadOlder(){
+  if(view!=="week"||dDrag||rolling||anchorPending) return;
+  if(touching){ scheduleOlder(); return }
+  if(scrollY<0||scrollY>120) return;
+  const from=histFrom(); if(!days.some(d=>!d.joker&&d.date<from)) return;
+  const first=$("#days .day:not(.spare)"), before=first?first.getBoundingClientRect().top:0, oldFirst=first?.dataset.id;
+  histBack+=7; renderDays();
+  const same=oldFirst&&$(`#days .day[data-id="${CSS.escape(oldFirst)}"]`);
+  if(same){ const d=same.getBoundingClientRect().top-before; if(d) scrollTo(0,scrollY+d) }
+  if(!reducedMotion()) for(const a of $("#days").querySelectorAll(".day:not(.spare)")){ if(a===same) break; a.animate([{opacity:0},{opacity:1}],{duration:220,easing:"ease-out"}) }
+}
+addEventListener("scroll",scheduleOlder,{passive:true});
+addEventListener("touchend",scheduleOlder,{passive:true});
+/* Joker in eigener Reihenfolge (Feld order); ohne order nach Datum, ganz hinten */
+function jokerList(){
+  const k=d=>d.order??1e15;
+  return days.filter(d=>d.joker).sort((a,b)=>k(a)-k(b)||(a.date<b.date?-1:a.date>b.date?1:0)||(a.id<b.id?-1:1));
+}
+function renderDays(){
+  if(dDrag||rolling){dPending=true;return}   /* Neu-Rendern beim Ziehen/Rollen würde Karte bzw. Animation zerstören; danach nachholen */
+  const el=$("#days");
+  if(!days.length){el.innerHTML=`<div class="state"><strong>Noch kein Plan</strong>Sagt Claude im Chat „Plane die nächste Woche“, dann erscheinen die Tage hier.</div>`;return}
+  const today=todayStr();
+  /* Joker: Gerichte ohne festen Tag (Feld joker:true, Datum 2099-… nur zum Sortieren), stehen unten in eigener Gruppe */
+  const reg=shownDays(), jok=jokerList();
+  if(!reg.length){el.innerHTML=`<div class="state"><strong>Noch kein Plan</strong>Sagt Claude im Chat „Plane die nächste Woche“, dann erscheinen die Tage hier.</div>`;return}
+  const card=d=>{
+    const dt=parse(d.date);
+    const cls=["day", d.date<today?"past":"", d.date===today?"today":"", openDay===d.id?"open":""].join(" ");
+    /* Kerstins Schicht gehört zum Tag, nicht zum Gericht → links unter dem Datum */
+    const ks=d.shift?`<span class="ks">${esc(d.shift)}${SHIFT[d.shift]?" "+esc(SHIFT[d.shift]):""}</span>`:"";
+    return `<article class="${cls}${d.joker?" spare":""}" data-id="${esc(d.id)}"${d.joker?` data-key="${esc(d.id)}"`:""}>
+      <button class="dayhead" aria-expanded="${openDay===d.id}">
+        <span class="date">${d.joker?`<span class="wd jk"></span>`:`<span class="wd">${dt.toLocaleDateString("de-DE",{weekday:"short"}).replace(".","")}</span><span class="dm">${dt.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span>${ks}`}</span>
+        <span class="slot">${hasMeal(d)?mealHTML(d):emptyHTML(d.id)}</span>
+        <svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg>
+      </button>
+      ${openDay===d.id?panel(d):""}
+    </article>`};
+  /* „Ohne Tag“ steht immer da und endet mit einem freien Platz – Ablageziel, auch wenn das letzte Gericht herausgezogen wird */
+  el.innerHTML=reg.map(card).join("")+`<div class="sec">Ohne Tag</div>`+jok.map(card).join("")+freeRowHTML();
+  if(anchorPending&&view==="week"){anchorPending=false;anchorYesterday();scheduleOlder()}
+}
+const JFREE="__frei";
+const freeRowHTML=()=>`<article class="day spare jfree" data-key="${JFREE}"><button class="dayhead" tabindex="-1"><span class="date"><span class="wd jk"></span></span><span class="slot">${emptyHTML(JFREE)}</span><span></span></button></article>`;
+/* Rechter Teil: das Gericht (data-key = Dokument, in dem es gerade steht) */
+function mealHTML(d){
+  const chips=[];
+  if(d.recipe) chips.push(`<span class="chip rec">Rezept</span>`);
+  /* Tags sind nur noch Arbeitshinweise zum Gericht (Einkaufen, Vorkochen, doppelte Menge); Tagesinfos wie Kinder/Homegroup stehen seit 27.10. nicht mehr im Plan */
+  (d.tags||[]).forEach(t=>chips.push(`<span class="chip prep">${esc(t)}</span>`));
+  const v=d.rating?`<span class="verdict ${d.rating}">${VERDICT[d.rating]}</span>`:"";
+  return `<span class="meal" data-key="${esc(d.id)}"><span class="dish">${esc(d.dish||"Noch offen")}</span>${chips.length||v?`<span class="meta">${chips.join("")}${v}</span>`:""}</span>`;
+}
+const emptyHTML=id=>`<span class="meal empty-m" data-key="empty:${esc(id)}"><span class="dish empty">${id===NEWDAY?"Neuer Tag":"Noch offen"}</span></span>`;
+function panel(d){
+  const dis=canWrite?"":"disabled";
+  return `<div class="panel">
+    ${d.note?`<p class="note">${esc(d.note)}</p>`:""}
+    ${d.recipe?`<a class="reclink" href="#rezept-${esc(d.recipe)}" data-nav="detail" data-arg="${esc(d.recipe)}">Rezept öffnen<span>Zutaten &amp; Schritte →</span></a>`:""}
+    <div><label class="lbl" for="dish-${d.id}">Gericht</label><input type="text" id="dish-${d.id}" data-f="dish" value="${esc(d.dish)}" ${dis}></div>
+    <div><span class="lbl">Wie war's?</span><div class="rate">${Object.entries(VERDICT).map(([k,l])=>`<button data-v="${k}" aria-pressed="${d.rating===k}" ${dis}>${l}</button>`).join("")}</div></div>
+    <div><label class="lbl" for="cmt-${d.id}">Notiz für den Rückblick</label><textarea id="cmt-${d.id}" data-f="comment" placeholder="z. B. zu scharf, doppelte Menge nächstes Mal" ${dis}>${esc(d.comment)}</textarea></div>
+  </div>`;
+}
+$("#days").addEventListener("click",e=>{
+  if(e.target.closest(".reclink")) return;   /* Navigation übernimmt nav() */
+  if(Date.now()-dEnded<400) return;          /* Klick direkt nach dem Ablegen nicht als Aufklappen werten */
+  const art=e.target.closest(".day"); if(!art||art.classList.contains("jfree")) return;
+  const id=art.dataset.id;
+  if(e.target.closest(".dayhead")){toggleDay(art);return}
+  const r=e.target.closest(".rate button");
+  if(r){const d=days.find(x=>x.id===id);const v=d.rating===r.dataset.v?null:r.dataset.v;save("days/"+id,{rating:v},"Bewertung gespeichert")}
+});
+$("#days").addEventListener("change",e=>{
+  const f=e.target.dataset.f; if(!f) return;
+  const id=e.target.closest(".day").dataset.id;
+  const d=days.find(x=>x.id===id); const val=e.target.value.trim();
+  if((d[f]||"")!==val) save("days/"+id,{[f]:val},"Gespeichert");
+});
+
+/* ---------- Umplanen: Gericht auf einen anderen Tag ziehen ----------
+   Handy: Gericht (rechter Teil) lange drücken, Maus: direkt ziehen. Der Tag links bleibt stehen.
+   Schon beim Ziehen rücken alle Gerichte an ihren künftigen Platz (150 ms, wie SortableJS in den ToDos). Auf einem Tag ablegen = Gericht kommt dorthin, das Gericht des Zieltags
+   und die folgenden rutschen je einen Tag nach hinten, bis ein freier Tag kommt (der Starttag wird frei);
+   was über den letzten Tag hinausrutscht, wird der erste Joker. Auf einem Joker ablegen = wie „Als Joker parken“.
+   Am Tag bleiben Datum und Kerstins Schicht; mit dem Gericht wandern Rezept, Notiz, Tags, Bewertung und Kommentar.
+   Unten „Als Joker parken“: Gericht wird Joker, der Tag ist wieder offen. Ein Joker, der leer würde, wird gelöscht. */
+const mealOf=d=>({dish:d.dish||"",recipe:d.recipe||"",tags:d.tags||[],note:d.note||"",rating:d.rating??null,comment:d.comment||""});
+const EMPTY_MEAL={dish:"",recipe:"",tags:[],note:"",rating:null,comment:""};
+const hasMeal=d=>!!(d.dish||d.recipe);
+const dayName=d=>d.joker?"ohne Tag":parse(d.date).toLocaleDateString("de-DE",{weekday:"short"}).replace(".","");
+const park=document.createElement("div"); park.id="park"; park.hidden=true; park.textContent="Ohne Tag ablegen";
+document.body.appendChild(park);
+let dPress=null, dDrag=null, dPending=false, dEnded=0, rolling=0;
+
+/* ---------- Tage auf-/zurollen (Skill artefakt-bau, aufklappen.md) ----------
+   180 ms über Höhe, Innen-/Außenabstand, Rahmen und Deckkraft. Ohne Neuzeichnen: das Panel wird direkt
+   eingefügt bzw. nach dem Zurollen entfernt, damit der Pfeil mitdreht. Zuklappen hält den Kopf (keepY/foldpad).
+   Erneuter Tipp während des Zurollens bricht ab, der Tag bleibt offen. Nur ein Tag ist offen. */
+const ROLL={duration:180,easing:"cubic-bezier(.4,0,.2,1)"};
+function roll(el,close){
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches) return null;
+  el.style.boxSizing="border-box"; el.style.overflow="hidden";
+  const cs=getComputedStyle(el);
+  const full={height:el.offsetHeight+"px",paddingTop:cs.paddingTop,paddingBottom:cs.paddingBottom,marginTop:cs.marginTop,marginBottom:cs.marginBottom,borderTopWidth:cs.borderTopWidth,borderBottomWidth:cs.borderBottomWidth,opacity:1};
+  const zero={height:"0px",paddingTop:"0px",paddingBottom:"0px",marginTop:"0px",marginBottom:"0px",borderTopWidth:"0px",borderBottomWidth:"0px",opacity:0};
+  const a=el.animate(close?[full,zero]:[zero,full],{...ROLL,fill:close?"forwards":"none"});
+  const tidy=()=>{el.style.overflow="";el.style.boxSizing=""};
+  a.finished.then(tidy,tidy);
+  return a;
+}
+const flushDays=()=>{ if(!rolling&&!dDrag&&dPending){dPending=false;renderDays()} };
+const setExp=(art,on)=>{art.classList.toggle("open",on);art.querySelector(".dayhead")?.setAttribute("aria-expanded",on)};
+function track(a,done){ rolling++; const end=ok=>{rolling--;done?.(ok);flushDays()}; if(a) a.finished.then(()=>end(true),()=>end(false)); else end(true) }
+function closePanel(art){
+  const p=art.querySelector(".panel:not(.closing)"); setExp(art,false); if(!p) return;
+  p.classList.add("closing"); keepY=Math.max(keepY,scrollY);
+  track(roll(p,true),ok=>{ if(ok&&p.classList.contains("closing")) p.remove() });
+}
+function openPanel(art){
+  const d=days.find(x=>x.id===art.dataset.id); if(!d) return;
+  setExp(art,true); art.insertAdjacentHTML("beforeend",panel(d));
+  track(roll(art.lastElementChild,false));
+}
+function toggleDay(art){
+  const id=art.dataset.id, c=art.querySelector(".panel.closing");
+  document.querySelectorAll("#days .day.open").forEach(a=>{ if(a.dataset.id!==id) closePanel(a) });
+  if(c){ c.classList.remove("closing"); c.getAnimations().forEach(a=>a.cancel()); setExp(art,true); openDay=id; return }
+  if(openDay===id){ openDay=null; closePanel(art) } else { openDay=id; openPanel(art) }
+}
+
+/* Werte wie SortableJS in den ToDos: 280 ms langer Druck (Touch), 6 px Wackeln erlaubt, Maus ab 3 px, 150 ms Nachrücken */
+const SLIDE={duration:150,easing:"ease"};
+const reducedMotion=()=>matchMedia("(prefers-reduced-motion: reduce)").matches;
+
+$("#days").addEventListener("pointerdown",e=>{
+  if(!canWrite||!db||e.button>0||dDrag) return;
+  const m=e.target.closest(".meal"); if(!m||m.classList.contains("empty-m")) return;   /* offene Tage sind nur Ziel */
+  const x=e.clientX,y=e.clientY, mouse=e.pointerType==="mouse";
+  if(mouse) e.preventDefault();
+  dPress={m,x,y,mouse,t:mouse?null:setTimeout(()=>dStart(m,x,y,false),280)};
+});
+addEventListener("pointermove",e=>{
+  if(dPress&&!dDrag){
+    const d=Math.hypot(e.clientX-dPress.x,e.clientY-dPress.y);
+    if(dPress.mouse){ if(d>3) dStart(dPress.m,dPress.x,dPress.y,true) }
+    else if(d>6){clearTimeout(dPress.t);dPress=null}
+  }
+  if(dDrag&&!dDrag.ending){dDrag.x=e.clientX;dDrag.y=e.clientY;dMove()}
+},{passive:true});
+addEventListener("pointerup",()=>{ if(dPress){clearTimeout(dPress.t);dPress=null} if(dDrag&&!dDrag.ending) dEnd(false) });
+addEventListener("pointercancel",()=>{ if(dPress){clearTimeout(dPress.t);dPress=null} if(dDrag&&!dDrag.ending) dEnd(true) });
+document.addEventListener("touchmove",e=>{ if(dDrag) e.preventDefault() },{passive:false});
+$("#days").addEventListener("contextmenu",e=>{ if(e.target.closest(".meal")) e.preventDefault() });
+
+/* ---------- Plan als Belegung: welcher Tag trägt welches Gericht, welche Joker in welcher Reihenfolge ----------
+   Schlüssel eines Gerichts = Dokument, in dem es vor dem Ziehen steht (Tag-id oder Joker-id). */
+/* NEWDAY: Platz hinter dem letzten Tag, nur während des Ziehens sichtbar. Wer dort ablegt, bekommt den Folgetag neu angelegt.
+   Nachrutschende Gerichte füllen ihn nicht, sie werden wie bisher „ohne Tag“. */
+const NEWDAY="__neu";
+const nextPlanDate=()=>{ const reg=shownDays(); return reg.length?addDays(reg[reg.length-1].date,1):todayStr() };
+function baseLayout(){
+  const reg=shownDays();
+  return {reg:[...reg.map(d=>d.id),NEWDAY], day:new Map([...reg.map(d=>[d.id,hasMeal(d)?d.id:null]),[NEWDAY,null]]), jok:jokerList().map(j=>j.id), pushed:0};
+}
+function layoutFor(src,tg){
+  const L=baseLayout();
+  if(L.day.get(src)===src) L.day.set(src,null); else L.jok=L.jok.filter(k=>k!==src);
+  if(tg.type==="day"){
+    /* Gericht auf den Zieltag; was dort steht, rutscht nach hinten bis zum nächsten freien Tag; über Freitag hinaus → erster Joker */
+    let carry=src, i=L.reg.indexOf(tg.id);
+    for(;;){
+      if(i>=L.reg.length||(L.reg[i]===NEWDAY&&tg.id!==NEWDAY)){L.jok.unshift(carry);break}
+      const cur=L.day.get(L.reg[i]); L.day.set(L.reg[i],carry);
+      if(cur==null) break;
+      carry=cur; i++; L.pushed++;
+    }
+  } else if(tg.type==="joker") L.jok.splice(Math.min(tg.at,L.jok.length),0,src);
+  else L.jok.push(src);   /* „Als Joker parken“ → ans Ende */
+  return L;
+}
+const sameLayout=(A,B)=>A.reg.every(id=>A.day.get(id)===B.day.get(id))&&A.jok.join("|")===B.jok.join("|");
+const sameTg=(a,b)=>a&&b&&a.type===b.type&&a.id===b.id&&a.at===b.at;
+
+/* ---------- Vorschau: Gerichte in ihre künftigen Plätze hängen, dann alles gleiten lassen (FLIP) ---------- */
+function snap(){
+  const m=new Map();
+  $("#days").querySelectorAll(".day,.meal,.sec").forEach(el=>{ const r=el.getBoundingClientRect(); m.set(el,{x:r.left,y:r.top,h:r.height}) });
+  return m;
+}
+function flip(before){
+  if(reducedMotion()) return;
+  const after=snap();
+  for(const [el,b] of before){
+    const a=after.get(el); if(!a) continue;
+    if(el.classList.contains("meal")){
+      /* Gericht liegt in einer Karte, die selbst gleitet: deren Weg abziehen, sonst doppelt */
+      const art=el.closest(".day"), ab=before.get(art), aa=after.get(art);
+      const cy=ab&&aa?ab.y-aa.y:0, cx=ab&&aa?ab.x-aa.x:0;
+      const dx=b.x-a.x-cx, dy=b.y-a.y-cy;
+      if(Math.abs(dx)>.5||Math.abs(dy)>.5) el.animate([{transform:`translate(${dx}px,${dy}px)`},{transform:"none"}],SLIDE);
+    } else {
+      const dy=b.y-a.y, dh=Math.abs(b.h-a.h)>.5;
+      if(Math.abs(dy)>.5||dh) el.animate([{transform:`translateY(${dy}px)`,...(dh?{height:b.h+"px"}:{})},{transform:"none",...(dh?{height:a.h+"px"}:{})}],SLIDE);
+    }
+  }
+  for(const [el] of after) if(!before.has(el)) el.animate([{opacity:0},{opacity:1}],SLIDE);   /* neu erschienen (z. B. „Noch offen“) */
+}
+function measure(){
+  const sy=scrollY;
+  dDrag.slots=[...$("#days").querySelectorAll(".day")].map(a=>{const r=a.getBoundingClientRect();
+    return {day:!a.classList.contains("spare"),id:a.dataset.id,key:a.dataset.key,top:r.top+sy,bottom:r.bottom+sy}});
+}
+function jokerRow(k){
+  const a=document.createElement("article"); a.className="day spare"; a.dataset.key=k;
+  a.innerHTML=`<button class="dayhead" aria-expanded="false" tabindex="-1"><span class="date"><span class="wd jk"></span></span><span class="slot"></span><svg class="chev" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></button>`;
+  return a;
+}
+function emptyEl(id){
+  let e=dDrag.empties.get(id);
+  if(!e){const t=document.createElement("span");t.innerHTML=emptyHTML(id);e=t.firstElementChild;dDrag.empties.set(id,e)}
+  return e;
+}
+function showLayout(L,animate=true){
+  const box=$("#days"), before=animate?snap():null;
+  box.querySelectorAll(".day,.meal,.sec").forEach(el=>el.getAnimations().forEach(x=>x.cancel()));
+  for(const id of L.reg){
+    const art=box.querySelector(`.day[data-id="${CSS.escape(id)}"]:not(.spare)`); if(!art) continue;
+    const k=L.day.get(id), el=k?dDrag.meals.get(k):emptyEl(id), slot=art.querySelector(".slot");
+    if(slot.firstElementChild!==el) slot.replaceChildren(el);
+  }
+  let sec=box.querySelector(".sec");
+  if(L.jok.length&&!sec){sec=document.createElement("div");sec.className="sec";sec.textContent="Ohne Tag";box.appendChild(sec)}
+  const keep=new Set(L.jok);
+  box.querySelectorAll(".day.spare:not(.jfree)").forEach(a=>{ if(!keep.has(a.dataset.key)) a.remove() });
+  for(const k of L.jok){
+    let a=dDrag.spares.get(k); if(!a){a=jokerRow(k);dDrag.spares.set(k,a)}
+    const el=dDrag.meals.get(k), slot=a.querySelector(".slot");
+    if(slot.firstElementChild!==el) slot.replaceChildren(el);
+    box.appendChild(a);   /* hängt in der neuen Reihenfolge an (verschiebt, erzeugt nichts neu) */
+  }
+  const fr=box.querySelector(".jfree"); if(fr) box.appendChild(fr);   /* freier Platz bleibt am Ende */
+  measure();
+  if(before) flip(before);
+}
+
+function dStart(m,x,y,mouse){
+  dPress=null;
+  const key=m.dataset.key, src=days.find(v=>v.id===key); if(!src) return;
+  if(!mouse) navigator.vibrate?.(12);
+  /* offene Tage zuklappen, damit nur noch Tag und Gericht zu sehen sind */
+  const box=$("#days"), before=snap();
+  box.querySelectorAll(".panel").forEach(p=>p.remove());
+  box.querySelectorAll(".day.open").forEach(a=>setExp(a,false)); openDay=null;
+  /* Platz für den neuen Tag hinter dem letzten Tag einblenden (verschwindet beim nächsten Zeichnen) */
+  const lastReg=[...box.querySelectorAll(".day:not(.spare)")].pop();
+  if(lastReg){ const nd=parse(nextPlanDate()), a=document.createElement("article"); a.className="day newday"; a.dataset.id=NEWDAY;
+    a.innerHTML=`<button class="dayhead" tabindex="-1"><span class="date"><span class="wd">${nd.toLocaleDateString("de-DE",{weekday:"short"}).replace(".","")}</span><span class="dm">${nd.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span></span><span class="slot">${emptyHTML(NEWDAY)}</span><span></span></button>`;
+    lastReg.after(a) }
+  const r=m.getBoundingClientRect();
+  const ghost=document.createElement("div"); ghost.className="meal-ghost"; ghost.style.width=(r.width+24)+"px";
+  ghost.appendChild(m.cloneNode(true)); document.body.appendChild(ghost);
+  const init=src.joker?{type:"joker",at:jokerList().findIndex(j=>j.id===key)}:{type:"day",id:key};
+  dDrag={key,src,ghost,dx:x-r.left+12,dy:y-r.top+8,x,y,tg:init,changed:0,
+    base:baseLayout(), meals:new Map([...box.querySelectorAll(".meal:not(.empty-m)")].map(e=>[e.dataset.key,e])),
+    empties:new Map([...box.querySelectorAll(".meal.empty-m")].map(e=>[e.dataset.key.slice(6),e])),
+    spares:new Map([...box.querySelectorAll(".day.spare:not(.jfree)")].map(a=>[a.dataset.key,a]))};
+  dDrag.L=dDrag.base;
+  m.classList.add("placeholder");
+  m.addEventListener("touchmove",ev=>{ if(dDrag) ev.preventDefault() },{passive:false});
+  document.body.classList.add("dragmode"); park.hidden=!!src.joker;
+  measure(); flip(before);
+  /* am oberen/unteren Rand weiterscrollen, auch wenn der Finger stillhält */
+  dDrag.iv=setInterval(()=>{
+    if(!dDrag||dDrag.ending) return;
+    const top=$("#mainhead").getBoundingClientRect().bottom;
+    const v=dDrag.y<top+30?-10:dDrag.y>innerHeight-50?10:0;
+    if(v){scrollBy(0,v);dMove()}
+  },16);
+  dMove();
+}
+function dMove(){
+  const g=dDrag, {x,y}=g;
+  g.ghost.style.transform=`translate(${x-g.dx}px,${y-g.dy}px)`;
+  const pr=park.getBoundingClientRect(), onPark=!park.hidden&&x>=pr.left&&x<=pr.right&&y>=pr.top&&y<=pr.bottom;
+  park.classList.toggle("over",onPark);
+  let tg=null;
+  if(onPark) tg={type:"park"};
+  else {
+    const yd=y+scrollY, hit=g.slots.find(s=>yd>=s.top&&yd<s.bottom);
+    if(hit?.day) tg={type:"day",id:hit.id};
+    else if(hit){
+      /* zwischen den Jokern: vor dem ersten, dessen Mitte unter dem Finger liegt */
+      const rows=g.slots.filter(s=>!s.day&&s.key!==g.key);
+      let at=rows.findIndex(s=>yd<(s.top+s.bottom)/2); if(at<0) at=rows.length;
+      tg={type:"joker",at};
+    }
+  }
+  /* außerhalb der Liste bleibt die letzte Vorschau stehen; kurz nach einem Wechsel nicht sofort zurückspringen */
+  if(!tg||sameTg(tg,g.tg)||performance.now()-g.changed<80) return;
+  g.tg=tg; g.changed=performance.now();
+  g.L=layoutFor(g.key,tg); showLayout(g.L);
+}
+async function dEnd(cancel){
+  const g=dDrag; g.ending=true; clearInterval(g.iv); dEnded=Date.now();
+  park.hidden=true; park.classList.remove("over");
+  if(cancel){ g.L=g.base; showLayout(g.base) }
+  /* Kopie gleitet auf den Platzhalter, dann ist das Gericht an seinem Platz */
+  const ph=g.meals.get(g.key), r=ph.getBoundingClientRect();
+  rolling++;
+  const fly=reducedMotion()?null:g.ghost.animate([{transform:g.ghost.style.transform},{transform:`translate(${r.left-12}px,${r.top-8}px)`}],{...SLIDE,fill:"forwards"});
+  const done=()=>{ g.ghost.remove(); ph.classList.remove("placeholder"); document.body.classList.remove("dragmode");
+    dDrag=null; rolling--; dPending=true; flushDays() };
+  if(fly) fly.finished.then(done,done); else done();
+  if(cancel||sameLayout(g.L,g.base)) return;
+  const tg=g.tg, ch=changesFor(g.L), target=tg.type==="day"?(tg.id===NEWDAY?{date:nextPlanDate()}:days.find(v=>v.id===tg.id)):null;
+  const msg=target?`Auf ${dayName(target)} verschoben`+(g.L.pushed?` · ${g.L.pushed===1?"1 Gericht rutscht":g.L.pushed+" Gerichte rutschen"} nach hinten`:"")
+    :g.src.joker?"Reihenfolge geändert":`${g.src.dish} ohne Tag abgelegt`;
+  await applyDays(ch,"next");
+  if(ch.ok) moveUndo(msg,ch);
+}
+/* Aus der Belegung die Schreibungen ableiten: je Dokument neuer Inhalt (null = löschen) und alter fürs Rückgängigmachen.
+   Am Tag bleiben Datum und Schicht; Joker bekommen eine Reihenfolge (order), neue Joker eine neue id. */
+function changesFor(L){
+  const strip=({id,...rest})=>rest, byId=new Map(days.map(d=>[d.id,d])), ch=[];
+  for(const id of L.reg){
+    if(id===NEWDAY){ const k=L.day.get(id); if(k){ const nd=nextPlanDate(); ch.push({id:nd,prev:null,next:{date:nd,...mealOf(byId.get(k))}}) } continue }
+    const d=byId.get(id), k=L.day.get(id), m=k?mealOf(byId.get(k)):EMPTY_MEAL;
+    if(JSON.stringify(m)!==JSON.stringify(mealOf(d))) ch.push({id,prev:strip(d),next:{...strip(d),...m}});
+  }
+  const keepJ=new Set(L.jok);
+  for(const j of days.filter(d=>d.joker)) if(!keepJ.has(j.id)) ch.push({id:j.id,prev:strip(j),next:null});
+  const stamp=Date.now();
+  L.jok.forEach((k,i)=>{
+    const o=(i+1)*1000, d=byId.get(k);
+    if(d.joker){ if(d.order!==o) ch.push({id:k,prev:strip(d),next:{...strip(d),order:o}}) }
+    else ch.push({id:`joker-${stamp}-${i}`,prev:null,next:{date:"2099-12-31",joker:true,...mealOf(d),order:o}});
+  });
+  return ch;
+}
+/* Schreibt die geplanten Stände lokal und in die Datenbank */
+/* Eigene, noch nicht bestätigte Änderungen: id → {body (null = gelöscht), t}. Die Datenbank meldet nach jeder
+   einzelnen Schreibung einen Zwischenstand; ohne diese Überlagerung sprängen Gerichte kurz auf den alten Platz zurück.
+   Ein Eintrag fällt weg, sobald ein Stand der Datenbank ihn bestätigt (oder nach 15 s). */
+const overlay=new Map();
+const canon=v=>JSON.stringify(v,(k,x)=>x&&typeof x==="object"&&!Array.isArray(x)?Object.fromEntries(Object.keys(x).sort().map(k=>[k,x[k]])):x);
+function applySnap(list){
+  const now=Date.now(), byId=new Map(list.map(d=>[d.id,d]));
+  for(const [id,o] of overlay){
+    const cur=byId.get(id);
+    if(now-o.t>15000){overlay.delete(id);continue}
+    if(o.body===null){ if(!cur) overlay.delete(id); else byId.delete(id) }
+    else { const {id:_,...rest}=cur||{}; if(cur&&canon(rest)===canon(o.body)) overlay.delete(id); else byId.set(id,{id,...o.body}) }
+  }
+  days=[...byId.values()].sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:0);
+  renderDays();
+}
+async function applyDays(ch,which){
+  const now=Date.now(); for(const c of ch) overlay.set(c.id,{body:c[which],t:now});
+  for(const c of ch){
+    const body=c[which]; days=days.filter(v=>v.id!==c.id);
+    if(body) days.push({id:c.id,...body});
+  }
+  days.sort((x,y)=>x.date<y.date?-1:x.date>y.date?1:0); renderDays();
+  try{
+    for(const c of ch){ const body=c[which]; if(body) await db.doc("days/"+c.id).set(body); else await db.doc("days/"+c.id).delete() }
+    refreshers.forEach(f=>f()); ch.ok=true;
+  }catch(err){ ch.ok=false; for(const c of ch) overlay.delete(c.id); refreshers.forEach(f=>f()); fail(err) }
+}
+function moveUndo(msg,ch){
+  const t=$("#toast"); t.innerHTML=`${esc(msg)} <button class="undo" type="button">Rückgängig</button>`; t.hidden=false;
+  clearTimeout(toast.h); toast.h=setTimeout(()=>{t.hidden=true},5000);
+  t.querySelector(".undo").onclick=async()=>{ clearTimeout(toast.h); t.hidden=true; await applyDays(ch,"prev"); if(ch.ok) toast("Rückgängig gemacht") };
+}
+
+/* Erfahrungen: Sammlung "erfahrungen", von Claude gepflegt (Rückblick am Wochenende). Nur lesen. */
+function renderExp(){
+  const el=$("#exp-body"); if(!el) return;
+  if(!exps.length){el.innerHTML=`<div class="state"><strong>Noch keine Erfahrungen</strong>Nach dem Wochenrückblick stehen sie hier.</div>`;return}
+  const cats=[...new Set(exps.slice().sort((a,b)=>(a.catOrder??0)-(b.catOrder??0)).map(e=>e.kategorie||"Sonstiges"))];
+  el.innerHTML=cats.map(c=>`<div class="group"><h2>${esc(c)}</h2><ul class="items">${
+    exps.filter(e=>(e.kategorie||"Sonstiges")===c).sort((a,b)=>(a.order??0)-(b.order??0)).map(e=>`<li><span class="et">${esc(e.titel)}</span>${e.bew&&VERDICT[e.bew]?`<span class="verdict ${e.bew}">${VERDICT[e.bew]}</span>`:""}${e.text?`<p class="ex">${esc(e.text)}</p>`:""}</li>`).join("")}</ul></div>`).join("");
+}
+
+/* Einkauf
+   Bedienung (22.10., 29.10.): Kreis = abhaken · Text antippen = ändern · lange drücken = ziehen:
+   auf einen Bereich (auch einer anderen Liste) = verschieben, auf den Papierkorb unten = löschen (mit Rückgängig).
+   Eine Zeile = ein Feld („3 Karotten“); Menge und Name trennt parseLine, gespeichert bleiben name und qty.
+   Enter speichert und öffnet direkt darunter eine neue Zeile. */
+let editId=null, drag=null;
+/* Neue Zeile direkt in einem Bereich: Enter im Namen springt zur Menge, Enter in der Menge speichert
+   und öffnet am Ende desselben Bereichs die nächste leere Zeile (26.10.) */
+let addAt=null;   /* {list, sec, after} oder null; after = order der Zeile, unter der die neue steht (null = am Ende) */
+/* Zugeklappte Abschnitte je Gerät merken (Liste|Abschnitt) */
+let shut=new Set(); try{shut=new Set(JSON.parse(localStorage.getItem("einkauf-zu")||"[]"))}catch(e){}
+const shutKey=(L,S)=>L+"|"+S;
+function saveShut(){try{localStorage.setItem("einkauf-zu",JSON.stringify([...shut]))}catch(e){}}
+const OLD_SEC={"Fleisch & Fisch":"Kühlregal","Gewürze":"Vorrat","Konserven & Vorrat":"Vorrat"};
+const secOf=i=>OLD_SEC[i.section]||i.section||"Sonstiges";
+const DONE="Erledigt";
+const LIST="Einkaufsliste";   /* es gibt nur eine Liste (29.10.); ältere Einträge mit anderem list-Feld zählen mit dazu */   /* Name des Sammelblocks für Abgehaktes (kein Ablageziel beim Ziehen) */
+const lineOf=i=>[i.qty,i.name].filter(Boolean).join(" ");
+/* Menge erkennen: vorne („3 Karotten“, „500g Hack“, „2 Dosen Mais“, „6 Scheiben (ca. 300 g) Brot“, „3x Eier“)
+   oder hinten („Milch 1 l“). Ohne Zahl ist alles Name. */
+/* ---------- Zentrale Listen der Einkaufsliste (29.10.) ----------
+   Einheiten, Stichwörter je Kategorie und „Immer im Haus“ (wird nicht aus Rezepten übernommen).
+   Gespeichert in der Datenbank unter einstellungen/einkauf; bis dahin gelten diese Vorgaben.
+   Über die Ansicht „Zuordnung & Einheiten“ (unten im Einkauf) zu sehen und zu ändern. */
+const CHECK=["Tiefkühl","Vorrat","Kühlregal","Gemüse & Obst","Drogerie","Sonstiges"];   /* Prüfreihenfolge, erster Treffer zählt */
+/* Labels je Eintrag samt Geschäfts-Logos: LABELS steht in labels.js (1.11. ausgelagert) */
+const LBK=Object.fromEntries(LABELS.map(L=>[L.k,L]));
+const lbCls=(L,on)=>`lbb${L.logo?" lg":""}${on?" on":""}`, lbStyle=L=>`--c:${L.c}${L.f?";--f:"+L.f:""}`, lbInner=L=>L.logo||L.g;
+const badge=k=>{const L=LBK[k]; return L?`<span class="${lbCls(L)}" style="${lbStyle(L)}" role="img" aria-label="${esc(L.n)}" title="${esc(L.n)}">${lbInner(L)}</span>`:""};
+/* Auswahlreihe der Labels (Eintrag bearbeiten, Vorschlag bearbeiten) */
+const lbPick=(on,cls="")=>`<div class="lbpick${cls}" role="group" aria-label="Labels">${LABELS.map(L=>{const a=on.includes(L.k); return `<button type="button" tabindex="-1" class="${lbCls(L,a)}" style="${lbStyle(L)}" data-lb="${L.k}" aria-pressed="${a}" aria-label="${esc(L.n)}" title="${esc(L.n)}">${lbInner(L)}</button>`}).join("")}</div>`;
+const DEF_MERK={
+  "Vorrat":["Linsen","Kichererbsen","Bohnen","Vollkornreis","Vollkornnudeln","Haferflocken"],
+  "Gemüse & Obst":["Zucchini","Paprika","Karotten","Brokkoli","Spinat","Pilze","Tomaten","Gurken","Zwiebeln","Grüne Bohnen","Kartoffeln","Süßkartoffeln"],
+  "Kühlregal":["Naturjoghurt","Skyr","Quark","Eier","Käse","Feta","Fisch","Geflügel"],
+  "Tiefkühl":[],"Drogerie":[],"Sonstiges":[]
+};
+const DEF_CFG={
+  vorrat:["salz","pfeffer","wasser"],
+  gelernt:{},   /* Artikelname → Kategorie, entsteht beim Verschieben eines Eintrags; gilt vor den Stichwörtern */
+  einheiten:["kg","g","mg","ml","cl","l","el","tl","msp","prise","prisen","bund","stk","stück","st","stange","stangen","dose","dosen","glas","gläser","pck","packung","packungen","päckchen","becher","flasche","flaschen","scheibe","scheiben","zehe","zehen","kopf","köpfe","netz","netze","beutel","tüte","tüten","schale","schalen","handvoll","liter","gramm","kilo","tasse","tassen"],
+  kategorien:{
+    "Tiefkühl":["tk","tiefk","gefror"],
+    "Vorrat":["salz","pfeffer","pulver","gemahlen","kümmel","cumin","curry","zimt","muskat","oregano","majoran","lorbeer","kurkuma","gewürz","chili","cayenne","vanille","natron","dose","glas","brühe","fond","bohnen","kichererbsen","mais","linsen","nudel","spaghetti","pasta","reis","bulgur","couscous","quinoa","mehl","zucker","honig","öl","olivenöl","rapsöl","essig","senf","ketchup","tomatenmark","passata","gehackte tomaten","stückige tomaten","kokosmilch","sauce","soße","haferflocken","nüsse","mandeln"],
+    "Kühlregal":["hack","fleisch","hähnchen","huhn","pute","rind","schwein","wurst","würst","schinken","speck","salami","lachs","fisch","garnel","ei","eier","milch","sahne","schmand","joghurt","quark","käse","feta","butter","mozzarella","parmesan","tofu","crème","creme","hefe"],
+    "Drogerie":["zahnpasta","zahncreme!","zahnbürste","zahnseide","duschgel","shampoo","spülung","seife","deo","rasier","wattepad","wattestäbchen","taschentüch","toilettenpapier","klopapier","küchenrolle","spülmittel","waschmittel","weichspüler","spülmaschinentabs","reiniger","putzmittel","schwamm","müllbeutel","pflaster","windel","feuchttücher","sonnencreme!","handcreme!"],
+    "Gemüse & Obst":["zwiebel","knoblauch","paprika","karotte","möhre","kartoffel","tomate","gurke","zucchini","aubergine","lauch","porree","sellerie","spinat","salat","pilz","champignon","brokkoli","blumenkohl","kohl","apfel","äpfel","banane","zitrone","limette","ingwer","koriander","petersilie","schnittlauch","basilikum","dill","minze","kräuter","avocado","kürbis","rote bete","beere","orange","birne","traube","radieschen","rucola","fenchel","erbsen","mango","kolben mais"],
+    "Sonstiges":[]
+  },
+  merk:DEF_MERK,   /* Merkliste je Kategorie: Vorschläge unter dem Listen-Symbol der Kategorie */
+  merkLb:{},   /* Vorschlag (klein geschrieben) → Labels, die der Eintrag beim Antippen bekommt (1.11.) */
+  labels:Object.fromEntries(LABELS.map(L=>[L.k,[]]))   /* Stichwörter je Label: neue Einträge bekommen es automatisch */
+};
+let cfg=structuredClone(DEF_CFG);
+const reEsc=w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
+/* Stichwort-Treffer: bis 3 Buchstaben nur als ganzes Wort („öl“, „ei“, „tk“), sonst irgendwo im Wort („Rinderhack“) */
+const LET="a-zäöüß";
+function hasWord(t,w){
+  t=String(t||"").toLowerCase(); if(!w) return false;
+  return w.length<=3 ? new RegExp(`(^|[^${LET}])${reEsc(w)}($|[^${LET}])`).test(t) : t.includes(w);
+}
+/* „Immer im Haus“ immer als ganzes Wort: „Pfeffer“ ja, „Cayennepfeffer“ nein */
+const isStaple=t=>cfg.vorrat.some(w=>new RegExp(`(^|[^${LET}])${reEsc(w)}($|[^${LET}])`,"i").test(String(t||"")));
+const NUMQ="(?:\\d+(?:[.,]\\d+)?(?:\\s*[-–]\\s*\\d+(?:[.,]\\d+)?)?\\s*[¼½¾⅓⅔]?|[¼½¾⅓⅔])";
+let LEAD, TRAIL;
+function buildUnits(){
+  const U=`(?:${[...cfg.einheiten].sort((a,b)=>b.length-a.length).map(reEsc).join("|")})(?![${LET}])\\.?`;
+  LEAD=new RegExp(`^(${NUMQ}\\s*(?:x(?![${LET}])\\s*)?(?:${U})?(?:\\s*\\([^)]*\\))?)\\s+(.+)$`,"i");
+  TRAIL=new RegExp(`^(.+?)\\s+(${NUMQ}\\s*(?:${U})?)$`,"i");
+}
+buildUnits();
+function setCfg(d){
+  const dk=d?.kategorien||{}, k={};
+  if(!dk.Vorrat&&(dk["Gewürze"]||dk["Konserven & Vorrat"])) dk.Vorrat=[...new Set([...(dk["Gewürze"]||[]),...(dk["Konserven & Vorrat"]||[])])];   /* alte Aufteilung übernehmen */
+  for(const S of CHECK) k[S]=Array.isArray(dk[S])?dk[S]:DEF_CFG.kategorien[S];
+  const g={}; for(const [n,S] of Object.entries(d?.gelernt||{})) g[n]=OLD_SEC[S]||S;
+  const dm=d?.merk||{}, m={}; for(const S of SECTIONS) m[S]=Array.isArray(dm[S])?dm[S]:(DEF_MERK[S]||[]);
+  const dl=d?.labels||{}, l={}; for(const L of LABELS) l[L.k]=Array.isArray(dl[L.k])?dl[L.k]:[];
+  const ml={}; for(const [n,ks] of Object.entries(d?.merkLb||{})) if(Array.isArray(ks)) ml[n]=sortLb(ks);
+  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, gelernt:g, merk:m, labels:l, merkLb:ml};
+  buildUnits();
+}
+/* Tag zum Einkaufen: Feld due (JJJJ-MM-TT), getrennt gespeichert wie qty und name.
+   Erkannt wird ein Tag am Anfang oder Ende der Zeile: Mo … So, Montag …, heute, morgen, 31.10. oder 31.10.2026.
+   Anzeige: innerhalb der nächsten 7 Tage der Wochentag, sonst das Datum (29.10.). */
+const WD=["So","Mo","Di","Mi","Do","Fr","Sa"];
+const WDL={so:0,mo:1,di:2,mi:3,do:4,fr:5,sa:6,sonntag:0,montag:1,dienstag:2,mittwoch:3,donnerstag:4,freitag:5,samstag:6};
+const isoOf=d=>`${d.getFullYear()}-${String(d.getMonth()+1).padStart(2,"0")}-${String(d.getDate()).padStart(2,"0")}`;
+const addDays=(s,n)=>{const d=parse(s); d.setDate(d.getDate()+n); return isoOf(d)};
+const dayDiff=s=>Math.round((parse(s)-parse(todayStr()))/864e5);
+function dueLabel(s){
+  if(!s) return ""; const k=dayDiff(s), d=parse(s);
+  if(k>=0&&k<=6) return WD[d.getDay()];
+  return `${d.getDate()}.${d.getMonth()+1}.`+(d.getFullYear()!==parse(todayStr()).getFullYear()?String(d.getFullYear()).slice(2):"");
+}
+const DAYTOK="(heute|morgen|montag|dienstag|mittwoch|donnerstag|freitag|samstag|sonntag|mo|di|mi|do|fr|sa|so|\\d{1,2}\\.\\d{1,2}\\.(?:\\d{2}|\\d{4})?)";
+const DAY_END=new RegExp(`\\s${DAYTOK}\\.?$`,"i"), DAY_START=new RegExp(`^${DAYTOK}\\.?\\s`,"i");
+function dayOf(t){
+  t=t.toLowerCase(); const today=todayStr();
+  if(t==="heute") return today;
+  if(t==="morgen") return addDays(today,1);
+  if(t in WDL) return addDays(today,(WDL[t]-parse(today).getDay()+7)%7);
+  const m=t.match(/^(\d{1,2})\.(\d{1,2})\.(\d{2}|\d{4})?$/); if(!m) return "";
+  const now=parse(today); let y=m[3]?(m[3].length===2?2000+ +m[3]:+m[3]):now.getFullYear();
+  let d=new Date(y,+m[2]-1,+m[1]); if(d.getMonth()!==+m[2]-1) return "";
+  if(!m[3]&&(now-d)/864e5>60) d=new Date(y+1,+m[2]-1,+m[1]);   /* „5.1.“ im Dezember = nächstes Jahr */
+  return isoOf(d);
+}
+/* Ganze Zeile zerlegen: erst den Tag abtrennen, dann Menge und Name */
+function parseFull(s){
+  s=String(s||"").replace(/\s+/g," ").trim(); let due="", m=s.match(DAY_END);
+  if(m&&(due=dayOf(m[1]))) s=s.slice(0,m.index).trim();
+  else if((m=s.match(DAY_START))&&(due=dayOf(m[1]))) s=s.slice(m[0].length).trim();
+  return {...parseLine(s),due};
+}
+/* Zeile zum Bearbeiten: Menge, Name und Tag wieder in einem Feld */
+const editLine=i=>[lineOf(i),dueLabel(i.due)].filter(Boolean).join(" ");
+function parseLine(s){
+  s=String(s||"").replace(/\s+/g," ").trim();
+  let m=s.match(LEAD); if(m) return {qty:m[1].trim(),name:m[2].trim()};
+  m=s.match(TRAIL); if(m) return {qty:m[2].trim(),name:m[1].trim()};
+  return {qty:"",name:s};
+}
+/* Kategorie raten – dieselbe Logik für eigene Einträge und Rezept-Zutaten:
+   zuerst wie derselbe Artikel schon als eigener Eintrag einsortiert ist, sonst Stichwörter in Prüfreihenfolge.
+   Bei Rezept-Zutaten wird zuerst der volle Zutatentext geprüft („Tomaten aus der Dose“), dann der Name. */
+/* Treffer eines Stichworts: [hart, Anzahl Wörter] oder null. Mehrere Wörter müssen alle vorkommen, Reihenfolge egal */
+function kwScore(t,w){
+  const hard=w.endsWith("!"), ws=(hard?w.slice(0,-1):w).trim().split(/\s+/).filter(Boolean);
+  return ws.length&&ws.every(x=>hasWord(t,x))?[hard?1:0,ws.length]:null;
+}
+function guessSec(name,hint){
+  const k=String(name||"").toLowerCase().trim();
+  if(cfg.gelernt[k]&&SECTIONS.includes(cfg.gelernt[k])) return cfg.gelernt[k];   /* einmal verschoben = gelernt */
+  const known=items.find(i=>!i.rezept&&String(i.name||"").toLowerCase()===k);
+  if(known) return secOf(known);
+  /* Stichwörter: alle Treffer sammeln, der stärkste gewinnt (29.10.):
+     1. mit ! am Ende („dose!“) zieht hart, 2. mehr Wörter schlagen weniger („kolben mais“ vor „mais“),
+     3. bei Gleichstand die Prüfreihenfolge. Geprüft wird die ganze Zeile samt Menge („1 Dose Mais“). */
+  const t=[hint,name].filter(Boolean).join(" "); let best=null;
+  CHECK.forEach((S,ci)=>cfg.kategorien[S].forEach(w=>{
+    const sc=kwScore(t,w); if(!sc) return;
+    const key=[sc[0],sc[1],-ci];
+    if(!best||key[0]>best.key[0]||(key[0]===best.key[0]&&(key[1]>best.key[1]||(key[1]===best.key[1]&&key[2]>best.key[2])))) best={S,key};
+  }));
+  return best?best.S:"Sonstiges";
+}
+/* Labels aus der Zuordnung: Stichwort trifft den Namen (gleiche Regeln wie bei den Kategorien) */
+const autoLabels=name=>LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(String(name||""),w))).map(L=>L.k);
+const sortLb=ks=>LABELS.map(L=>L.k).filter(k=>ks.includes(k));
+/* order für eine neue Zeile unter „after“ (zwischen ihr und der nächsten), ohne after am Ende des Bereichs */
+function orderAfter(L,S,after){
+  const os=items.filter(i=>secOf(i)===S).map(i=>i.order??0);
+  if(after==null) return Math.max(0,...os)+1000;
+  const nx=os.filter(o=>o>after); return nx.length?(after+Math.min(...nx))/2:after+1000;
+}
+/* Beim Ziehen nie neu zeichnen: iOS schickt die Fingerbewegung weiter an die ursprüngliche Zeile. Wird sie ersetzt,
+   kommt das Scroll-Verbot nicht mehr an, die Seite scrollt und bricht das Ziehen ab (pointercancel). */
+let shopPending=false, recCol=new Map();
+function renderShop(force){
+  /* auch beim Ändern oder Ergänzen nicht neu zeichnen, sonst ginge Getipptes samt Tastatur verloren */
+  if((drag||editId||addAt||mkEdit||document.activeElement?.matches?.("#shop .add .an, #shop .mkadd input"))&&!force){shopPending=true;return}
+  shopPending=false; hidePop();
+  /* Rezeptbücher einfärben, sobald mehr als ein Rezept auf der Liste steht (feste Reihenfolge nach Rezeptname) */
+  const recs=[...new Set(items.filter(i=>i.rezept).sort((a,b)=>String(a.rezeptName).localeCompare(String(b.rezeptName),"de")).map(i=>i.rezept))];
+  recCol=new Map(recs.length>1?recs.map((r,k)=>[r,k%6]):[]);
+  const el=$("#shop");
+  const lists=[LIST];
+  el.innerHTML=lists.map(L=>{
+    const li=items;
+    const open=li.filter(i=>!i.checked).length;
+    /* Offene Artikel nach Kategorien; Abgehakte stehen gesammelt unten im Block „Erledigt“ (29.10.) */
+    const todo=li.filter(i=>!i.checked), dn=li.filter(i=>i.checked);
+    /* Alle Kategorien stehen immer da, auch leer (29.10.); unbekannte alte Bereiche hinten an */
+    const secs=[...SECTIONS,...new Set(todo.map(secOf).filter(S=>!SECTIONS.includes(S)))];
+    dn.sort((a,b)=>(SECTIONS.indexOf(secOf(a))-SECTIONS.indexOf(secOf(b)))||((a.order??0)-(b.order??0)));
+    const dz=shut.has(shutKey(L,DONE))&&!dn.some(r=>r.id===editId);
+    return `<div class="group" data-list="${esc(L)}">
+      ${secs.map(S=>{const rows=todo.filter(i=>secOf(i)===S).sort((a,b)=>(a.order??0)-(b.order??0));
+        const adding=addAt?.list===L&&addAt.sec===S, zu=rows.length>0&&shut.has(shutKey(L,S))&&!adding&&!rows.some(r=>r.id===editId);   /* leerer Abschnitt ist nie zugeklappt (1.11.) */
+        const html=rows.map(rowHTML);
+        if(adding){ let at=addAt.after==null?-1:rows.findIndex(r=>(r.order??0)>addAt.after); html.splice(at<0?html.length:at,0,newRowHTML()) }
+        const mo=mkOpen.has(S);
+        return `<div class="drop${html.length?"":" emptysec"}${zu?" shut":""}" data-list="${esc(L)}" data-sec="${esc(S)}">${secHead(S,rows,zu,SECTIONS.includes(S)?`<button type="button" class="mkinfo" aria-expanded="${mo}" aria-label="Merkliste ${esc(S)}" title="Merkliste">${LIST_ICON}</button>`:"")}${SECTIONS.includes(S)?mkBoxHTML(S,mo):""}<ul class="items">${html.join("")||`<li class="ph">Hierher ziehen</li>`}</ul></div>`}).join("")}
+      ${canWrite?`<form class="add" data-list="${esc(L)}"><input type="text" class="an" placeholder="Etwas ergänzen" aria-label="Artikel zu ${esc(L)} ergänzen" enterkeyhint="done" autocomplete="off"></form>`:""}
+      ${dn.length?`<div class="drop doneblk${dz?" shut":""}" data-list="${esc(L)}" data-sec="${DONE}">${secHead(`${DONE} (${dn.length})`,dn,dz,canWrite?`<button type="button" class="clr" data-list="${esc(L)}" aria-label="Erledigte entfernen" title="Erledigte entfernen">${TRASH}</button>`:"")}<ul class="items">${dn.map(rowHTML).join("")}</ul></div>`:""}
+    </div>`}).join("")
+  + `<p class="quiet"><button type="button" class="linkbtn" data-nav="zuo">Zuordnung &amp; Einheiten</button></p>`;
+  const n=el.querySelector(addAt?".edit.new .ei":editId?".edit .ei":null);
+  if(n&&document.activeElement?.closest?.(".edit")==null){n.focus();n.setSelectionRange(n.value.length,n.value.length)}
+}
+/* Auf-/Zurollen: kurz (180 ms) Höhe und Deckkraft gleiten lassen, damit die Richtung sichtbar wird.
+   Danach gilt nur die Klasse .shut (display:none); ein laufendes Rollen wird beim erneuten Tippen abgelöst. */
+/* Ankerpunkt halten (Patricks Lösung, 26.10.): fester Freiraum von einer Bildschirmhöhe am Seitenende,
+   damit Zuklappen die Seite nie kürzer macht als den sichtbaren Bereich. Normales Scrollen stoppt trotzdem
+   am Inhaltsende; nur nach einem Zuklappen bleibt die Position erlaubt, bis man wieder nach oben scrollt. */
+const foldpad=document.createElement("div"); foldpad.id="foldpad"; foldpad.setAttribute("aria-hidden","true"); document.body.appendChild(foldpad);
+let keepY=0;
+const normalMax=()=>Math.max(0,foldpad.getBoundingClientRect().top+scrollY+32-innerHeight);   /* 32 = unterer Seitenabstand */
+/* Nachfedern an der eigenen Grenze, wie in den ToDos (dort für das Pop-up erprobt):
+   Schwung trifft die Grenze → gedämpfte Feder x = v0·t·e^(−W·t) mit dem Scrolltempo als Start;
+   mit dem Finger weiterziehen → Inhalt folgt dem Finger und federt beim Loslassen zurück.
+   Bewegt wird nur die sichtbare Ansicht, die klebende Kopfleiste bleibt stehen. */
+const W=0.0085;   /* Spitze nach ~120 ms, nach ~800 ms zurück */
+let touching=false, samples=[], spr=0, wobY=null, wob=false;
+const viewEl=()=>document.querySelector(VIEWS[view]||"#v-week");
+const setY=(y,tr)=>{const el=viewEl(); if(!el) return; el.style.transition=tr||"none"; el.style.transform=y?`translateY(${y.toFixed(1)}px)`:"";};
+const stopSpr=()=>{ if(spr){cancelAnimationFrame(spr);spr=0;setY(0)} };
+function spring(v0){ stopSpr(); const t0=performance.now();
+  const step=()=>{const t=performance.now()-t0; if(t>900||touching){setY(0);spr=0;return}
+    setY(-v0*t*Math.exp(-W*t)); spr=requestAnimationFrame(step)};
+  spr=requestAnimationFrame(step); }
+const limY=()=>Math.max(normalMax(),keepY);
+addEventListener("scroll",()=>{
+  const now=performance.now(), y=scrollY, lim=limY();
+  samples.push([now,y]); samples=samples.filter(([t])=>now-t<120);
+  if(y>lim+1){
+    scrollTo(0,lim);
+    if(!touching&&samples.length>=3){ const pr=samples.slice(0,-1), [t1,y1]=pr[0], [t2,y2]=pr[pr.length-1];
+      const v=t2>t1?(y2-y1)/(t2-t1):0; if(v>0.2) spring(Math.min(v,3.5)); }
+    samples=[];
+  } else if(y<keepY) keepY=y;
+},{passive:true});
+addEventListener("touchstart",()=>{touching=true; stopSpr(); wobY=null; wob=false},{passive:true});
+addEventListener("touchmove",e=>{
+  if(e.touches.length!==1||drag||dDrag) return;   /* beim Ziehen (Einkauf oder Woche) nicht nachfedern */
+  const y0=e.touches[0].clientY;
+  if(scrollY>=limY()-1){ if(wobY===null) wobY=y0; const d=y0-wobY;
+    if(d<0){ e.preventDefault(); wob=true; setY(d); }
+    else if(wob){ setY(0); wob=false; wobY=null; } }
+  else wobY=null;
+},{passive:false});
+const wobEnd=()=>{ touching=false; samples=[]; if(!wob) return; wob=false; wobY=null;
+  setY(0,"transform .4s cubic-bezier(.2,.8,.3,1)"); setTimeout(()=>{ if(!wob){const el=viewEl(); if(el) el.style.transition=""} },420); };
+addEventListener("touchend",wobEnd,{passive:true}); addEventListener("touchcancel",wobEnd,{passive:true});
+function foldAnim(d,close){
+  const ul=d.querySelector(".items"); ul.getAnimations().forEach(a=>a.cancel());
+  if(close) keepY=Math.max(keepY,scrollY);
+  if(matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.toggle("shut",close);return}
+  if(close){
+    const h=ul.offsetHeight;
+    const a=ul.animate([{height:h+"px",opacity:1},{height:"0px",opacity:0,borderColor:"transparent"}],{duration:180,easing:"cubic-bezier(.4,0,.2,1)"});
+    a.onfinish=()=>d.classList.add("shut");
+  } else {
+    d.classList.remove("shut"); const h=ul.offsetHeight;
+    ul.animate([{height:"0px",opacity:0,borderColor:"transparent"},{height:h+"px",opacity:1}],{duration:180,easing:"cubic-bezier(.4,0,.2,1)"});
+  }
+}
+/* Merkliste: offen/zu je Gerät; Vorschläge, die schon offen auf der Liste stehen, sind markiert */
+let mkOpen=new Set(); try{mkOpen=new Set(JSON.parse(localStorage.getItem("einkauf-merk")||"[]"))}catch(e){}
+function saveMk(){try{localStorage.setItem("einkauf-merk",JSON.stringify([...mkOpen]))}catch(e){}}
+const onList=(S,n)=>items.find(i=>!i.checked&&secOf(i)===S&&String(i.name||"").toLowerCase()===String(n).toLowerCase());
+/* Vorschläge alphabetisch (1.11.); lange drücken = Name im Chip ändern und Labels wählen */
+const mkLb=n=>cfg.merkLb[String(n).toLowerCase()]||[];
+let mkEdit=null;   /* {S, n, lb} solange ein Vorschlag bearbeitet wird */
+function mkBoxHTML(S,open){
+  const ns=[...(cfg.merk[S]||[])].sort((a,b)=>a.localeCompare(b,"de",{sensitivity:"base"}));
+  const chip=n=>{ const ed=mkEdit?.S===S&&mkEdit.n===n, lb=ed?mkEdit.lb:mkLb(n);
+    if(ed) return `<span class="mkchip mked" data-n="${esc(n)}"><span class="mkname" contenteditable="plaintext-only" role="textbox" aria-label="Name des Vorschlags" spellcheck="false">${esc(n)}</span>${sortLb(lb).map(badge).join("")}</span>${lbPick(lb," mkpick")}`;
+    return `<button type="button" class="mkchip${onList(S,n)?" mkon":""}" data-n="${esc(n)}" aria-pressed="${!!onList(S,n)}">${esc(n)}${sortLb(lb).map(badge).join("")}</button>` };
+  return `<div class="mkbox" data-sec="${esc(S)}"${open?"":" hidden"}>${ns.map(chip).join("")}${canWrite?`<form class="mkadd"><input type="text" placeholder="＋ merken" aria-label="Zur Merkliste ${esc(S)}" enterkeyhint="done" autocomplete="off"></form>`:""}</div>`;
+}
+/* Auf-/Zurollen eines Bereichs nach aufklappen.md: Höhe, Innen-/Außenabstand und Deckkraft, 180 ms;
+   erneuter Tipp während des Zurollens bricht ab und lässt ihn offen */
+function mkRoll(el,open){
+  const run=el.getAnimations(); if(!open&&el.hidden) return;
+  if(open&&el._closing){ run.forEach(a=>a.cancel()); el._closing=false; return }
+  run.forEach(a=>a.cancel());
+  if(!open) keepY=Math.max(keepY,scrollY);
+  if(reducedMotion()){ el.hidden=!open; return }
+  el.hidden=false;
+  const c=getComputedStyle(el);
+  const full={height:el.offsetHeight+"px",paddingTop:c.paddingTop,paddingBottom:c.paddingBottom,marginTop:c.marginTop,marginBottom:c.marginBottom,opacity:1};
+  const zero={height:"0px",paddingTop:"0px",paddingBottom:"0px",marginTop:"0px",marginBottom:"0px",opacity:0};
+  el.style.overflow="hidden";
+  const a=el.animate(open?[zero,full]:[full,zero],{duration:180,easing:"cubic-bezier(.4,0,.2,1)",fill:open?"none":"forwards"});
+  el._closing=!open;
+  a.onfinish=()=>{ el.style.overflow=""; if(!open){ el.hidden=true; el._closing=false; a.cancel() } };
+  a.oncancel=()=>{ el.style.overflow="" };
+}
+function secHead(S,rows,zu,extra=""){
+  return `<div class="sh"><button type="button" class="tg" aria-expanded="${!zu}">${esc(S)}</button>${extra}</div>`;
+}
+const LIST_ICON=`<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" aria-hidden="true"><path d="M9 6.5h11M9 12h11M9 17.5h11"/><circle cx="4.5" cy="6.5" r=".6" fill="currentColor"/><circle cx="4.5" cy="12" r=".6" fill="currentColor"/><circle cx="4.5" cy="17.5" r=".6" fill="currentColor"/></svg>`;
+const TRASH=`<svg width="17" height="17" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg>`;
+function newRowHTML(){
+  return `<li><form class="edit new"><input type="text" class="ei" placeholder="Neuer Eintrag" aria-label="Neuer Eintrag" enterkeyhint="next" autocomplete="off"></form></li>`;
+}
+const BOOK=`<svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.1" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M5 4.5A1.5 1.5 0 0 1 6.5 3H19v15H6.5A1.5 1.5 0 0 0 5 19.5z"/><path d="M5 19.5A1.5 1.5 0 0 0 6.5 21H19v-3"/><path d="M9 7.5h6"/></svg>`;
+function rowHTML(i){
+  /* Bearbeiten: Kreis bleibt stehen, nur der Text wird zum Feld (29.10.) */
+  if(i.id===editId) return `<li><form class="edit ex lbon" data-id="${esc(i.id)}"><input type="checkbox" data-id="${esc(i.id)}" ${i.checked?"checked":""} aria-label="${esc(i.name)} abhaken"><input type="text" class="ei" value="${esc(editLine(i))}" aria-label="Eintrag" enterkeyhint="next" autocomplete="off">${lbPick(i.labels||[])}</form></li>`;
+  return `<li class="row${drag?.id===i.id?" dragging":""}" data-id="${esc(i.id)}"><div class="item${i.checked?" done":""}"><input type="checkbox" data-id="${esc(i.id)}" ${i.checked?"checked":""} ${canWrite?"":"disabled"} aria-label="${esc(i.name)} abhaken"><span class="nm">${i.qty?`<b class="q">${esc(i.qty)}</b> `:""}${esc(i.name)}</span>${i.labels?.length?`<span class="lbset">${sortLb(i.labels).map(badge).join("")}</span>`:""}${i.due?`<span class="due${dayDiff(i.due)<0?" late":""}">${esc(dueLabel(i.due))}</span>`:""}${i.rezept?`<button type="button" class="orig${recCol.has(i.rezept)?" rc"+recCol.get(i.rezept):""}" data-id="${esc(i.id)}" aria-expanded="false" aria-label="Aus Rezept ${esc(i.rezeptName||i.rezept)}">${BOOK}</button>`:""}</div></li>`;
+}
+$("#shop").addEventListener("change",e=>{
+  if(e.target.type!=="checkbox") return;
+  save("shopping/"+e.target.dataset.id,{checked:e.target.checked});
+});
+/* Neuer Vorschlag in der Merkliste einer Kategorie; gleiche Schreibweise wie getippt */
+function addMerk(S,raw,refocus){
+  const n=String(raw||"").replace(/\s+/g," ").trim(); if(!n) return false;
+  const list=cfg.merk[S]||[];
+  if(!list.some(x=>x.toLowerCase()===n.toLowerCase())){ cfg.merk={...cfg.merk,[S]:[...list,n]}; saveCfg(true) }
+  renderShop(true);
+  if(refocus) $(`#shop .mkbox[data-sec="${CSS.escape(S)}"] .mkadd input`)?.focus();
+  return true;
+}
+$("#shop").addEventListener("submit",async e=>{
+  e.preventDefault();
+  if(e.target.classList.contains("mkadd")){ const inp=e.target.querySelector("input"), v=inp.value; inp.value="";
+    if(!addMerk(e.target.closest(".mkbox").dataset.sec,v,true)) inp.blur(); return }
+  if(!db) return;
+  if(e.target.classList.contains("new")) return commitNew(e.target,false);
+  if(e.target.classList.contains("edit")) return commitEdit(e.target);
+  /* Ergänzen unten: Kategorie wird geraten; synchron zeichnen und das neue Feld fokussieren (Tastatur bleibt offen) */
+  addBottom(e.target,true);
+});
+/* Ergänzen-Feld unten übernehmen: mit Enter (Feld bleibt offen) oder beim Verlassen (29.10.) */
+function addBottom(form,refocus){
+  const inp=form.querySelector(".an"), v=inp.value; inp.value="";
+  return addLine(form.dataset.list,v,refocus);
+}
+/* refocus=true: synchron neu zeichnen und Feld wieder fokussieren (Enter). Sonst normal zeichnen,
+   damit eine gerade geöffnete Bearbeiten-Zeile nicht gestört wird (sie holt das Zeichnen nach). */
+/* Label-Namen in neuen Einträgen (1.11.): „Bio Reiswaffeln Dinkel Lidl“ → „Reiswaffeln Dinkel“ mit Bio und Lidl.
+   Nur beim Neuanlegen, nicht beim Ändern. Ganze Wörter, Groß-/Kleinschreibung egal. „Mo“ allein bleibt der Montag,
+   für das Label „Onkel Mo“ schreiben. */
+const LB_WORDS={bio:["bio"],angebot:["angebot","%"],mo:["onkel mo"],dm:["dm"],penny:["penny"],rewe:["rewe"],lidl:["lidl"],
+  globus:["globus"],aldi:["aldi süd","aldi"],netto:["netto"],tp:["thomas philipps","philipps"],amazon:["amazon"]};
+function takeLabels(v){
+  let t=String(v||""); const lb=[];
+  for(const [k,ws] of Object.entries(LB_WORDS)) for(const w of ws){
+    const re=new RegExp(`(^|[^${LET}0-9])\\(?\\s*${reEsc(w)}\\s*\\)?(?=$|[^${LET}0-9])`,"gi");   /* Klammern drum herum fallen mit weg: „Deo (Globus)“ */
+    if(re.test(t)){ t=t.replace(re,"$1"); lb.push(k); break }
+  }
+  /* Reste wie „()“ oder ein einzelnes Komma aus „(Bio, Lidl)“ entfernen */
+  t=t.replace(/\(\s*[,;\/&+]*\s*\)/g," ").replace(/(^|\s)[,;\/&+()]+(?=\s|$)/g," ");
+  return {t:t.replace(/\s+/g," ").trim(), lb:sortLb(lb)};
+}
+const lbExtra=(due,lb)=>({...(due?{due}:{}),...(lb.length?{labels:lb}:{})});
+function addLine(L,v,refocus){
+  const tk=takeLabels(v), {name,qty,due}=parseFull(tk.t); if(!name) return false;
+  const S=guessSec(name,[qty,name].filter(Boolean).join(" ")); addItem(L,S,name,qty,lbExtra(due,tk.lb));
+  if(refocus){ renderShop(true); $(`#shop .add[data-list="${CSS.escape(L)}"] .an`)?.focus() } else renderShop();
+  toast(`Ergänzt unter ${S}`);
+  return true;
+}
+/* Ändern: gespeichert wird, sobald der Fokus das Formular verlässt (woanders hintippen) oder mit Enter */
+async function commitEdit(f){
+  const id=f.dataset.id; if(editId!==id||f.dataset.done) return;
+  const it=items.find(x=>x.id===id);
+  const {name,qty,due}=parseFull(f.querySelector(".ei").value);
+  editId=null;
+  if(!name){renderShop();return toast("Name darf nicht leer sein")}
+  if(it&&(it.name!==name||(it.qty||"")!==qty||(it.due||"")!==due)){ Object.assign(it,{name,qty,due}); await save("shopping/"+id,{name,qty,due},"Geändert") } else renderShop();
+}
+/* Neue Zeile speichern. next=true: gleich die nächste leere Zeile im selben Bereich öffnen.
+   Alles synchron zeichnen und fokussieren, damit die Tastatur am iPhone offen bleibt; gespeichert wird danach. */
+function commitNew(f,next){
+  if(!addAt||f.dataset.done) return; f.dataset.done="1";
+  const tk=takeLabels(f.querySelector(".ei").value), {name,qty,due}=parseFull(tk.t);
+  const {list:L,sec:S,after}=addAt;
+  if(!next||!name) addAt=null;          /* Enter in leerer Zeile oder woanders hintippen = fertig */
+  if(name){ const o=addItem(L,S,name,qty,lbExtra(due,tk.lb),orderAfter(L,S,after)); if(addAt) addAt.after=o; }   /* nächste Zeile unter der neuen */
+  renderShop(true);
+}
+/* Neuer Eintrag mit eigener id: sofort lokal sichtbar, der nächste Snapshot enthält ihn unter derselben id */
+const newId=p=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
+function addItem(L,S,name,qty,extra={},order){
+  if(order==null) order=orderAfter(L,S,null);
+  const lb=sortLb([...new Set([...(extra.labels||[]),...autoLabels(name)])]);
+  const id=newId("i"), body={name,qty,section:S,list:LIST,checked:false,order,...extra,...(lb.length?{labels:lb}:{})};
+  items.push({id,...body});
+  if(db) db.doc("shopping/"+id).set(body).then(()=>refreshers.forEach(f=>f())).catch(fail);
+  return order;
+}
+$("#shop").addEventListener("focusout",e=>{
+  if(e.target.matches(".mkname")){ setTimeout(()=>{ if(!document.activeElement?.matches?.(".mkname")) commitMk(false) },0); return }
+  if(e.target.matches(".mkadd input")){
+    const inp=e.target, S=inp.closest(".mkbox").dataset.sec, v=inp.value; inp.value="";
+    setTimeout(()=>{ if(addMerk(S,v,false)) return; if(shopPending&&!document.activeElement?.matches?.("#shop .add .an, #shop .mkadd input")) renderShop() },0); return }
+  if(e.target.matches(".add .an")){
+    /* Wert sofort lesen: tippt man auf eine andere Zeile, ist das Feld beim nächsten Schritt schon ersetzt */
+    const inp=e.target, L=inp.form.dataset.list, v=inp.value; inp.value="";
+    setTimeout(()=>{
+      if(addLine(L,v,false)) return;   /* Getipptes speichern */
+      if(shopPending&&!document.activeElement?.matches?.("#shop .add .an")) renderShop() },0); return }
+  const f=e.target.closest(".edit"); if(!f||f.contains(e.relatedTarget)) return;
+  setTimeout(()=>{ if(!f.isConnected||f.contains(document.activeElement)) return;
+    f.classList.contains("new")?commitNew(f,false):commitEdit(f) },0);
+});
+/* War beim Antippen gerade eine Zeile im Bearbeiten? Dann beendet der Tipp nur das Bearbeiten (29.10.) */
+let editAtDown=0;
+$("#shop").addEventListener("pointerdown",()=>{ editAtDown=(editId||addAt||mkEdit)?Date.now():0 },true);
+$("#shop").addEventListener("click",async e=>{
+  /* Label im Bearbeiten an-/abwählen: sofort speichern, Feld behält den Fokus */
+  const lbb=e.target.closest(".lbpick .lbb");
+  if(lbb&&lbb.closest(".mkpick")){ if(!mkEdit) return;
+    const s2=new Set(mkEdit.lb), k=lbb.dataset.lb; s2.has(k)?s2.delete(k):s2.add(k); mkEdit.lb=sortLb([...s2]);
+    lbb.classList.toggle("on",s2.has(k)); lbb.setAttribute("aria-pressed",s2.has(k));
+    const ch=$("#shop .mkchip.mked"); ch.querySelectorAll(".lbb").forEach(b=>b.remove()); ch.insertAdjacentHTML("beforeend",mkEdit.lb.map(badge).join(""));
+    const nm=ch.querySelector(".mkname"); if(document.activeElement!==nm) nm.focus({preventScroll:true});
+    return }
+  if(lbb){ const f=lbb.closest(".edit"), it=items.find(x=>x.id===f?.dataset.id); if(!it) return;
+    const s=new Set(it.labels||[]), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k);
+    it.labels=sortLb([...s]); lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
+    const ei=f.querySelector(".ei"); if(document.activeElement!==ei) ei.focus({preventScroll:true});
+    save("shopping/"+it.id,{labels:it.labels}); return }
+  const mi=e.target.closest(".sh .mkinfo");
+  if(mi){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
+    const d=mi.closest(".drop"), S=d.dataset.sec, open=!mkOpen.has(S);
+    open?mkOpen.add(S):mkOpen.delete(S); saveMk(); mi.setAttribute("aria-expanded",open);
+    mkRoll(d.querySelector(".mkbox"),open); return }
+  /* Vorschlag antippen: kommt in diese Kategorie auf die Liste; nochmal antippen nimmt ihn wieder herunter */
+  const mc=e.target.closest(".mkbox .mkchip");
+  if(mc&&(mc.classList.contains("mked")||Date.now()-mkPressedAt<700)){ if(Date.now()-mkPressedAt<1500) focusMkEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
+  if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
+    if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
+    const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
+    if(have) removeItem(have); else addItem(LIST,S,n,"",mkLb(n).length?{labels:mkLb(n)}:{});
+    renderShop(true); return }
+  const sh=e.target.closest(".sh .tg");
+  if(sh&&Date.now()-editAtDown<1500){ editAtDown=0; return }   /* Überschrift nicht auf-/zuklappen */
+  if(sh&&sh.closest(".drop").classList.contains("emptysec")) return;   /* leerer Abschnitt klappt nicht zu (1.11.) */
+  if(sh){ const d=sh.closest(".drop"), k=shutKey(d.dataset.list,d.dataset.sec);
+    shut.has(k)?shut.delete(k):shut.add(k); saveShut(); sh.setAttribute("aria-expanded",!shut.has(k));
+    foldAnim(d,shut.has(k)); return }
+  const sb=e.target.closest(".item .orig");
+  if(sb){ if(Date.now()-endedAt<400) return; const it=items.find(i=>i.id===sb.dataset.id); if(!it) return;
+    popFor===it.id?openSrc(it):showPop(sb,it); return }
+  const nm=e.target.closest(".item .nm, .item .lbset");
+  if(nm&&canWrite&&!drag){if(Date.now()-endedAt<400) return;
+    const nf=$("#shop .edit.new"); if(nf) commitNew(nf,false);   /* offene neue Zeile erst übernehmen */
+    editId=e.target.closest(".row").dataset.id; renderShop(true); return}
+  /* Papierkorb in der Erledigt-Überschrift: erst Nachfrage in derselben Zeile, dann entfernen (mit Rückgängig) (29.10.) */
+  const clr=e.target.closest(".sh .clr");
+  if(clr){ const n=items.filter(i=>i.checked).length;
+    clr.outerHTML=`<span class="cf" data-list="${esc(clr.dataset.list)}"><button type="button" class="cf-yes">${n===1?"Entfernen":`Alle ${n} entfernen`}</button><button type="button" class="cf-no">Abbrechen</button></span>`;
+    return }
+  if(e.target.closest(".sh .cf-no")){ renderShop(); return }
+  const yes=e.target.closest(".sh .cf-yes");
+  if(yes&&db){
+    const gone=items.filter(i=>i.checked); if(!gone.length) return;
+    items=items.filter(i=>!gone.includes(i)); renderShop();
+    try{
+      await Promise.all(gone.map(i=>db.doc("shopping/"+i.id).delete())); refreshers.forEach(f=>f());
+      undoBar(`${gone.length} erledigte entfernt`,()=>Promise.all(gone.map(({id,...b})=>db.doc("shopping/"+id).set(b))));
+    }catch(err){fail(err)}
+  }
+});
+$("#shop").addEventListener("keydown",e=>{
+  if(e.target.matches(".mkname")){
+    if(e.key==="Enter"&&!e.isComposing){ e.preventDefault(); commitMk(false) }
+    else if(e.key==="Escape") commitMk(true);
+    return }
+  if(e.key==="Escape"&&(editId||addAt)){editId=null;addAt=null;renderShop(true);return}
+  /* Zurück-Taste in leerer Zeile: Zeile verschwindet, Cursor ans Ende der Zeile darüber (29.10.) */
+  if(e.key==="Backspace"&&!e.isComposing&&e.target.matches(".edit .ei")&&!e.target.value){
+    e.preventDefault();
+    const f=e.target.form, prev=f.closest("li").previousElementSibling;
+    f.dataset.done="1";
+    if(f.classList.contains("new")) addAt=null;
+    else { const it=items.find(x=>x.id===f.dataset.id); editId=null; if(it) removeItem(it) }
+    editId=prev?.matches(".row")?prev.dataset.id:null;
+    renderShop(true);   /* synchron, damit die Tastatur offen bleibt; renderShop setzt den Cursor ans Zeilenende */
+    return;
+  }
+  if(e.key!=="Enter"||e.isComposing) return;
+  const t=e.target;
+  if(!t.matches(".edit .ei")) return;   /* Ergänzen-Feld unten: Enter schickt das Formular ab */
+  e.preventDefault();
+  const f=t.form;
+  /* Neue Zeile: Enter speichert und öffnet die nächste darunter; Enter in leerer Zeile = fertig */
+  if(f.classList.contains("new")) return commitNew(f,!!t.value.trim());
+  /* Bestehende Zeile: übernehmen, dann neue Zeile direkt darunter */
+  const it=items.find(x=>x.id===f.dataset.id); if(!it) return;
+  const {name,qty,due}=parseFull(t.value);
+  if(!name) return toast("Name darf nicht leer sein");
+  f.dataset.done="1"; editId=null; addAt={list:LIST,sec:secOf(it),after:it.order??0};
+  const changed=it.name!==name||(it.qty||"")!==qty||(it.due||"")!==due;
+  Object.assign(it,{name,qty,due}); renderShop(true);
+  if(changed) save("shopping/"+it.id,{name,qty,due},"Geändert");
+});
+
+/* ---------- Vorschlag lange drücken (450 ms): Name im Chip ändern, darunter Labels wählen (1.11.) ----------
+   Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
+   Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
+let mkPress=null, mkPressedAt=0;
+$("#shop").addEventListener("pointerdown",e=>{
+  if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
+  const c=e.target.closest(".mkbox button.mkchip"); if(!c) return;
+  mkPress={c,x:e.clientX,y:e.clientY,t:setTimeout(()=>{ mkPress=null; mkPressedAt=Date.now(); startMk(c) },450)};
+});
+addEventListener("pointermove",e=>{ if(mkPress&&Math.hypot(e.clientX-mkPress.x,e.clientY-mkPress.y)>8){clearTimeout(mkPress.t);mkPress=null} },{passive:true});
+addEventListener("pointerup",()=>{ if(mkPress){clearTimeout(mkPress.t);mkPress=null} });
+addEventListener("pointercancel",()=>{ if(mkPress){clearTimeout(mkPress.t);mkPress=null} });
+$("#shop").addEventListener("contextmenu",e=>{ if(e.target.closest(".mkchip")) e.preventDefault() });
+const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
+function startMk(c){
+  const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
+  navigator.vibrate?.(12);
+  mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
+  const nm=$("#shop .mkchip.mked .mkname"); if(!nm) return;
+  fitMk(nm); nm.addEventListener("input",()=>fitMk(nm));
+  mkFocusAt=Date.now(); focusMkEnd();
+}
+/* Cursor ans Ende. Beim Loslassen des Fingers noch einmal: Nur dort öffnet iOS die Tastatur (Benutzergeste),
+   und das Loslassen würde den Cursor sonst an die Fingerstelle setzen (1.11.) */
+let mkFocusAt=0;
+function focusMkEnd(){
+  const nm=$("#shop .mkchip.mked .mkname"); if(!nm) return;
+  nm.focus({preventScroll:true});
+  const r=document.createRange(); r.selectNodeContents(nm); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
+}
+addEventListener("pointerup",e=>{ if(mkEdit&&Date.now()-mkFocusAt<3000){ if(e.pointerType!=="touch") mkFocusAt=0; focusMkEnd() } });
+/* Maus-Ersatzereignisse nach dem langen Druck würden den Cursor an die Fingerstelle setzen */
+document.addEventListener("mousedown",e=>{ if(mkEdit&&Date.now()-mkPressedAt<1500&&e.target.closest?.(".mkchip.mked")) e.preventDefault() },true);
+addEventListener("touchend",e=>{ if(mkEdit&&Date.now()-mkFocusAt<3000){ mkFocusAt=0; e.preventDefault(); focusMkEnd() } },{passive:false});
+function commitMk(cancel){
+  const m=mkEdit; if(!m) return; mkEdit=null;
+  const nm=$("#shop .mkchip.mked .mkname");
+  const v=cancel?m.n:String(nm?.innerText??m.n).replace(/\u00a0/g," ").replace(/\s+/g," ").trim()||m.n;
+  const list=cfg.merk[m.S]||[], ok=v===m.n||!list.some(x=>x.toLowerCase()===v.toLowerCase()&&x!==m.n);
+  const name=ok?v:m.n, oldK=m.n.toLowerCase(), newK=name.toLowerCase();
+  const lbBefore=mkLb(m.n), lbNew=cancel?lbBefore:sortLb(m.lb);
+  if(name!==m.n||canon(lbNew)!==canon(lbBefore)){
+    const ml={...cfg.merkLb}; delete ml[oldK]; if(lbNew.length) ml[newK]=lbNew;
+    cfg.merk={...cfg.merk,[m.S]:list.map(x=>x===m.n?name:x)}; cfg.merkLb=ml;
+    if(name!==m.n) items.filter(i=>!i.checked&&secOf(i)===m.S&&String(i.name||"").toLowerCase()===oldK).forEach(i=>{ i.name=name; save("shopping/"+i.id,{name}) });
+    saveCfg(true);
+  }
+  if(!ok) toast(`„${v}“ steht schon in der Liste`);
+  renderShop(true);
+}
+
+/* Ziehen wie in den ToDos (SortableJS-Werte): Touch 280 ms lange drücken, 6 px Wackeln erlaubt; Maus ab 3 px sofort */
+const bin=document.createElement("div"); bin.id="bin"; bin.hidden=true;
+bin.innerHTML=`<svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" aria-hidden="true"><path d="M4 7h16M9 7V4h6v3M6 7l1 13h10l1-13M10 11v6M14 11v6"/></svg><span>Hier ablegen zum Löschen</span>`;
+document.body.appendChild(bin);
+let press=null, endedAt=0;
+$("#shop").addEventListener("mousedown",e=>{ if(e.target.matches(".edit.ex input[type=checkbox]")||e.target.closest(".lbpick .lbb")) e.preventDefault() });
+$("#shop").addEventListener("pointerdown",e=>{
+  if(!canWrite||editId||addAt||e.button>0) return;
+  const row=e.target.closest(".row"); if(!row||e.target.type==="checkbox"||e.target.closest(".orig")) return;
+  const x=e.clientX,y=e.clientY, mouse=e.pointerType==="mouse";
+  if(mouse) e.preventDefault();   /* sonst markiert die Maus beim Ziehen Text auf der Seite */
+  /* Langer Druck nur bei Touch (dort heißt Bewegen „scrollen“); die Maus zieht sofort, sobald sie sich ein paar Pixel bewegt */
+  press={id:row.dataset.id,row,x,y,mouse,t:mouse?null:setTimeout(()=>startDrag(row,x,y),280)};
+});
+addEventListener("pointermove",e=>{
+  if(press&&!drag){
+    const d=Math.hypot(e.clientX-press.x,e.clientY-press.y);
+    if(press.mouse){ if(d>3) startDrag(press.row,press.x,press.y) }
+    else if(d>6){clearTimeout(press.t);press=null}
+  }
+  if(drag) moveDrag(e.clientX,e.clientY);
+},{passive:true});
+addEventListener("pointerup",()=>{ if(press){clearTimeout(press.t);press=null} if(drag) endDrag() });
+addEventListener("pointercancel",()=>{ if(press){clearTimeout(press.t);press=null} if(drag){drag.cancel=true;endDrag()} });
+/* Seite darf beim Ziehen nicht scrollen (iPhone) */
+document.addEventListener("touchmove",e=>{ if(drag) e.preventDefault() },{passive:false});
+$("#shop").addEventListener("contextmenu",e=>{ if(e.target.closest(".row")) e.preventDefault() });
+
+function startDrag(row,x,y){
+  const it=items.find(i=>i.id===row.dataset.id); if(!it) return;
+  const r=row.getBoundingClientRect();
+  const ghost=row.cloneNode(true); ghost.className="row ghost"; ghost.style.width=r.width+"px";
+  document.body.appendChild(ghost);
+  const mouse=press?.mouse;
+  drag={id:it.id,row,ghost,dx:x-r.left,dy:y-r.top,x,y,from:{ul:row.parentNode,next:row.nextSibling},target:null,raf:0};
+  press=null; if(!mouse) navigator.vibrate?.(12);
+  addEmptyDrops();
+  row.classList.add("dragging");
+  row.addEventListener("touchmove",ev=>{ if(drag) ev.preventDefault() },{passive:false});
+  document.body.classList.add("dragmode"); bin.hidden=false;
+  moveDrag(x,y); autoScroll();
+}
+/* Eintrag löschen (geleerte Zeile per Zurück-Taste), mit Rückgängig */
+function removeItem(it){
+  items=items.filter(i=>i.id!==it.id);
+  const {id,...body}=it; if(!db) return;
+  db.doc("shopping/"+id).delete().then(()=>{refreshers.forEach(f=>f()); undoToast(`„${it.name}“ gelöscht`,id,body)}).catch(fail);
+}
+/* Löschen rückgängig: 5 s lang; stellt den Eintrag mit derselben id wieder her */
+function undoToast(msg,id,body){
+  const t=$("#toast"); t.innerHTML=`${esc(msg)} <button class="undo" type="button">Rückgängig</button>`; t.hidden=false;
+  clearTimeout(toast.h); toast.h=setTimeout(()=>{t.hidden=true},5000);
+  t.querySelector(".undo").onclick=async()=>{ clearTimeout(toast.h); t.hidden=true;
+    try{await db.doc("shopping/"+id).set(body); refreshers.forEach(f=>f()); toast("Wiederhergestellt")}catch(err){fail(err)} };
+}
+/* Fehlende Bereiche als leere Ziele einfügen, ohne vorhandene Zeilen anzufassen */
+function addEmptyDrops(){
+  document.querySelectorAll("#shop .group").forEach(g=>{
+    const L=g.dataset.list, have=new Map([...g.querySelectorAll(".drop")].map(d=>[d.dataset.sec,d]));
+    let prev=null;   /* Zähler „x von y offen“ entfällt seit 1.11.; erste Kategorie steht ganz oben */
+    for(const S of SECTIONS){
+      let d=have.get(S);
+      if(!d){d=document.createElement("div");d.className="drop emptysec";d.dataset.list=L;d.dataset.sec=S;
+        d.innerHTML=`${secHead(S,[],false)}<ul class="items"><li class="ph">Hierher ziehen</li></ul>`;prev?prev.after(d):g.prepend(d)}
+      prev=d;
+    }
+  });
+}
+const nextRow=li=>{let n=li.nextElementSibling; while(n&&!n.classList.contains("row")) n=n.nextElementSibling; return n||null};
+/* Lage im Dokument ohne laufende Gleit-Animationen (offsetTop kennt keine transform) */
+const layTop=el=>{let t=0; for(let e=el;e;e=e.offsetParent) t+=e.offsetTop; return t};
+/* Gleiten wie SortableJS animation:150 – Kategorien und Zeilen von der alten zur neuen Lage */
+function shopSnap(){
+  const m=new Map(); $("#shop").querySelectorAll(".drop,.row:not(.ghost)").forEach(el=>{const r=el.getBoundingClientRect(); m.set(el,r.top)}); return m;
+}
+function shopFlip(before){
+  if(reducedMotion()) return;
+  for(const [el,t] of before){
+    if(!el.isConnected||!el.offsetParent) continue;
+    const now=el.getBoundingClientRect().top, par=el.classList.contains("row")?el.closest(".drop"):null;
+    /* Zeile in einer Kategorie, die selbst gleitet: deren Weg abziehen */
+    const pd=par&&before.has(par)?(before.get(par)-par.getBoundingClientRect().top):0;
+    const dy=t-now-pd; if(Math.abs(dy)<.5) continue;
+    el.getAnimations().forEach(a=>a.cancel());
+    el.animate([{transform:`translateY(${dy}px)`},{transform:"none"}],{duration:150,easing:"ease"});
+  }
+}
+/* Der Eintrag selbst rückt beim Ziehen an die Stelle unter dem Finger (wie in den ToDos), kein Rahmen ums Ziel */
+function moveDrag(x,y){
+  drag.x=x; drag.y=y;
+  drag.ghost.style.transform=`translate(${x-drag.dx}px,${y-drag.dy}px)`;
+  drag.ghost.style.visibility="hidden";
+  const under=document.elementFromPoint(x,y);
+  drag.ghost.style.visibility="";
+  const onBin=!!under?.closest?.("#bin"); bin.classList.toggle("over",onBin); drag.onBin=onBin;
+  if(onBin) return;
+  const py=y+scrollY, drops=[...document.querySelectorAll("#shop .drop:not(.doneblk)")];
+  let best=null, bd=Infinity;
+  for(const d of drops){ const t=layTop(d), b=t+d.offsetHeight, dist=py<t?t-py:py>b?py-b:0; if(dist<bd){bd=dist;best=d} }
+  if(!best||bd>60) return;   /* weit weg (z. B. über „Erledigt“): letzte Stelle bleibt */
+  const ul=best.querySelector(".items"), row=drag.row;
+  const rows=[...ul.children].filter(li=>li.classList.contains("row")&&li!==row&&li.offsetParent);
+  let nx;
+  if(row.parentNode===ul){
+    /* Gleiche Kategorie wie SortableJS (swapThreshold 1): getauscht wird, sobald der Finger die Nachbarzeile betritt */
+    const hit=rows.find(li=>{const t=layTop(li); return py>=t&&py<t+li.offsetHeight}); if(!hit) return;
+    nx=row.compareDocumentPosition(hit)&Node.DOCUMENT_POSITION_FOLLOWING?nextRow(hit):hit;
+  } else nx=rows.find(li=>py<layTop(li)+li.offsetHeight/2)||null;   /* andere Kategorie: vor der Zeile, deren Mitte unter dem Finger liegt */
+  if(row.parentNode===ul&&nextRow(row)===nx) return;
+  const before=shopSnap(); ul.insertBefore(row,nx); shopFlip(before);
+}
+/* Am Rand weiterscrollen, solange der Finger dort steht, und dabei die Stelle nachführen */
+function autoScroll(){
+  if(!drag) return;
+  const edge=110, top=$("#mainhead").getBoundingClientRect().bottom, h=innerHeight, y=drag.y;
+  let v=0; if(y<top+edge) v=-Math.ceil(18*(1-(y-top)/edge)); else if(y>h-edge) v=Math.ceil(18*(1-(h-y)/edge));
+  if(v){ const s0=scrollY; scrollBy(0,v); if(scrollY!==s0) moveDrag(drag.x,drag.y) }
+  drag.raf=requestAnimationFrame(autoScroll);
+}
+async function endDrag(){
+  const d=drag; drag=null; endedAt=Date.now(); cancelAnimationFrame(d.raf);
+  d.ghost.remove(); bin.hidden=true; bin.classList.remove("over"); document.body.classList.remove("dragmode");
+  const it=items.find(i=>i.id===d.id), row=d.row;
+  if(!it||d.cancel){renderShop();return}
+  if(d.onBin){
+    items=items.filter(i=>i.id!==it.id); renderShop();
+    const {id,...body}=it;
+    try{await db.doc("shopping/"+id).delete(); refreshers.forEach(f=>f()); undoToast(`„${it.name}“ gelöscht`,id,body)}catch(err){fail(err)}
+    return;
+  }
+  /* Ziel = wo der Eintrag jetzt steht; unverändert → nichts speichern */
+  const drop=row.closest(".drop");
+  if(!drop||drop.classList.contains("doneblk")||(row.parentNode===d.from.ul&&row.nextSibling===d.from.next)){renderShop();return}
+  const tg={list:drop.dataset.list,sec:drop.dataset.sec,before:nextRow(row)?.dataset.id||null};
+  const sib=items.filter(i=>secOf(i)===tg.sec&&i.id!==it.id).sort((a,b)=>(a.order??0)-(b.order??0));
+  const k=tg.before?sib.findIndex(i=>i.id===tg.before):-1;
+  let order;
+  if(k<0) order=(sib.length?(sib[sib.length-1].order??0):0)+1000;
+  else { const nx=sib[k].order??0, pv=k>0?(sib[k-1].order??0):nx-2000; order=(pv+nx)/2; }
+  const patch={section:tg.sec,order};
+  /* In eine andere Kategorie gezogen: für diesen Artikel merken, gilt künftig auch für Rezept-Zutaten (29.10.) */
+  if(secOf(it)!==tg.sec&&it.name){ cfg.gelernt={...cfg.gelernt,[it.name.toLowerCase().trim()]:tg.sec}; saveCfg(true) }
+  if(it.list!==LIST) patch.list=LIST;
+  Object.assign(it,patch); renderShop();
+  await save("shopping/"+it.id,patch,"Verschoben");
+}
+/* Speicher */
+async function save(path,data,msg){
+  if(!db) return toast("Speichern geht hier gerade nicht.");
+  try{await db.doc(path).update(data); refreshers.forEach(f=>f()); if(msg) toast(msg)}catch(err){fail(err)}
+}
+function fail(err){
+  if(err?.code==="invalid_argument"){canWrite=false;renderDays();renderShop();toast("Du kannst diesen Plan nur ansehen.")}
+  else toast("Konnte nicht speichern. Bitte gleich noch einmal versuchen.");
+}
+
+/* ---------- Herkunft: Blase direkt links am Knopf; zweiter Tipp (auf Knopf oder Blase) öffnet das Rezept ---------- */
+const pop=document.createElement("div"); pop.id="srcpop"; pop.hidden=true; pop.setAttribute("role","button"); document.body.appendChild(pop);
+let popFor=null;
+function showPop(btn,it){
+  hidePop();
+  pop.innerHTML=`<span>Aus <b>${esc(it.rezeptName||it.rezept)}</b>${it.pers?` · ${esc(it.pers)} Pers.`:""}</span>`;
+  const r=btn.getBoundingClientRect();
+  pop.style.right=(document.documentElement.clientWidth-r.left+8)+"px"; pop.style.top=(r.top+r.height/2)+"px";
+  pop.hidden=false; popFor=it.id; btn.setAttribute("aria-expanded","true");
+}
+function hidePop(){
+  if(!popFor) return; pop.hidden=true;
+  document.querySelector(`#shop .orig[data-id="${CSS.escape(popFor)}"]`)?.setAttribute("aria-expanded","false"); popFor=null;
+}
+function openSrc(it){
+  hidePop();
+  try{ if(it.pers) localStorage.setItem("personen-"+it.rezept,it.pers) }catch(e){}   /* Rezept zeigt die Mengen wie auf der Liste */
+  nav("detail",it.rezept);
+}
+pop.addEventListener("click",()=>{ const it=items.find(i=>i.id===popFor); if(it) openSrc(it) });
+document.addEventListener("pointerdown",e=>{ if(popFor&&!e.target.closest("#srcpop,.item .orig")) hidePop() },true);
+addEventListener("scroll",hidePop,{passive:true});
+
+/* ---------- Rezept → Einkaufsliste (rezepte.js ruft window.Einkauf) ----------
+   Zutaten kommen in die erste Liste, jede in ihre geratene Kategorie, mit rezept, rezeptName und pers.
+   Noch offene Zutaten desselben Rezepts werden ersetzt (z. B. nach Ändern der Personen); abgehakte bleiben. */
+/* go: optional {label, run} – zweiter Knopf, z. B. „Zur Liste“ (29.10.) */
+function undoBar(msg,fn,go){
+  const t=$("#toast"); t.innerHTML=`${esc(msg)} ${go?`<button class="undo go" type="button">${esc(go.label)}</button>`:""}<button class="undo" type="button">Rückgängig</button>`; t.hidden=false;
+  if(go) t.querySelector(".go").onclick=()=>{ clearTimeout(toast.h); t.hidden=true; go.run() };
+  clearTimeout(toast.h); toast.h=setTimeout(()=>{t.hidden=true},5000);
+  t.querySelector(".undo:not(.go)").onclick=async()=>{ clearTimeout(toast.h); t.hidden=true; try{await fn(); refreshers.forEach(f=>f()); toast("Rückgängig gemacht")}catch(err){fail(err)} };
+}
+/* In den Einkauf springen und die eben übernommenen Zeilen kurz aufleuchten lassen; erste davon ins Bild holen */
+function showFresh(ids){
+  nav("shop");
+  requestAnimationFrame(()=>requestAnimationFrame(()=>{
+    const rows=ids.map(id=>$(`#shop .row[data-id="${CSS.escape(id)}"]`)).filter(Boolean);
+    rows.forEach(r=>{ r.classList.remove("fresh"); void r.offsetWidth; r.classList.add("fresh") });
+    const top=Math.min(...rows.map(r=>r.getBoundingClientRect().top)), head=$("#mainhead").getBoundingClientRect().bottom;
+    if(rows.length&&(top>innerHeight-80||top<head)) scrollTo({top:scrollY+top-head-60,behavior:reducedMotion()?"auto":"smooth"});
+  }));
+}
+/* ---------- Ansicht „Zuordnung & Einheiten“: alle Listen sichtbar, Stichwörter hinzufügen und entfernen ---------- */
+let zuoPending=false;
+function zuoBox(key,title,sub,words,opt={}){
+  return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
+    <div class="chips">${(opt.keep?[...words]:[...words].sort((a,b)=>a.localeCompare(b,"de"))).map(w=>`<span class="kw${w.endsWith("!")?" hard":""}">${esc(w)}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>`).join("")}
+    ${canWrite?`<form class="kadd"><input type="text" placeholder="＋ Stichwort" aria-label="Stichwort zu ${esc(title)}" enterkeyhint="done" autocomplete="off" autocapitalize="off" spellcheck="false"></form>`:""}</div></section>`;
+}
+function renderZuo(force){
+  const el=$("#zuo-body"); if(!el) return;
+  if(!force&&el.contains(document.activeElement)&&document.activeElement.matches("input")){zuoPending=true;return}
+  zuoPending=false;
+  el.innerHTML=zuoBox("vorrat","Immer im Haus","Wird nicht aus Rezepten übernommen. Gilt nur als ganzes Wort.",cfg.vorrat)
+    +`<section class="zg" data-k="gelernt"><h2>Gelernt</h2><p class="sub">Entsteht, wenn ein Eintrag in eine andere Kategorie gezogen wird. Gilt vor den Stichwörtern.</p><div class="chips">${
+      Object.entries(cfg.gelernt).sort((a,b)=>a[0].localeCompare(b[0],"de")).map(([n,S])=>`<span class="kw">${esc(n)} <span class="kto">→ ${esc(S)}</span>${canWrite?`<button type="button" class="kx" data-w="${esc(n)}" aria-label="${esc(n)} vergessen">×</button>`:""}</span>`).join("")||`<span class="sub">Noch nichts gelernt.</span>`}</div></section>`
+    +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Vorher gelten „Gelernt“ und die Kategorie, in der derselbe Artikel schon als eigener Eintrag steht.</p></section>`
+    +CHECK.map(S=>zuoBox("k:"+S,S,S==="Sonstiges"?"Alles ohne Treffer.":"",cfg.kategorien[S])).join("")
+    +`<section class="zg"><h2>Merklisten</h2><p class="sub">Gute Lebensmittel je Kategorie, zum schnellen Ergänzen über das Listen-Symbol in der Einkaufsliste.</p></section>`
+    +SECTIONS.map(S=>zuoBox("m:"+S,S,"",cfg.merk[S]||[])).join("")
+    +`<section class="zg"><h2>Labels</h2><p class="sub">Neue Einträge, deren Name ein Stichwort enthält, bekommen das Label automatisch – auch Einträge, die schon offen auf der Liste stehen.</p></section>`
+    +LABELS.map(L=>zuoBox("l:"+L.k,L.n,"",cfg.labels[L.k]||[],{icon:badge(L.k)})).join("")
+    +zuoBox("einheiten","Mengeneinheiten","Werden nach einer Zahl erkannt, z. B. „2 Dosen Mais“.",cfg.einheiten);
+  flashKw();
+}
+async function saveCfg(quiet){
+  if(!quiet) renderZuo(true);
+  if(!db) return toast("Speichern geht hier gerade nicht.");
+  try{ await db.doc("einstellungen/einkauf").set({...cfg,geaendert:new Date().toISOString(),geaendert_von:"Patrick"}); refreshers.forEach(f=>f()) }catch(err){fail(err)}
+}
+const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:k.startsWith("m:")?(cfg.merk[k.slice(2)]||[]):k.startsWith("l:")?(cfg.labels[k.slice(2)]||[]):cfg.kategorien[k.slice(2)];
+function cfgSet(k,list){
+  if(k==="vorrat") cfg.vorrat=list; else if(k==="einheiten") cfg.einheiten=list;
+  else if(k.startsWith("m:")) cfg.merk={...cfg.merk,[k.slice(2)]:list};
+  else if(k.startsWith("l:")) cfg.labels={...cfg.labels,[k.slice(2)]:list};
+  else cfg.kategorien[k.slice(2)]=list;
+  buildUnits();
+}
+$("#zuo-body").addEventListener("click",e=>{
+  const x=e.target.closest(".kx"); if(!x) return;
+  const k=x.closest(".zg").dataset.k, w=x.dataset.w;
+  /* Entfernen mit Rückgängig (29.10.) */
+  if(k==="gelernt"){ const prev=cfg.gelernt, g={...prev}; delete g[w]; cfg.gelernt=g; saveCfg();
+    undoBar(`„${w}“ vergessen`,()=>{ cfg.gelernt={...cfg.gelernt,[w]:prev[w]}; return saveCfg() }); return }
+  const prev=cfgList(k); cfgSet(k,prev.filter(v=>v!==w)); saveCfg();
+  undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
+});
+/* Stichwort übernehmen: mit Enter (Feld bleibt offen) oder beim Verlassen (dann zum neuen Chip rollen); der Chip leuchtet kurz auf */
+/* Zuletzt ergänzter Chip leuchtet 1,6 s; übersteht auch ein Neuzeichnen (Animation läuft an der richtigen Stelle weiter) */
+let lastKw=null;
+function flashKw(){
+  if(!lastKw) return; const el=performance.now()-lastKw.t; if(el>1600){lastKw=null;return}
+  const chip=$(`#zuo-body .zg[data-k="${CSS.escape(lastKw.k)}"] .kx[data-w="${CSS.escape(lastKw.w)}"]`)?.closest(".kw");
+  if(chip){ chip.style.animationDelay=`-${Math.round(el)}ms`; chip.classList.add("fresh") }
+}
+function addKw(k,raw,leaving){
+  /* Merklisten behalten die Schreibweise („Naturjoghurt“), alle anderen Stichwörter klein */
+  let w=String(raw||"").trim().replace(/\s+/g," "); if(!k.startsWith("m:")) w=w.toLowerCase(); if(!w) return false;
+  const have=cfgList(k).find(x=>x.toLowerCase()===w.toLowerCase());
+  if(have) w=have; else cfgSet(k,[...cfgList(k),w]);
+  saveCfg();   /* zeichnet synchron neu */
+  if(k.startsWith("l:")) applyLabel(k.slice(2),w);
+  lastKw={k,w,t:performance.now()}; flashKw();
+  const chip=$(`#zuo-body .zg[data-k="${CSS.escape(k)}"] .kx[data-w="${CSS.escape(w)}"]`)?.closest(".kw");
+  if(chip&&leaving) chip.scrollIntoView({block:"center",behavior:reducedMotion()?"auto":"smooth"});
+  return true;
+}
+/* Neues Label-Stichwort: offene Einträge mit passendem Namen bekommen das Label gleich mit */
+function applyLabel(lk,w){
+  if(!db||!canWrite) return;
+  items.filter(i=>!i.checked&&!(i.labels||[]).includes(lk)&&kwScore(String(i.name||""),w)).forEach(i=>{
+    i.labels=sortLb([...(i.labels||[]),lk]); save("shopping/"+i.id,{labels:i.labels});
+  });
+}
+$("#zuo-body").addEventListener("submit",e=>{
+  e.preventDefault();
+  const inp=e.target.querySelector("input"), k=e.target.closest(".zg").dataset.k, v=inp.value; inp.value="";
+  if(addKw(k,v,false)) $(`#zuo-body .zg[data-k="${CSS.escape(k)}"] .kadd input`)?.focus();
+});
+$("#zuo-body").addEventListener("focusout",e=>{
+  /* Wert sofort lesen: ein Tipp auf einen anderen Chip zeichnet die Ansicht neu */
+  const inp=e.target.matches(".kadd input")?e.target:null, k=inp?.closest(".zg")?.dataset.k, v=inp?inp.value:""; if(inp) inp.value="";
+  setTimeout(()=>{ if(k&&addKw(k,v,true)) return; if(zuoPending&&!$("#zuo-body").contains(document.activeElement)) renderZuo() },0);
+});
+
+/* Rezept auf den Plan: neues Gericht „ohne Tag“ am Ende, mit Sprung zum Plan und Rückgängig */
+$("#d-plan").addEventListener("click",async()=>{
+  const r=window.Rezepte?.current?.(); if(!r) return;
+  if(!db) return toast("Speichern geht hier gerade nicht.");
+  if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
+  const id=`joker-${Date.now()}`, order=Math.max(0,...jokerList().map(j=>j.order??0))+1000;
+  const body={date:"2099-12-31",joker:true,...EMPTY_MEAL,dish:r.name,recipe:r.id,order};
+  const ch=[{id,prev:null,next:body}]; await applyDays(ch,"next"); if(!ch.ok) return;
+  undoBar(`${r.name} auf dem Plan (ohne Tag)`,()=>applyDays(ch,"prev"),{label:"Zum Plan",run:()=>{
+    nav("week");
+    requestAnimationFrame(()=>requestAnimationFrame(()=>{ const a=$(`#days .day[data-id="${CSS.escape(id)}"]`); if(!a) return;
+      a.classList.remove("fresh"); void a.offsetWidth; a.classList.add("fresh");
+      a.scrollIntoView({block:"center",behavior:reducedMotion()?"auto":"smooth"}) }));
+  }});
+});
+
+window.Einkauf={
+  count:id=>items.filter(i=>i.rezept===id&&!i.checked).length,
+  /* Tag, den die offenen Zutaten des Rezepts schon tragen (für die Vorauswahl am Einkaufswagen) */
+  dueOf:id=>items.find(i=>i.rezept===id&&!i.checked&&i.due)?.due||"",
+  dueLabel:d=>dueLabel(d), addDays:(d,n)=>addDays(d,n), today:()=>todayStr(),
+  async addRecipe({id,name,pers,entries,due}){
+    if(!db){toast("Speichern geht hier gerade nicht.");return false}
+    if(!canWrite){toast("Du kannst diesen Plan nur ansehen.");return false}
+    const L=LIST;
+    const old=items.filter(i=>i.rezept===id&&!i.checked);
+    items=items.filter(i=>!old.includes(i));
+    const skip=entries.filter(z=>isStaple(z.name)); entries=entries.filter(z=>!isStaple(z.name));
+    const made=entries.map(z=>{
+      const S=guessSec(z.name,z.hint), o=orderAfter(L,S,null), nid=newId("r");
+      const lb=autoLabels(z.name);
+      const body={name:z.name,qty:z.qty,section:S,list:L,checked:false,order:o,rezept:id,rezeptName:name,pers,...(due?{due}:{}),...(lb.length?{labels:lb}:{})};
+      items.push({id:nid,...body}); return {id:nid,body};
+    });
+    renderShop(); window.Rezepte?.shopChanged?.();
+    try{
+      await Promise.all([...made.map(m=>db.doc("shopping/"+m.id).set(m.body)),...old.map(o=>db.doc("shopping/"+o.id).delete())]);
+      refreshers.forEach(f=>f());
+    }catch(err){fail(err);return false}
+    undoBar(old.length?`Mengen für ${pers} ${pers===1?"Person":"Personen"} aktualisiert`:`${made.length} Zutaten auf der Einkaufsliste${due?" · "+dueLabel(due):""}${skip.length?` · ohne ${skip.map(z=>z.name).join(", ")}`:""}`,async()=>{
+      await Promise.all([...made.map(m=>db.doc("shopping/"+m.id).delete()),...old.map(({id:oid,...b})=>db.doc("shopping/"+oid).set(b))]);
+    },{label:"Zur Liste",run:()=>showFresh(made.map(m=>m.id))});
+    return true;
+  }
+};
+
+{
+  let tab="week"; try{ tab=localStorage.getItem("tab")||"week" }catch(e){}
+  const p = parseHash(location.hash) || [tab, null];
+  nav(p[0], p[1], {push:false});
+  try{ history.replaceState({v:p[0], a:p[1], o:origin}, "", hashFor(p[0], p[1])) }catch(e){}
+}
+
+(async()=>{
+  /* Ladezustand mit Zwischenschritten: zeigt, woran es hängt, falls nichts kommt */
+  const status=t=>{const el=$("#days"); if(!days.length) el.innerHTML=`<div class="state"><strong>Plan wird geladen …</strong>${esc(t)}</div>`};
+  const use=n=>window.claude?.use?window.claude.use(n):Promise.resolve(null);
+  status(window.claude?.use?"Verbinde mit der Datenbank …":"Keine Verbindung zur Claude-App (window.claude fehlt).");
+  let gotDays=false;
+  const t0=setTimeout(()=>{if(!gotDays) status("Die Datenbank antwortet nicht. Bitte Seite neu laden; hilft das nicht, Claude Bescheid geben.")},12000);
+  const [d,u]=await Promise.all([use("db"),use("user")]);
+  db=d;
+  if(!db){clearTimeout(t0);$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Öffne den Essensplan angemeldet in der Claude-App.</div>`;$("#shop").innerHTML="";return}
+  status("Datenbank verbunden, lade die Tage …");
+  /* Live-Abo; lehnt die Plattform es ab (passiert nach dem Zurückkommen von einer Unterseite:
+     „Invalid subscription id“), direkt laden und regelmäßig nachladen */
+  const live=(q,apply,onErr)=>{
+    let timer=null;
+    const pull=()=>q.get().then(apply).catch(onErr);
+    const un=q.onSnapshot(apply,err=>{
+      if(err?.code==="invalid_argument"&&/subscription/i.test(err?.message||"")){
+        pull(); refreshers.push(pull); toast("Live-Verbindung abgelehnt, lade regelmäßig nach");
+        if(!timer) timer=setInterval(()=>{if(document.visibilityState==="visible") pull()},15000);
+      } else onErr(err);
+    });
+    unsubs.push(un);
+  };
+  live(db.collection("days").orderBy("date"),
+    s=>{gotDays=true;clearTimeout(t0);applySnap(s.docs.map(x=>({id:x.id,...x.data()})))},
+    err=>{clearTimeout(t0);status("Fehler beim Laden der Tage: "+(err?.code||"")+" "+(err?.message||err))});
+  live(db.collection("shopping"),
+    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.()},
+    err=>{$("#shop").innerHTML=`<div class="state"><strong>Einkaufsliste nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
+  live(db.collection("einstellungen"),
+    s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo()},
+    ()=>{});
+  live(db.collection("erfahrungen"),
+    s=>{exps=s.docs.map(x=>({id:x.id,...x.data()}));if(view==="exp")renderExp()},
+    err=>{$("#exp-body").innerHTML=`<div class="state"><strong>Erfahrungen nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
+  document.addEventListener("visibilitychange",()=>{if(document.visibilityState==="visible") refreshers.forEach(f=>f())});
+  /* Schreibrecht nebenher prüfen, blockiert das Laden nicht mehr */
+  if(u){try{const w=await u.can("data.write"); if(w===false){canWrite=false;renderDays();renderShop()}}catch(e){}}
+})();
+</script>
+
+
+
+</body></html>
