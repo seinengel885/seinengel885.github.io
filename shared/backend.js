@@ -27,9 +27,10 @@
   const nameOf = email => cfg.names?.[String(email||"").toLowerCase()] || String(email||"").split("@")[0];
 
   const CSS = `
-  #auth{position:fixed;inset:0;z-index:100;display:flex;align-items:center;justify-content:center;padding:16px;
+  #auth{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center;
+    padding:max(16px,env(safe-area-inset-top)) 16px max(16px,env(safe-area-inset-bottom));overflow-y:auto;
     background:var(--bg,#f6f8f6);color:var(--ink,#18261f);font-family:var(--body,system-ui,-apple-system,sans-serif)}
-  #auth form{width:100%;max-width:360px;display:flex;flex-direction:column;gap:12px}
+  #auth form{width:100%;max-width:360px;margin:auto 0;display:flex;flex-direction:column;gap:12px}
   #auth h1{font-family:var(--display,inherit);font-size:1.6rem;margin:0}
   #auth p{margin:0;color:var(--muted,#5f6f66);font-size:.95rem;line-height:1.45}
   #auth input{font:inherit;font-size:16px;padding:11px 12px;border-radius:10px;border:1px solid var(--line,#dde5df);
@@ -56,6 +57,17 @@
       <p id="a-err" class="err" role="alert"></p>
     </form>`;
     document.body.appendChild(box);
+    // iOS (v. a. als Home-Bildschirm-App) schiebt fixierte Elemente nicht über die Tastatur:
+    // Anmeldefläche auf den sichtbaren Bereich (visualViewport) begrenzen, dann rutscht das Formular hoch.
+    const vv = window.visualViewport;
+    if(vv){
+      const fit = () => {
+        if(!box.isConnected){ vv.removeEventListener("resize", fit); vv.removeEventListener("scroll", fit); return; }
+        box.style.top = vv.offsetTop + "px"; box.style.height = vv.height + "px"; box.style.bottom = "auto";
+      };
+      vv.addEventListener("resize", fit); vv.addEventListener("scroll", fit); fit();
+    }
+    box.addEventListener("focusin", e => setTimeout(() => e.target.scrollIntoView?.({block: "center"}), 300));
     const $ = id => box.querySelector("#" + id);
     $("a-mail").value = email;
     if(msg) $("a-err").textContent = msg;
