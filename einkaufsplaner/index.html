@@ -840,7 +840,7 @@ const DEF_CFG={
   },
   merk:DEF_MERK,   /* Merkliste je Kategorie: Vorschläge unter dem Listen-Symbol der Kategorie */
   merkLb:{},   /* Vorschlag (klein geschrieben) → Labels, die der Eintrag beim Antippen bekommt (1.11.) */
-  labels:Object.fromEntries(LABELS.map(L=>[L.k,[]]))   /* Stichwörter je Label: neue Einträge bekommen es automatisch */
+  zuoLb:{}   /* Zuordnung (Stichwort ohne !) → Logos, die ein neuer Eintrag bekommt, wenn diese Zuordnung ihn einsortiert */
 };
 let cfg=structuredClone(DEF_CFG);
 const reEsc=w=>w.replace(/[.*+?^${}()|[\]\\]/g,"\\$&");
@@ -865,9 +865,8 @@ function setCfg(d){
   if(!dk.Vorrat&&(dk["Gewürze"]||dk["Konserven & Vorrat"])) dk.Vorrat=[...new Set([...(dk["Gewürze"]||[]),...(dk["Konserven & Vorrat"]||[])])];   /* alte Aufteilung übernehmen */
   for(const S of CHECK) k[S]=Array.isArray(dk[S])?dk[S]:DEF_CFG.kategorien[S];
   const dm=d?.merk||{}, m={}; for(const S of SECTIONS) m[S]=Array.isArray(dm[S])?dm[S]:(DEF_MERK[S]||[]);
-  const dl=d?.labels||{}, l={}; for(const L of LABELS) l[L.k]=Array.isArray(dl[L.k])?dl[L.k]:[];
-  const ml={}; for(const [n,ks] of Object.entries(d?.merkLb||{})) if(Array.isArray(ks)) ml[n]=sortLb(ks);
-  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, merk:m, labels:l, merkLb:ml};
+  const lbMap=o=>{ const r={}; for(const [n,ks] of Object.entries(o||{})) if(Array.isArray(ks)&&ks.length) r[n]=sortLb(ks); return r };
+  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, merk:m, merkLb:lbMap(d?.merkLb), zuoLb:lbMap(d?.zuoLb)};
   buildUnits();
 }
 /* Tag zum Einkaufen: Feld due (JJJJ-MM-TT), getrennt gespeichert wie qty und name.
@@ -918,7 +917,7 @@ function kwScore(t,w){
   const hard=w.endsWith("!"), ws=(hard?w.slice(0,-1):w).trim().split(/\s+/).filter(Boolean);
   return ws.length&&ws.every(x=>hasWord(t,x))?[hard?1:0,ws.length]:null;
 }
-function guessSec(name,hint){
+function bestKw(name,hint){
   /* Stichwörter: alle Treffer sammeln, der stärkste gewinnt (29.10.):
      1. mit ! am Ende („dose!“) zieht hart, 2. mehr Wörter schlagen weniger („kolben mais“ vor „mais“),
      3. bei Gleichstand die Prüfreihenfolge. Geprüft wird die ganze Zeile samt Menge („1 Dose Mais“). */
@@ -926,10 +925,11 @@ function guessSec(name,hint){
   CHECK.forEach((S,ci)=>cfg.kategorien[S].forEach(w=>{
     const sc=kwScore(t,w); if(!sc) return;
     const key=[sc[0],sc[1],-ci];
-    if(!best||key[0]>best.key[0]||(key[0]===best.key[0]&&(key[1]>best.key[1]||(key[1]===best.key[1]&&key[2]>best.key[2])))) best={S,key};
+    if(!best||key[0]>best.key[0]||(key[0]===best.key[0]&&(key[1]>best.key[1]||(key[1]===best.key[1]&&key[2]>best.key[2])))) best={S,w,key};
   }));
-  return best?best.S:"Sonstiges";
+  return best;   /* {S, w}: Kategorie und die Zuordnung, die gewonnen hat */
 }
+const guessSec=(name,hint)=>bestKw(name,hint)?.S||"Sonstiges";
 /* In eine andere Kategorie gezogen (1.11.): den Namen als Stichwort in die Zuordnung eintragen, sichtbar und änderbar.
    Gleiches Stichwort in anderen Kategorien fällt weg; trifft schon ein Stichwort der Zielkategorie, bleibt alles, wie es ist.
    Zieht danach noch ein stärkeres Stichwort woandershin, bekommt es ein ! am Ende. Gibt das neue Stichwort zurück. */
@@ -941,10 +941,12 @@ function learnKw(name,S){
   cfg.kategorien[S]=[...own,w]; if(guessSec(name)===S) return w;
   cfg.kategorien[S]=[...own,w+"!"]; return w+"!";
 }
-/* Logos aus den Zuordnungen: ein Stichwort eines Labels trifft den Namen (gleiche Regeln wie bei den Kategorien).
+/* Logos aus der Zuordnung: dieselbe Zuordnung, die die Kategorie bestimmt, gibt ihre Logos mit.
    Gilt für jeden neuen Eintrag – getippt, aus dem Rezept oder per Vorschlag. */
 const sortLb=ks=>LABELS.map(L=>L.k).filter(k=>ks.includes(k));
-const autoLabels=name=>LABELS.filter(L=>(cfg.labels[L.k]||[]).some(w=>kwScore(String(name||""),w))).map(L=>L.k);
+const kwKey=w=>String(w).replace(/!$/,"");   /* „dose!“ und „dose“ sind dieselbe Zuordnung */
+const zuoLb=w=>cfg.zuoLb[kwKey(w)]||[];
+const autoLabels=(name,hint)=>{ const b=bestKw(name,hint); return b?zuoLb(b.w):[] };
 /* order für eine neue Zeile unter „after“ (zwischen ihr und der nächsten), ohne after am Ende des Bereichs */
 function orderAfter(L,S,after){
   const os=items.filter(i=>secOf(i)===S).map(i=>i.order??0);
@@ -1170,7 +1172,7 @@ function commitNew(f,next){
 const newId=p=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 function addItem(L,S,name,qty,extra={},order){
   if(order==null) order=orderAfter(L,S,null);
-  const lb=sortLb([...(extra.labels||[]),...autoLabels(name)]);
+  const lb=sortLb([...(extra.labels||[]),...autoLabels(name,qty)]);
   const id=newId("i"), body={name,qty,section:S,list:LIST,checked:false,order,...extra,...(lb.length?{labels:lb}:{})};
   items.push({id,...body});
   if(db) db.doc("shopping/"+id).set(body).then(()=>refreshers.forEach(f=>f())).catch(fail);
@@ -1326,12 +1328,11 @@ function focusEnd(el){
 }
 /* Getippten Namen bereinigen (\s trifft auch das geschützte Leerzeichen aus contenteditable) */
 const cleanWord=s=>String(s??"").replace(/\s+/g," ").trim();
-/* Logo im geöffneten Chip (Vorschlag oder Zuordnung) an-/abwählen: Chip-Logos neu zeichnen, der Text behält den Fokus.
-   own: Logo, das schon in der Überschrift steht und am Chip nicht wiederholt wird */
-function toggleLb(m,lbb,txt,own){
+/* Logo im geöffneten Chip (Vorschlag oder Zuordnung) an-/abwählen: Chip-Logos neu zeichnen, der Text behält den Fokus */
+function toggleLb(m,lbb,txt){
   const s=new Set(m.lb), k=lbb.dataset.lb; s.has(k)?s.delete(k):s.add(k); m.lb=sortLb([...s]);
   lbb.classList.toggle("on",s.has(k)); lbb.setAttribute("aria-pressed",s.has(k));
-  txt.parentElement.querySelectorAll(".lbb").forEach(b=>b.remove()); txt.insertAdjacentHTML("afterend",m.lb.filter(x=>x!==own).map(badge).join(""));
+  txt.parentElement.querySelectorAll(".lbb").forEach(b=>b.remove()); txt.insertAdjacentHTML("afterend",m.lb.map(badge).join(""));
   if(document.activeElement!==txt) txt.focus();
 }
 function commitMk(cancel){
@@ -1561,15 +1562,13 @@ function showFresh(ids){
 /* ---------- Ansicht „Zuordnung & Einheiten“: alle Listen sichtbar, Stichwörter hinzufügen und entfernen ---------- */
 let zuoPending=false;
 let kwEdit=null;   /* {k, w, lb} solange eine Zuordnung geändert wird */
-/* Zuordnungen = Stichwörter auf dieser Seite; sie wirken, wenn ein Eintrag eingegeben wird. Logos tragen die
-   Zuordnungen der Kategorien und der Labels: Logo einer Zuordnung = das Wort steht in der Stichwortliste dieses Labels
-   (cfg.labels), so bekommt jeder neue Eintrag mit diesem Wort das Logo (autoLabels). Vorschläge (Merkliste) stehen
-   nur in der Einkaufsliste und haben eigene Logos (merkLb). */
-const zuoHasLb=k=>/^[kl]:/.test(k);
-const zuoLb=w=>LABELS.map(L=>L.k).filter(lk=>(cfg.labels[lk]||[]).includes(w));
+/* Zuordnungen = Stichwörter auf dieser Seite; sie wirken, wenn ein Eintrag eingegeben wird. Die Zuordnungen der
+   Kategorien tragen Logos (cfg.zuoLb): Sortiert eine Zuordnung einen neuen Eintrag ein, bekommt er ihre Logos.
+   Vorschläge (Merkliste) stehen nur in der Einkaufsliste und haben eigene Logos (cfg.merkLb). */
+const zuoHasLb=k=>k.startsWith("k:");
 function zuoBox(key,title,sub,words,opt={}){
   const chip=w=>{
-    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=(ed?kwEdit.lb:zuoHasLb(key)?zuoLb(w):[]).filter(x=>"l:"+x!==key);   /* eigenes Label steht schon in der Überschrift */
+    const ed=kwEdit?.k===key&&kwEdit.w===w, lb=ed?kwEdit.lb:zuoHasLb(key)?zuoLb(w):[];
     return `<span class="kw${w.endsWith("!")?" hard":""}${ed?" ked":""}">${ed?`<span class="kt" data-w="${esc(w)}" contenteditable="plaintext-only" role="textbox" aria-label="Stichwort ändern" spellcheck="false" autocapitalize="off">${esc(w)}</span>`:`<button type="button" class="kt" data-w="${esc(w)}"${canWrite?"":" disabled"}>${esc(w)}</button>`}${lb.map(badge).join("")}${canWrite?`<button type="button" class="kx" data-w="${esc(w)}" aria-label="${esc(w)} entfernen">×</button>`:""}</span>${ed&&zuoHasLb(key)?lbPick(kwEdit.lb," mkpick"):""}` };
   return `<section class="zg" data-k="${esc(key)}"><h2>${opt.icon||""}${esc(title)}</h2>${sub?`<p class="sub">${sub}</p>`:""}
     <div class="chips">${[...words].sort((a,b)=>a.localeCompare(b,"de")).map(chip).join("")}
@@ -1582,8 +1581,6 @@ function renderZuo(force){
   el.innerHTML=zuoBox("vorrat","Immer im Haus","Wird nicht aus Rezepten übernommen. Gilt nur als ganzes Wort.",cfg.vorrat)
     +`<section class="zg"><h2>Kategorien</h2><p class="sub">Es gewinnt der stärkste Treffer: ein Stichwort mit ! am Ende („dose!“) immer, sonst das mit mehr Wörtern („kolben mais“ vor „mais“), bei Gleichstand die obere Kategorie. Stichwörter bis 3 Buchstaben gelten nur als ganzes Wort. Wird ein Eintrag in eine andere Kategorie gezogen, kommt sein Name hier als Stichwort dazu.</p></section>`
     +CHECK.map(S=>zuoBox("k:"+S,S,S==="Sonstiges"?"Alles ohne Treffer.":"",cfg.kategorien[S])).join("")
-    +`<section class="zg"><h2>Labels</h2><p class="sub">Neue Einträge, deren Name ein Stichwort enthält, bekommen das Label automatisch – auch Einträge, die schon offen auf der Liste stehen.</p></section>`
-    +LABELS.map(L=>zuoBox("l:"+L.k,L.n,"",cfg.labels[L.k]||[],{icon:badge(L.k)})).join("")
     +zuoBox("einheiten","Mengeneinheiten","Werden nach einer Zahl erkannt, z. B. „2 Dosen Mais“.",cfg.einheiten);
   flashKw();
 }
@@ -1592,10 +1589,9 @@ async function saveCfg(quiet){
   if(!db) return toast("Speichern geht hier gerade nicht.");
   try{ await db.doc("einstellungen/einkauf").set({...cfg,geaendert:new Date().toISOString(),geaendert_von:(window.backend?.userName||"")}); refreshers.forEach(f=>f()) }catch(err){fail(err)}
 }
-const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:k.startsWith("l:")?(cfg.labels[k.slice(2)]||[]):cfg.kategorien[k.slice(2)];
+const cfgList=k=>k==="vorrat"?cfg.vorrat:k==="einheiten"?cfg.einheiten:cfg.kategorien[k.slice(2)];
 function cfgSet(k,list){
   if(k==="vorrat") cfg.vorrat=list; else if(k==="einheiten") cfg.einheiten=list;
-  else if(k.startsWith("l:")) cfg.labels={...cfg.labels,[k.slice(2)]:list};
   else cfg.kategorien[k.slice(2)]=list;
   buildUnits();
 }
@@ -1609,15 +1605,20 @@ function startKw(c){
 }
 $("#zuo-body").addEventListener("click",e=>{
   const lbb=e.target.closest(".lbpick .lbb");
-  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt"),kwEdit.k.startsWith("l:")?kwEdit.k.slice(2):null); return }
+  if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$("#zuo-body .kw.ked .kt")); return }
   const kw=e.target.closest(".kw");
   if(kw&&canWrite&&!kw.classList.contains("ked")&&!e.target.closest(".kx")){ if(kwEdit) commitKw(false); startKw(kw); return }   /* anderer Chip offen: erst übernehmen */
   const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
 /* Zuordnung entfernen mit Rückgängig (29.10.) */
 function removeKw(k,w){
-  cfgSet(k,cfgList(k).filter(v=>v!==w)); saveCfg();
-  undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); return saveCfg() });
+  const lb=zuoHasLb(k)?zuoLb(w):[];
+  cfgSet(k,cfgList(k).filter(v=>v!==w)); if(lb.length) setZuoLb(w,null,[]); saveCfg();
+  undoBar(`„${w}“ entfernt`,()=>{ if(!cfgList(k).includes(w)) cfgSet(k,[...cfgList(k),w]); setZuoLb(null,w,lb); return saveCfg() });
+}
+/* Logos einer Zuordnung umhängen: alter Schlüssel weg, neuer mit lb (leer = keiner) */
+function setZuoLb(old,w,lb){
+  const z={...cfg.zuoLb}; if(old!=null) delete z[kwKey(old)]; if(w!=null&&lb.length) z[kwKey(w)]=lb; cfg.zuoLb=z;
 }
 /* Stichwort übernehmen: mit Enter (Feld bleibt offen) oder beim Verlassen (dann zum neuen Chip rollen); der Chip leuchtet kurz auf */
 /* Zuletzt ergänzter Chip leuchtet 1,6 s; übersteht auch ein Neuzeichnen (Animation läuft an der richtigen Stelle weiter) */
@@ -1632,38 +1633,30 @@ function addKw(k,raw,leaving){
   const have=cfgList(k).find(x=>x.toLowerCase()===w.toLowerCase());
   if(have) w=have; else cfgSet(k,[...cfgList(k),w]);
   saveCfg();   /* zeichnet synchron neu */
-  if(k.startsWith("l:")) applyLabel(k.slice(2),w);
   lastKw={k,w,t:performance.now()}; flashKw();
   const chip=$(`#zuo-body .zg[data-k="${CSS.escape(k)}"] .kx[data-w="${CSS.escape(w)}"]`)?.closest(".kw");
   if(chip&&leaving) chip.scrollIntoView({block:"center",behavior:reducedMotion()?"auto":"smooth"});
   return true;
 }
-/* Neues Label-Stichwort: offene Einträge mit passendem Namen bekommen das Label gleich mit */
-function applyLabel(lk,w){
-  if(!db||!canWrite) return;
-  items.filter(i=>!i.checked&&!(i.labels||[]).includes(lk)&&kwScore(String(i.name||""),w)).forEach(i=>{
-    i.labels=sortLb([...(i.labels||[]),lk]); save("shopping/"+i.id,{labels:i.labels});
+/* Neue Logos einer Zuordnung: offene Einträge, die sie einsortiert, bekommen sie gleich mit */
+function applyZuoLb(w,lb){
+  if(!db||!canWrite||!lb.length) return;
+  items.filter(i=>!i.checked&&bestKw(i.name,i.qty)?.w===w&&lb.some(x=>!(i.labels||[]).includes(x))).forEach(i=>{
+    i.labels=sortLb([...(i.labels||[]),...lb]); save("shopping/"+i.id,{labels:i.labels});
   });
 }
-/* Geänderte Zuordnung übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig.
-   Logos: das Wort aus den Stichwortlisten der abgewählten Labels nehmen, in die der gewählten eintragen. Wird bei einer
-   Label-Zuordnung das eigene Logo abgewählt, verschwindet sie aus diesem Label – das ist Abwählen. */
+/* Geänderte Zuordnung übernehmen (Enter oder woanders hintippen); Esc bricht ab, leer = entfernen mit Rückgängig */
 function commitKw(cancel){
   const m=kwEdit; if(!m) return; kwEdit=null;
   const ed=$("#zuo-body .kw.ked .kt"), w=cancel?m.w:cleanWord(ed?.innerText??m.w).toLowerCase(), list=cfgList(m.k);
   if(!w) return removeKw(m.k,m.w);
-  const dup=list.find(x=>x!==m.w&&x===w);
-  if(dup){ toast(`„${dup}“ steht schon in der Liste`); renderZuo(true); return }
-  const hasLb=zuoHasLb(m.k), lbOld=hasLb?zuoLb(m.w):[], lbNew=cancel||!hasLb?lbOld:sortLb(m.lb);
+  if(list.some(x=>x!==m.w&&x===w)){ toast(`„${w}“ steht schon in der Liste`); renderZuo(true); return }
+  const lbOld=zuoHasLb(m.k)?zuoLb(m.w):[], lbNew=cancel?lbOld:sortLb(m.lb);
   if(w===m.w&&canon(lbNew)===canon(lbOld)){ renderZuo(true); return }
-  if(!m.k.startsWith("l:")) cfgSet(m.k,list.map(x=>x===m.w?w:x));
-  if(hasLb){
-    const labels={...cfg.labels};
-    for(const L of LABELS){ const a=(labels[L.k]||[]).filter(x=>x!==m.w); if(lbNew.includes(L.k)&&!a.includes(w)) a.push(w); labels[L.k]=a }
-    cfg.labels=labels;
-  }
+  cfgSet(m.k,list.map(x=>x===m.w?w:x));
+  if(zuoHasLb(m.k)) setZuoLb(m.w,w,lbNew);
   saveCfg();
-  lbNew.forEach(lk=>applyLabel(lk,w));
+  applyZuoLb(w,lbNew.filter(x=>!lbOld.includes(x)));
   lastKw={k:m.k,w,t:performance.now()}; flashKw();
 }
 $("#zuo-body").addEventListener("keydown",e=>{
@@ -1713,7 +1706,7 @@ window.Einkauf={
     const skip=entries.filter(z=>isStaple(z.name)); entries=entries.filter(z=>!isStaple(z.name));
     const made=entries.map(z=>{
       const S=guessSec(z.name,z.hint), o=orderAfter(L,S,null), nid=newId("r");
-      const lb=autoLabels(z.name);
+      const lb=autoLabels(z.name,z.hint);
       const body={name:z.name,qty:z.qty,section:S,list:L,checked:false,order:o,rezept:id,rezeptName:name,pers,...(due?{due}:{}),...(lb.length?{labels:lb}:{})};
       items.push({id:nid,...body}); return {id:nid,body};
     });
