@@ -87,7 +87,9 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 @media (prefers-reduced-motion:reduce){.kw.fresh{animation:none}}
 .kadd input::placeholder{color:var(--muted)}
 /* Stichwort antippen = ändern wie ein Eintrag der Einkaufsliste; leer machen entfernt es (1.11.) */
-.kw .kt{cursor:text;line-height:20px}
+.kw{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
+.kw .kt{line-height:20px}
+.kw.ked .kt{cursor:text}
 .kw .lbb{width:16px;height:16px;margin-left:3px}
 /* Beim Ändern bleibt der Chip unverändert, nur der Cursor kommt dazu: Text direkt editierbar, 16px gegen den iOS-Zoom,
    optisch auf Chipgröße (.88rem) verkleinert; die gesparte Breite gleicht fitMk() aus (wie .mkname) */
@@ -1212,7 +1214,7 @@ $("#shop").addEventListener("click",async e=>{
     mkRoll(d.querySelector(".mkbox"),open); return }
   /* Vorschlag antippen: kommt in diese Kategorie auf die Liste; nochmal antippen nimmt ihn wieder herunter */
   const mc=e.target.closest(".mkbox .mkchip");
-  if(mc&&(mc.classList.contains("mked")||Date.now()-mkPressedAt<700)){ if(Date.now()-mkPressedAt<1500) focusMkEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
+  if(mc&&(mc.classList.contains("mked")||Date.now()-lpAt<700)){ if(Date.now()-lpAt<1500) focusEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
   if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
     if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
     const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
@@ -1284,37 +1286,44 @@ $("#shop").addEventListener("keydown",e=>{
 /* ---------- Vorschlag lange drücken (450 ms): Name im Chip ändern, darunter Labels wählen (1.11.) ----------
    Gespeichert wird beim Verlassen oder mit Enter; Esc bricht ab. Offene Einträge mit dem alten Namen in dieser
    Kategorie heißen danach mit. Labels gelten für künftiges Antippen des Vorschlags. */
-let mkPress=null, mkPressedAt=0;
+/* Langer Druck (450 ms) auf einen Chip öffnet ihn zum Ändern – Vorschläge in der Einkaufsliste und Stichwörter
+   in der Zuordnung nutzen denselben Ablauf (1.11.) */
+let lpPress=null, lpAt=0;
+const chipEditing=()=>!!(mkEdit||kwEdit);
+function longPress(e,c,start){ lpPress={x:e.clientX,y:e.clientY,t:setTimeout(()=>{ lpPress=null; lpAt=Date.now(); start(c) },450)} }
+addEventListener("pointermove",e=>{ if(lpPress&&Math.hypot(e.clientX-lpPress.x,e.clientY-lpPress.y)>8){clearTimeout(lpPress.t);lpPress=null} },{passive:true});
+addEventListener("pointerup",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
+addEventListener("pointercancel",()=>{ if(lpPress){clearTimeout(lpPress.t);lpPress=null} });
 $("#shop").addEventListener("pointerdown",e=>{
-  if(!canWrite||mkEdit||editId||addAt||e.button>0) return;
-  const c=e.target.closest(".mkbox button.mkchip"); if(!c) return;
-  mkPress={c,x:e.clientX,y:e.clientY,t:setTimeout(()=>{ mkPress=null; mkPressedAt=Date.now(); startMk(c) },450)};
+  if(!canWrite||chipEditing()||editId||addAt||e.button>0) return;
+  const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,startMk);
 });
-addEventListener("pointermove",e=>{ if(mkPress&&Math.hypot(e.clientX-mkPress.x,e.clientY-mkPress.y)>8){clearTimeout(mkPress.t);mkPress=null} },{passive:true});
-addEventListener("pointerup",()=>{ if(mkPress){clearTimeout(mkPress.t);mkPress=null} });
-addEventListener("pointercancel",()=>{ if(mkPress){clearTimeout(mkPress.t);mkPress=null} });
 $("#shop").addEventListener("contextmenu",e=>{ if(e.target.closest(".mkchip")) e.preventDefault() });
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
 function startMk(c){
   const S=c.closest(".mkbox").dataset.sec, n=c.dataset.n;
   navigator.vibrate?.(12);
   mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
-  const nm=$("#shop .mkchip.mked .mkname"); if(!nm) return;
-  fitMk(nm); nm.addEventListener("input",()=>fitMk(nm));
-  mkFocusAt=Date.now(); focusMkEnd();
+  const nm=$("#shop .mkchip.mked .mkname"); if(nm) editText(nm);
+}
+/* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
+function editText(el){
+  fitMk(el); el.addEventListener("input",()=>fitMk(el));
+  edFocusAt=Date.now(); focusEnd();
 }
 /* Cursor ans Ende. Beim Loslassen des Fingers noch einmal: Nur dort öffnet iOS die Tastatur (Benutzergeste),
    und das Loslassen würde den Cursor sonst an die Fingerstelle setzen (1.11.) */
-let mkFocusAt=0;
-function focusMkEnd(){
-  const nm=$("#shop .mkchip.mked .mkname"); if(!nm) return;
-  nm.focus();   /* ohne preventScroll: sonst rollt iOS das Feld nicht über die Tastatur */
-  const r=document.createRange(); r.selectNodeContents(nm); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
+const ED_TEXT="#shop .mkchip.mked .mkname, #zuo-body .kw.ked .kt";
+let edFocusAt=0;
+function focusEnd(){
+  const el=$(ED_TEXT); if(!el) return;
+  el.focus();   /* ohne preventScroll: sonst rollt iOS das Feld nicht über die Tastatur */
+  const r=document.createRange(); r.selectNodeContents(el); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
 }
-addEventListener("pointerup",e=>{ if(mkEdit&&Date.now()-mkFocusAt<3000){ if(e.pointerType!=="touch") mkFocusAt=0; focusMkEnd() } });
+addEventListener("pointerup",e=>{ if(chipEditing()&&Date.now()-edFocusAt<3000){ if(e.pointerType!=="touch") edFocusAt=0; focusEnd() } });
 /* Maus-Ersatzereignisse nach dem langen Druck würden den Cursor an die Fingerstelle setzen */
-document.addEventListener("mousedown",e=>{ if(mkEdit&&Date.now()-mkPressedAt<1500&&e.target.closest?.(".mkchip.mked")) e.preventDefault() },true);
-addEventListener("touchend",e=>{ if(mkEdit&&Date.now()-mkFocusAt<3000){ mkFocusAt=0; e.preventDefault(); focusMkEnd() } },{passive:false});
+document.addEventListener("mousedown",e=>{ if(chipEditing()&&Date.now()-lpAt<1500&&e.target.closest?.(".mkchip.mked, .kw.ked")) e.preventDefault() },true);
+addEventListener("touchend",e=>{ if(chipEditing()&&Date.now()-edFocusAt<3000){ edFocusAt=0; e.preventDefault(); focusEnd() } },{passive:false});
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
   const nm=$("#shop .mkchip.mked .mkname");
@@ -1579,6 +1588,18 @@ function cfgSet(k,list){
   buildUnits();
 }
 $("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")) e.preventDefault() });
+/* Stichwort lange drücken: Text im Chip ändern, darunter Logos wählen (wie die Vorschläge in der Einkaufsliste) */
+$("#zuo-body").addEventListener("pointerdown",e=>{
+  if(!canWrite||chipEditing()||e.button>0||e.target.closest(".kx")) return;
+  const c=e.target.closest(".kw"); if(c) longPress(e,c,startKw);
+});
+$("#zuo-body").addEventListener("contextmenu",e=>{ if(e.target.closest(".kw")) e.preventDefault() });
+function startKw(c){
+  const k=c.closest(".zg").dataset.k, w=c.querySelector(".kt").dataset.w;
+  navigator.vibrate?.(12);
+  kwEdit={k,w,lb:[...kwLb(k,w)]}; renderZuo(true);
+  const ed=$("#zuo-body .kw.ked .kt"); if(ed) editText(ed);
+}
 $("#zuo-body").addEventListener("click",e=>{
   /* Label beim Ändern eines Merklisten-Stichworts an-/abwählen; das Feld behält den Fokus */
   const lbb=e.target.closest(".lbpick .lbb");
@@ -1589,14 +1610,7 @@ $("#zuo-body").addEventListener("click",e=>{
     ch.querySelector(".kt").insertAdjacentHTML("afterend",kwEdit.lb.filter(x=>"l:"+x!==kwEdit.k).map(badge).join(""));
     const kt=ch.querySelector(".kt"); if(document.activeElement!==kt) kt.focus();
     return }
-  const kt=e.target.closest(".kw .kt, .kw .lbb");
-  if(kt&&canWrite&&!kt.closest(".ked")){ const kw=kt.closest(".kw"), k=kw.closest(".zg").dataset.k, w=kw.querySelector(".kt").dataset.w;
-    kwEdit={k,w,lb:[...kwLb(k,w)]}; renderZuo(true);
-    /* Normales focus(): iOS rollt das Feld dann selbst über die Tastatur (mit preventScroll nicht) */
-    const ed=$("#zuo-body .kw.ked .kt"); if(!ed) return;
-    fitMk(ed); ed.addEventListener("input",()=>fitMk(ed)); ed.focus();
-    const r=document.createRange(); r.selectNodeContents(ed); r.collapse(false); const sel=getSelection(); sel.removeAllRanges(); sel.addRange(r);
-    return }
+  if(e.target.closest(".kw.ked")&&Date.now()-lpAt<1500){ focusEnd(); return }   /* Klick nach langem Druck: Cursor ans Ende */
   const x=e.target.closest(".kx"); if(!x) return;
   const k=x.closest(".zg").dataset.k, w=x.dataset.w;
   /* Entfernen mit Rückgängig (29.10.) */
