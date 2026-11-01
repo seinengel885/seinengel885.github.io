@@ -974,7 +974,7 @@ function renderShop(force){
     </div>`}).join("")
   + `<p class="quiet"><button type="button" class="linkbtn" data-nav="zuo">Zuordnung &amp; Einheiten</button></p>`;
   const n=el.querySelector(addAt?".edit.new .ei":editId?".edit .ei":null);
-  if(n&&document.activeElement?.closest?.(".edit")==null){n.focus();n.setSelectionRange(n.value.length,n.value.length)}
+  if(n&&document.activeElement?.closest?.(".edit")==null){n.focus({preventScroll:true});n.setSelectionRange(n.value.length,n.value.length)}
 }
 /* Auf-/Zurollen: kurz (180 ms) Höhe und Deckkraft gleiten lassen, damit die Richtung sichtbar wird.
    Danach gilt nur die Klasse .shut (display:none); ein laufendes Rollen wird beim erneuten Tippen abgelöst. */
