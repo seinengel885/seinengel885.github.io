@@ -2,6 +2,7 @@
    Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
    Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
 window.SITE_VERSIONEN = [
+  { nr: 8, stand: "2026-11-02 00:36", was: "Zuordnungen und Vorschläge: antippen, langer Druck oder Rechtsklick zum Ändern; Logos gehören zur einzelnen Zuordnung bzw. zum Vorschlag je Kategorie" },
   { nr: 7, stand: "2026-11-01 18:43", was: "Einkauf: Sortierung nur über Stichwörter; Verschieben trägt ein Stichwort in die Zuordnung ein" },
   { nr: 6, stand: "2026-11-01 18:06", was: "Tastatur: Scrollgrenze rechnet mit sichtbarer Höhe; Hinweis auf neue Version auch beim Zurückholen der App" },
   { nr: 5, stand: "2026-11-01 17:48", was: "Eingabefelder: Tastatur verdeckt sie nicht mehr, iOS schiebt sie selbst hoch" },
