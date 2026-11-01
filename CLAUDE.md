@@ -24,6 +24,8 @@
   Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
   „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt Patrick, ob GitHub Pages schon
   ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
+- **Tastatur:** Jede Seite mit Eingabefeldern bindet `shared/tastatur.js` ein (rollt das Feld über die iOS-Tastatur
+  samt schwebender Leiste). Eigene Scrollgrenzen fragen `window.imEingabefeld()` ab und greifen beim Tippen nicht.
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
   Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
   und zusätzlich unter `supabase/migrations/` ablegen; danach den Sicherheitscheck (Advisors) laufen lassen.
