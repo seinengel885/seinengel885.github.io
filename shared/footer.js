@@ -1,4 +1,4 @@
-/* Fußzeile mit dem geladenen Stand (aus version.js). Prüft zusätzlich ohne Cache, welcher Stand auf dem
+/* Fußzeile mit der geladenen Versionsnummer (aus version.js). Prüft zusätzlich ohne Cache, welcher Stand auf dem
    Server liegt: Ist dort schon ein neuerer, erscheint „Neuer Stand online – neu laden“. */
 (function(){
   const me = document.currentScript;
@@ -10,12 +10,13 @@
     const v = window.SITE_VERSION || {};
     const st = document.createElement("style"); st.textContent = css; document.head.appendChild(st);
     const f = document.createElement("footer"); f.className = "site-foot";
-    f.innerHTML = `Stand ${fmt(v.stand)}${v.was ? " · " + v.was.replace(/[<>&]/g, "") : ""}<span class="site-new"></span>`;
+    f.innerHTML = `Version ${v.nr ?? "?"}<span class="site-new"></span>`;
+    f.title = `Stand ${fmt(v.stand)}${v.was ? ": " + v.was : ""}`;
     document.body.appendChild(f);
     fetch(vUrl, { cache: "no-store" }).then(r => r.ok ? r.text() : "").then(t => {
-      const m = t.match(/stand:\s*"([^"]+)"/);
-      if(m && v.stand && m[1] > v.stand){
-        f.querySelector(".site-new").innerHTML = ` · Neuer Stand online (${fmt(m[1])}) – <button type="button">neu laden</button>`;
+      const m = t.match(/nr:\s*(\d+)/);
+      if(m && v.nr && +m[1] > v.nr){
+        f.querySelector(".site-new").innerHTML = ` · Version ${m[1]} ist online – <button type="button">neu laden</button>`;
         f.querySelector("button").onclick = () => location.reload();
       }
     }).catch(() => {});

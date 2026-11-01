@@ -13,8 +13,9 @@
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
   aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner). Erst nach Patricks „passt“ auf `main` pushen.
   Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
-- **Bei jeder Änderung, die live gehen soll: `shared/version.js` aktualisieren** (Zeit Europe/Berlin, kurz was neu ist).
-  Die Fußzeile jeder Seite zeigt diesen Stand, daran erkennt Patrick, ob GitHub Pages schon ausgeliefert hat.
+- **Bei jedem Push auf `main`, der live gehen soll: `shared/version.js` aktualisieren**: `nr` um 1 erhöhen,
+  `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt „Version nr“
+  (Datum und Text nur als Tooltip), daran erkennt Patrick, ob GitHub Pages schon ausgeliefert hat.
   Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
   Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
