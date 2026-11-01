@@ -40,7 +40,7 @@
 - Rezept-Regeln stehen in `einkaufsplaner/regeln.html`.
 - **Begriffe im Einkaufsplaner** (mit Patrick so sprechen): *Logos* = Bio, Angebot und die Geschäfte (im Code `LABELS`,
   Feld `labels` am Eintrag). *Vorschläge* = Chips der Merkliste unter dem Listen-Symbol einer Kategorie in der
-  Einkaufsliste (`cfg.merk`, Logos in `cfg.merkLb`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
+  Einkaufsliste (`cfg.merk`, Logos je Kategorie und Vorschlag in `cfg.merkLb[Kategorie][Name]`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
   offen auf der Liste steht); ändern per langem Druck oder Rechtsklick. *Zuordnungen* = Chips auf der Seite Zuordnung
   (Stichwörter der Kategorien, dazu „Immer im Haus“ und Mengeneinheiten). Sie wirken beim Eingeben eines Eintrags;
   Antippen öffnet sie direkt zum Ändern. Logos sind eine Eigenschaft der einzelnen Zuordnung einer Kategorie (`cfg.zuoLb[Kategorie][Wort]`): Die Zuordnung, die

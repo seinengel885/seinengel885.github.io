@@ -840,7 +840,7 @@ const DEF_CFG={
     "Sonstiges":[]
   },
   merk:DEF_MERK,   /* Merkliste je Kategorie: Vorschläge unter dem Listen-Symbol der Kategorie */
-  merkLb:{},   /* Vorschlag (klein geschrieben) → Labels, die der Eintrag beim Antippen bekommt (1.11.) */
+  merkLb:{},   /* Kategorie → Vorschlag (klein geschrieben) → Logos, die der Eintrag beim Antippen bekommt; Eigenschaft genau dieses Vorschlags */
   zuoLb:{}   /* Kategorie → Zuordnung (Stichwort ohne !) → Logos: Eigenschaft genau dieser Zuordnung. Ein neuer Eintrag bekommt sie,
                wenn diese Zuordnung ihn einsortiert. Gleiches Wort in einer anderen Kategorie ist eine andere Zuordnung. */
 };
@@ -868,7 +868,8 @@ function setCfg(d){
   for(const S of CHECK) k[S]=Array.isArray(dk[S])?dk[S]:DEF_CFG.kategorien[S];
   const dm=d?.merk||{}, m={}; for(const S of SECTIONS) m[S]=Array.isArray(dm[S])?dm[S]:(DEF_MERK[S]||[]);
   const lbMap=o=>{ const r={}; for(const [n,ks] of Object.entries(o||{})) if(Array.isArray(ks)&&ks.length) r[n]=sortLb(ks); return r };
-  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, merk:m, merkLb:lbMap(d?.merkLb), zuoLb:{}};
+  cfg={vorrat:Array.isArray(d?.vorrat)?d.vorrat:DEF_CFG.vorrat, einheiten:Array.isArray(d?.einheiten)?d.einheiten:DEF_CFG.einheiten, kategorien:k, merk:m, merkLb:{}, zuoLb:{}};
+  for(const S of SECTIONS){ const z=lbMap(d?.merkLb?.[S]); if(Object.keys(z).length) cfg.merkLb[S]=z }
   for(const S of CHECK){ const z=lbMap(d?.zuoLb?.[S]); if(Object.keys(z).length) cfg.zuoLb[S]=z }
   buildUnits();
 }
@@ -1069,11 +1070,16 @@ let mkOpen=new Set(); try{mkOpen=new Set(JSON.parse(localStorage.getItem("einkau
 function saveMk(){try{localStorage.setItem("einkauf-merk",JSON.stringify([...mkOpen]))}catch(e){}}
 const onList=(S,n)=>items.find(i=>!i.checked&&secOf(i)===S&&String(i.name||"").toLowerCase()===String(n).toLowerCase());
 /* Vorschläge alphabetisch (1.11.); lange drücken = Name im Chip ändern und Labels wählen */
-const mkLb=n=>cfg.merkLb[String(n).toLowerCase()]||[];
+const mkLb=(S,n)=>cfg.merkLb[S]?.[String(n).toLowerCase()]||[];
+/* Logos eines Vorschlags umhängen: alter Name weg, neuer mit lb (leer = keine) – nur in seiner Kategorie */
+function setMkLb(S,old,n,lb){
+  const z={...(cfg.merkLb[S]||{})}; if(old!=null) delete z[String(old).toLowerCase()]; if(n!=null&&lb.length) z[String(n).toLowerCase()]=lb;
+  const all={...cfg.merkLb}; if(Object.keys(z).length) all[S]=z; else delete all[S]; cfg.merkLb=all;
+}
 let mkEdit=null;   /* {S, n, lb} solange ein Vorschlag bearbeitet wird */
 function mkBoxHTML(S,open){
   const ns=[...(cfg.merk[S]||[])].sort((a,b)=>a.localeCompare(b,"de",{sensitivity:"base"}));
-  const chip=n=>{ const ed=mkEdit?.S===S&&mkEdit.n===n, lb=ed?mkEdit.lb:mkLb(n);
+  const chip=n=>{ const ed=mkEdit?.S===S&&mkEdit.n===n, lb=ed?mkEdit.lb:mkLb(S,n);
     if(ed) return `<span class="mkchip mked" data-n="${esc(n)}"><span class="mkname" contenteditable="plaintext-only" role="textbox" aria-label="Name des Vorschlags" spellcheck="false">${esc(n)}</span>${sortLb(lb).map(badge).join("")}</span>${lbPick(lb," mkpick")}`;
     return `<button type="button" class="mkchip${onList(S,n)?" mkon":""}" data-n="${esc(n)}" aria-pressed="${!!onList(S,n)}">${esc(n)}${sortLb(lb).map(badge).join("")}</button>` };
   return `<div class="mkbox" data-sec="${esc(S)}"${open?"":" hidden"}>${ns.map(chip).join("")}${canWrite?`<form class="mkadd"><input type="text" placeholder="＋ merken" aria-label="Zur Merkliste ${esc(S)}" enterkeyhint="done" autocomplete="off"></form>`:""}</div>`;
@@ -1186,8 +1192,9 @@ function commitNew(f,next){
 const newId=p=>`${p}-${Date.now().toString(36)}-${Math.random().toString(36).slice(2,7)}`;
 function addItem(L,S,name,qty,extra={},order){
   if(order==null) order=orderAfter(L,S,null);
-  const lb=sortLb([...(extra.labels||[]),...autoLabels(name,qty,S)]);
-  const id=newId("i"), body={name,qty,section:S,list:LIST,checked:false,order,...extra,...(lb.length?{labels:lb}:{})};
+  const {labels:own=[],...rest}=extra;   /* labels nur speichern, wenn es welche gibt */
+  const lb=sortLb([...own,...autoLabels(name,qty,S)]);
+  const id=newId("i"), body={name,qty,section:S,list:LIST,checked:false,order,...rest,...(lb.length?{labels:lb}:{})};
   items.push({id,...body});
   if(db) db.doc("shopping/"+id).set(body).then(()=>refreshers.forEach(f=>f())).catch(fail);
   return order;
@@ -1230,7 +1237,7 @@ $("#shop").addEventListener("click",async e=>{
   if(mc){ if(Date.now()-editAtDown<1500){ editAtDown=0; return }
     if(!canWrite) return toast("Du kannst diesen Plan nur ansehen.");
     const S=mc.closest(".mkbox").dataset.sec, n=mc.dataset.n, have=onList(S,n);
-    if(have) removeItem(have); else addItem(LIST,S,n,"",{labels:mkLb(n)});
+    if(have) removeItem(have); else addItem(LIST,S,n,"",{labels:mkLb(S,n)});
     renderShop(true); return }
   const sh=e.target.closest(".sh .tg");
   if(sh&&Date.now()-editAtDown<1500){ editAtDown=0; return }   /* Überschrift nicht auf-/zuklappen */
@@ -1341,12 +1348,11 @@ $("#shop").addEventListener("pointerdown",e=>{
   const c=e.target.closest(".mkbox button.mkchip"); if(c) longPress(e,c,MK_CHIP);
 });
 $("#shop").addEventListener("contextmenu",e=>{
-  const c=e.target.closest(".mkchip"); if(!c) return; e.preventDefault();
-  if(c.matches(".mkbox button.mkchip")) chipMenu(e,c,MK_CHIP);
+  const c=e.target.closest(".mkbox button.mkchip"); if(c) chipMenu(e,c,MK_CHIP);   /* im offenen Vorschlag bleibt das Textmenü des Browsers */
 });
 const fitMk=nm=>{ nm.style.marginRight=(-nm.offsetWidth*.12).toFixed(1)+"px" };
 function startMk(S,n){
-  mkEdit={S,n,lb:[...mkLb(n)]}; renderShop(true);
+  mkEdit={S,n,lb:[...mkLb(S,n)]}; renderShop(true);
   const nm=$(MK_TEXT); if(nm) editText(nm);
 }
 /* Geöffneten Chip-Text bearbeitbar machen: Breite angleichen, Cursor ans Ende */
@@ -1371,12 +1377,12 @@ function toggleLb(m,lbb,txt){
 function commitMk(cancel){
   const m=mkEdit; if(!m) return; mkEdit=null;
   const nm=$(MK_TEXT), list=cfg.merk[m.S]||[], oldK=m.n.toLowerCase();
-  const v=cancel?m.n:cleanWord(nm?.innerText??m.n), lb=cancel?mkLb(m.n):sortLb(m.lb);
+  const v=cancel?m.n:cleanWord(nm?.innerText??m.n), lb=cancel?mkLb(m.S,m.n):sortLb(m.lb);
   if(!v) return removeMerk(m.S,m.n);
   if(v!==m.n&&list.some(x=>x!==m.n&&x.toLowerCase()===v.toLowerCase())){ toast(`„${v}“ steht schon in der Liste`); renderShop(true); return }
-  if(v!==m.n||canon(lb)!==canon(mkLb(m.n))){
-    const ml={...cfg.merkLb}; delete ml[oldK]; if(lb.length) ml[v.toLowerCase()]=lb;
-    cfg.merk={...cfg.merk,[m.S]:list.map(x=>x===m.n?v:x)}; cfg.merkLb=ml;
+  if(v!==m.n||canon(lb)!==canon(mkLb(m.S,m.n))){
+    setMkLb(m.S,m.n,v,lb);
+    cfg.merk={...cfg.merk,[m.S]:list.map(x=>x===m.n?v:x)};
     if(v!==m.n) items.filter(i=>!i.checked&&secOf(i)===m.S&&String(i.name||"").toLowerCase()===oldK).forEach(i=>{ i.name=v; save("shopping/"+i.id,{name:v}) });
     saveCfg(true);
   }
@@ -1384,11 +1390,11 @@ function commitMk(cancel){
 }
 /* Vorschlag entfernen mit Rückgängig (Logos kommen mit zurück) */
 function removeMerk(S,n){
-  const k=n.toLowerCase(), lb=mkLb(n), ml={...cfg.merkLb}; delete ml[k];
-  cfg.merk={...cfg.merk,[S]:(cfg.merk[S]||[]).filter(x=>x!==n)}; cfg.merkLb=ml; saveCfg(true); renderShop(true);
+  const lb=mkLb(S,n); setMkLb(S,n,null,[]);
+  cfg.merk={...cfg.merk,[S]:(cfg.merk[S]||[]).filter(x=>x!==n)}; saveCfg(true); renderShop(true);
   undoBar(`„${n}“ entfernt`,()=>{
     if(!(cfg.merk[S]||[]).includes(n)) cfg.merk={...cfg.merk,[S]:[...(cfg.merk[S]||[]),n]};
-    if(lb.length) cfg.merkLb={...cfg.merkLb,[k]:lb};
+    if(lb.length) setMkLb(S,null,n,lb);
     renderShop(true); return saveCfg(true) });
 }
 
@@ -1629,7 +1635,9 @@ function cfgSet(k,list){
   else cfg.kategorien[k.slice(2)]=list;
   buildUnits();
 }
-$("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")) e.preventDefault() });
+/* Logo, anderer Chip oder ×: der Fokus bleibt im offenen Chip. Sonst übernimmt focusout die Zuordnung und zeichnet neu,
+   bevor der Klick ankommt – der Klick träfe ein ersetztes Element und ginge verloren. Der Klick übernimmt selbst. */
+$("#zuo-body").addEventListener("mousedown",e=>{ if(e.target.closest(".lbpick .lbb")||(kwEdit&&e.target.closest(".kw .kx,.kw:not(.ked) .kt"))) e.preventDefault() });
 /* Zuordnung antippen: Text im Chip ändern, darunter Logos wählen (wie beim Vorschlag nach langem Druck).
    Antippen reicht, weil eine Zuordnung sonst nichts tut. Der Tipp ist selbst die Benutzergeste, mit der iOS die Tastatur öffnet. */
 function startKw(k,w){
@@ -1641,7 +1649,7 @@ function startKw(k,w){
    eine andere Zuordnung, der Schlüssel bleibt gültig). */
 const KW_CHIP={
   key:c=>({k:c.closest(".zg").dataset.k,w:c.querySelector(".kt").dataset.w}),
-  open:({k,w})=>{ if(!canWrite) return false; if(kwEdit) commitKw(false); if(!(cfgList(k)||[]).includes(w)) return false; startKw(k,w); return true },
+  open:({k,w})=>{ if(!canWrite||(kwEdit?.k===k&&kwEdit.w===w)) return false; if(kwEdit) commitKw(false);   /* schon offen: Android meldet den langen Druck danach noch als Rechtsklick */ if(!(cfgList(k)||[]).includes(w)) return false; startKw(k,w); return true },
   sel:KW_TEXT };
 /* Der Chip unter dem Finger/Zeiger, der sich öffnen lässt: nicht der offene (dort gilt das Textmenü des Browsers), nicht das × */
 const kwTarget=e=>canWrite&&!e.target.closest(".kx")?e.target.closest(".kw:not(.ked)"):null;
@@ -1655,7 +1663,10 @@ $("#zuo-body").addEventListener("click",e=>{
   const lbb=e.target.closest(".lbpick .lbb");
   if(lbb){ if(kwEdit) toggleLb(kwEdit,lbb,$(KW_TEXT)); return }
   const kw=kwTarget(e); if(kw){ KW_CHIP.open(KW_CHIP.key(kw)); return }
-  const x=e.target.closest(".kx"); if(x) removeKw(x.closest(".zg").dataset.k,x.dataset.w);
+  const x=e.target.closest(".kx"); if(!x) return;
+  if(x.closest(".kw.ked")){ const m=kwEdit; kwEdit=null; return removeKw(m.k,m.w) }   /* × am offenen Chip: entfernen, was dort vor dem Ändern stand */
+  if(kwEdit) commitKw(false);
+  removeKw(x.closest(".zg").dataset.k,x.dataset.w);
 });
 /* Zuordnung entfernen mit Rückgängig (29.10.) */
 function removeKw(k,w){
