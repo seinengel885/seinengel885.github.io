@@ -5,6 +5,8 @@
   mit eigenem `data-app`. Der Einkaufsplaner liegt in `einkaufsplaner/`, seine Daten aber unter
   `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
   (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
+- **Live gehen = direkt auf `main` pushen** (GitHub Pages liefert von `main` aus). Patrick hat das ausdrücklich erlaubt;
+  kein Pull Request und keine Rückfrage nötig. Vorher `origin/main` in den Arbeitszweig mergen.
 - **Bei jeder Änderung, die live gehen soll: `shared/version.js` aktualisieren** (Zeit Europe/Berlin, kurz was neu ist).
   Die Fußzeile jeder Seite zeigt diesen Stand, daran erkennt Patrick, ob GitHub Pages schon ausgeliefert hat.
   Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
