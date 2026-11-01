@@ -7,6 +7,12 @@
   (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
 - **Live gehen = direkt auf `main` pushen** (GitHub Pages liefert von `main` aus). Patrick hat das ausdrücklich erlaubt;
   kein Pull Request und keine Rückfrage nötig. Vorher `origin/main` in den Arbeitszweig mergen.
+- **Vorschau vor dem Push:** Patrick prüft Änderungen in einer klickbaren Vorschau im Chat, bevor sie live gehen.
+  `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau` baut die Seite mit `shared/demo-backend.js`
+  (Beispieldaten, keine Anmeldung, nichts geht an Supabase) und gibt die Dateiliste aus. Veröffentlichen mit dem
+  Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
+  aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner). Erst nach Patricks „passt“ auf `main` pushen.
+  Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
 - **Bei jeder Änderung, die live gehen soll: `shared/version.js` aktualisieren** (Zeit Europe/Berlin, kurz was neu ist).
   Die Fußzeile jeder Seite zeigt diesen Stand, daran erkennt Patrick, ob GitHub Pages schon ausgeliefert hat.
   Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
