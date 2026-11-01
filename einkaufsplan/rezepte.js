@@ -31,8 +31,9 @@ function loadRecipe(id){
    bei 80 % Qualität über 150 KB, wird es einmal mit 70 % gespeichert (28.10.). */
 const BILD_W = 720, BILD_Q = [0.8, 0.7], BILD_MAX = 150 * 1024;
 const own = new Map();   /* rezept-id → {asset, quelle, fokus?} */
-const bildOf = r => own.has(r.id) ? "/_blob/" + own.get(r.id).asset : "";
-const use = n => window.claude?.use ? window.claude.use(n) : Promise.resolve(null);
+const blobSrc = a => window.backend?.blobUrl(a) || "";   /* Fotos liegen im privaten Supabase-Speicher */
+const bildOf = r => own.has(r.id) ? blobSrc(own.get(r.id).asset) : "";
+const use = n => window.backend?.use ? window.backend.use(n) : Promise.resolve(null);
 let assets = null, bilderDB = null, busy = false;
 const CAM = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 8h3l2-3h6l2 3h3v11H4z"/><circle cx="12" cy="13" r="3.5"/></svg>`;
 const PEN = `<svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true"><path d="M4 20h4L19 9l-4-4L4 16z"/><path d="M13.5 6.5l4 4"/></svg>`;
@@ -46,7 +47,7 @@ const adjHTML = () => bilderDB && recipe ? `<button type="button" class="edb" ar
 /* Bild an allen sichtbaren Stellen dieses Rezepts tauschen, ohne die Ansicht neu zu zeichnen */
 function showBild(id){
   const b = own.get(id); if(!b) return;
-  const src = "/_blob/" + b.asset;
+  const src = blobSrc(b.asset); if(!src) return;
   document.querySelectorAll(`[data-bild="${CSS.escape(id)}"]`).forEach(box => {
     let img = box.querySelector("img");
     if(!img){ img = document.createElement("img"); img.alt = ""; img.onerror = () => img.remove(); box.querySelector(".ph").after(img); }
@@ -150,8 +151,9 @@ Promise.all([use("db"), use("assets")]).then(async ([db, a]) => {
   try{
     const s = await bilderDB.get();
     s.docs.forEach(d => { const v = d.data(); if(v?.asset) own.set(d.id, {asset: v.asset, quelle: v.quelle || "", fokus: v.fokus}); });
+    await window.backend?.prefetchBlobs([...own.values()].map(b => b.asset)).catch(() => {});
     own.forEach((_, id) => showBild(id));
-    whenIdle(() => own.forEach(b => { const img = new Image(); img.decoding = "async"; img.src = "/_blob/" + b.asset; }));   /* Vorladen für die Rezeptliste */
+    whenIdle(() => own.forEach(b => { const img = new Image(); img.decoding = "async"; img.src = blobSrc(b.asset); }));   /* Vorladen für die Rezeptliste */
   }catch(e){}
   assets = a;
   if(recipe && !$("v-detail").hidden) ctlRefresh();
