@@ -1,6 +1,6 @@
 {
-  "name": "Unser Essensplan",
-  "short_name": "Einkaufsplan",
+  "name": "Einkaufsplaner",
+  "short_name": "Einkaufsplaner",
   "start_url": "./",
   "scope": "./",
   "display": "standalone",

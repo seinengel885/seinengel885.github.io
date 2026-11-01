@@ -7,7 +7,7 @@
 <!-- Diese Seite ist die verbindliche Vorlage für jedes neue Rezept. Claude liest sie vor jeder Aufnahme. -->
 <div class="wrap">
   <div class="top">
-    <a class="back" href="index.html">← Essensplan</a>
+    <a class="back" href="index.html">← Einkaufsplaner</a>
     <nav class="toplinks"></nav>
   </div>
   <h1>Rezept-Regeln</h1>
@@ -51,7 +51,7 @@
         <li>In Chrome (Claude in Chrome, neuer Tab) die Bild-URL direkt öffnen, dann per <code>javascript_tool</code> das <code>&lt;img&gt;</code> mit <code>position:fixed; left:0; top:0; width:880px</code> auf weißem Grund darstellen, Höhe im Seitenverhältnis, <code>cursor:none</code>. Hochformat auf 4:3 zuschneiden (negatives <code>top</code>). Maus mit <code>hover</code> aus dem Bild nehmen</li>
         <li>Mit dem <code>computer</code>-Tool <code>zoom</code> auf genau diese Region <code>(0, 0, 880, Höhe)</code> mit <code>save_to_disk: true</code> aufnehmen, die PNG liegt danach im Arbeitsbereich. Hängt die Aufnahme (Timeout), Tab neu laden und wiederholen</li>
         <li>Mit PIL als JPEG (Qualität 85) speichern, in den Bucket <code>bilder</code> hochladen und das Dokument <code>bilder/&lt;id&gt;</code> schreiben (siehe oben)</li>
-        <li><b>Selbst prüfen:</b> Seite lokal mit <code>python3 -m http.server</code> im Repo starten und mit Playwright-Chromium (Viewport 390 × 844) <code>einkaufsplan/index.html#rezepte</code> öffnen. Prüfen: alle Karten haben ein geladenes Bild, keine Netzwerk- oder Skriptfehler; neue Rezepte per <code>nav('detail', id)</code> öffnen und die Screenshots ansehen</li>
+        <li><b>Selbst prüfen:</b> Seite lokal mit <code>python3 -m http.server</code> im Repo starten und mit Playwright-Chromium (Viewport 390 × 844) <code>einkaufsplaner/index.html#rezepte</code> öffnen. Prüfen: alle Karten haben ein geladenes Bild, keine Netzwerk- oder Skriptfehler; neue Rezepte per <code>nav('detail', id)</code> öffnen und die Screenshots ansehen</li>
         <li>Nicht mehr benötigte Bilder (ersetzte Fotos im Bucket, Zwischenstände) löschen</li>
       </ol>
     </li>
