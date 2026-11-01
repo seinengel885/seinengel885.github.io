@@ -974,7 +974,7 @@ function renderShop(force){
     </div>`}).join("")
   + `<p class="quiet"><button type="button" class="linkbtn" data-nav="zuo">Zuordnung &amp; Einheiten</button></p>`;
   const n=el.querySelector(addAt?".edit.new .ei":editId?".edit .ei":null);
-  if(n&&document.activeElement?.closest?.(".edit")==null){n.focus({preventScroll:true});n.setSelectionRange(n.value.length,n.value.length)}
+  if(n&&document.activeElement?.closest?.(".edit")==null){n.focus();n.setSelectionRange(n.value.length,n.value.length)}
 }
 /* Auf-/Zurollen: kurz (180 ms) Höhe und Deckkraft gleiten lassen, damit die Richtung sichtbar wird.
    Danach gilt nur die Klasse .shut (display:none); ein laufendes Rollen wird beim erneuten Tippen abgelöst. */
@@ -983,7 +983,10 @@ function renderShop(force){
    am Inhaltsende; nur nach einem Zuklappen bleibt die Position erlaubt, bis man wieder nach oben scrollt. */
 const foldpad=document.createElement("div"); foldpad.id="foldpad"; foldpad.setAttribute("aria-hidden","true"); document.body.appendChild(foldpad);
 let keepY=0;
-const normalMax=()=>Math.max(0,foldpad.getBoundingClientRect().top+scrollY+32-innerHeight);   /* 32 = unterer Seitenabstand */
+/* Sichtbare Höhe aus visualViewport: Auf dem iPhone bleibt innerHeight bei offener Tastatur gleich, die Grenze
+   läge sonst eine Tastaturhöhe zu tief und das Feld hinter der Tastatur. */
+const sichtH=()=>window.visualViewport?.height??innerHeight;
+const normalMax=()=>Math.max(0,foldpad.getBoundingClientRect().top+scrollY+32-sichtH());   /* 32 = unterer Seitenabstand */
 /* Nachfedern an der eigenen Grenze, wie in den ToDos (dort für das Pop-up erprobt):
    Schwung trifft die Grenze → gedämpfte Feder x = v0·t·e^(−W·t) mit dem Scrolltempo als Start;
    mit dem Finger weiterziehen → Inhalt folgt dem Finger und federt beim Loslassen zurück.
@@ -997,10 +1000,8 @@ function spring(v0){ stopSpr(); const t0=performance.now();
   const step=()=>{const t=performance.now()-t0; if(t>900||touching){setY(0);spr=0;return}
     setY(-v0*t*Math.exp(-W*t)); spr=requestAnimationFrame(step)};
   spr=requestAnimationFrame(step); }
-/* Beim Tippen keine eigene Grenze: iOS rollt das Feld selbst über die Tastatur und braucht dafür Platz unter dem
-   Inhalt. Nach dem Tippen bleibt die Stelle stehen wie nach einem Zuklappen (keepY). */
-const tippt=()=>{const a=document.activeElement; return !!a&&(a.isContentEditable||a.matches("textarea,input[type=text],input[type=email],input:not([type])"))};
-const limY=()=>tippt()?Infinity:Math.max(normalMax(),keepY);
+const limY=()=>Math.max(normalMax(),keepY);
+/* Schließt die Tastatur, bleibt die Stelle stehen wie nach einem Zuklappen, statt zurückzuspringen */
 document.addEventListener("focusout",()=>{ keepY=Math.max(keepY,scrollY) },true);
 addEventListener("scroll",()=>{
   const now=performance.now(), y=scrollY, lim=limY();
