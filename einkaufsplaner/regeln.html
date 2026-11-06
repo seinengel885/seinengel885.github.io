@@ -15,8 +15,8 @@
 
   <section id="aufbau"><h2>Aufbau</h2><div class="box"><ul class="rules">
     <li><b>Kopfzeile:</b> ~kcal pro Portion · Portionen · Minuten, dazu 1–2 Sätze Beschreibung</li>
-    <li><b>Beilage für lange Sättigung</b> direkt nach der Beschreibung, vor den Zutaten. <b>Nur, was nicht schon im Rezept steht:</b> steckt die Beilage in Zutaten oder Schritten (z. B. Spätzle, Brot, Schmand), entfällt sie dort. Ohne Beilage bleibt <code>beilagen</code> leer, dann fehlt der Abschnitt</li>
-    <li><b>Zutaten</b> vollständig, mit genauen Gramm- und Mengenangaben</li>
+    <li><b>Beilage für lange Sättigung</b> direkt nach der Beschreibung, vor den Zutaten. <b>Nur in zwei Fällen:</b> das Rezept nennt selbst eine Beilage oder Alternative (z. B. Reis statt Nudeln), oder das Gericht ist für sich keine vollständige Mahlzeit. Sonst bleibt <code>beilagen</code> leer, dann fehlt der Abschnitt</li>
+    <li><b>Zutaten</b> vollständig, mit genauen Gramm- und Mengenangaben. Alles, was ein Schritt verwendet, steht auch bei den Zutaten, mit derselben Menge (sonst <code>optional</code>)</li>
     <li><b>Personen-Umrechnung:</b> Die Menge links und Angaben mit „ca.“ im Zutatentext werden umgerechnet. Deshalb im Zutatentext <b>keine Packungsangaben</b> wie „(1 Dose)“ oder „(1 Becher)“, die würden nicht mitwachsen. Angaben pro Stück mit „à“ sind in Ordnung, z. B. „2 Dosen“ · „weiße Bohnen (à 400 g)“</li>
     <li><b>Zubereitung in Phasen</b>, z. B. Vorbereiten / Anbraten / Zusammenführen / Servieren</li>
     <li><b>Jeder Schritt zum Abhaken</b>, die <b>Menge steht im Schritt</b>: „<b>300 g Champignons</b> in Scheiben schneiden“</li>
@@ -37,9 +37,9 @@
     <li><b>Kerstins Lieblinge</b> nur, wenn Kerstin das Gericht kennt und für gut befunden hat, nie bei neuen Vorschlägen</li>  </ul></div></section>
 
   <section id="technik"><h2>Technik für Claude</h2><div class="box"><ul class="rules">
-    <li>Jedes Rezept ist eine Datei <code>rezepte/&lt;id&gt;.json</code>, id klein mit Bindestrich, z. B. <code>chili-con-carne</code></li>
-    <li>Vorlage für die Felder: <code>rezepte/shakshuka.json</code>. Mengen im Schritt mit <code>**fett**</code> markieren</li>
-    <li>Neues Rezept zusätzlich in <code>rezepte/index.json</code> eintragen. Nur Rezeptdatei und Index ins Repo <code>seinengel885.github.io</code> (Ordner <code>einkaufsplan/</code>) committen, die Seiten bleiben unverändert</li>
+    <li>Rezepte sind Inhalte und liegen <b>nur in Supabase</b>, nie im Repo: Tabelle <code>public.docs</code>, <code>app = 'einkaufsplan'</code>, <code>collection = 'rezepte'</code>, ein Dokument je Rezept. Die <code>id</code> ist die Dokument-id, klein mit Bindestrich, z. B. <code>chili-con-carne</code></li>
+    <li>Felder: name, tags, kcal (pro Portion), portionen, minuten, kurz, beilageHinweis, beilagen [{name, text}], zutaten [{menge, text, optional?}], phasen [{titel, schritte [{text}]}], tipps [{titel, text}], quelle. Vorlage: das Dokument <code>rezepte/shakshuka</code>. Mengen im Schritt mit <code>**fett**</code> markieren</li>
+    <li>Ein neues Rezept erscheint, sobald sein Dokument geschrieben ist; die Seiten bleiben unverändert</li>
     <li>Im Wochenplan verknüpft das Feld <code>recipe</code> am Tag das Gericht mit seinem Rezept. Daten liegen in Supabase, Tabelle <code>public.docs</code> mit <code>app = 'einkaufsplan'</code>, Sammlung in <code>collection</code> (<code>days</code>, <code>shopping</code>, <code>erfahrungen</code>, <code>einstellungen</code>, <code>bilder</code>), Inhalt in <code>data</code>. Claude liest und schreibt per Supabase-Werkzeug (SQL); jede Änderung landet zusätzlich in <code>docs_history</code></li>
     <li><b>Alle Rezepte nutzen dieselbe Vorlage</b> <code>rezepte.js</code>, die Rezeptdatei enthält nur Daten. Änderungen an Darstellung oder Funktion macht man einmal dort (und in <code>app.css</code>), sie gelten dann für alle Rezepte</li>
     <li><b>Kein Seitenwechsel:</b> Rezeptliste, Rezept, Kochmodus und Regeln sind Ansichten von <code>index.html</code>. Echte Unterseiten würden beim Zurückkommen die Live-Verbindung neu aufbauen</li>

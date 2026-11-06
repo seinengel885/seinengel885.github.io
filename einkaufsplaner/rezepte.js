@@ -1,5 +1,5 @@
 /* Rezepte: Liste, Rezeptansicht, Kochmodus und Regeln.
-   Eine Vorlage für alle Rezepte – die Rezeptdaten liegen als rezepte/<id>.json im Artefakt.
+   Eine Vorlage für alle Rezepte – die Rezeptdaten liegen in Supabase (Sammlung rezepte).
    Wird von index.html eingebunden, damit es keinen Seitenwechsel gibt (sonst reißt die Live-Verbindung zur Datenbank ab).
    Navigation läuft über window.nav(view, arg) aus index.html. */
 (() => {
@@ -10,17 +10,23 @@ const $ = id => document.getElementById(id);
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const state = (title, text) => `<div class="state"><strong>${esc(title)}</strong>${text}</div>`;
 
-/* ---------- Daten (einmal geladen, dann aus dem Zwischenspeicher) ---------- */
+/* ---------- Daten ----------
+   Rezepte sind Inhalte und liegen in Supabase (Sammlung rezepte, ein Dokument je Rezept, id = Rezept-id), nicht im Repo.
+   Alle Rezepte kommen mit einer Abfrage und bleiben dann im Zwischenspeicher. */
 let indexP = null; const cache = new Map();
-function getJSON(url){ return fetch(url, {cache:"no-store"}).then(r => { if(!r.ok) throw r.status; return r.json(); }); }
 function loadIndex(){
-  if(!indexP) indexP = getJSON("rezepte/index.json")
-    .then(d => (d.rezepte || []).slice().sort((a,b) => a.name.localeCompare(b.name, "de")))
+  if(!indexP) indexP = use("db")
+    .then(db => { if(!db) throw "keine Datenbank"; return db.collection("rezepte").get(); })
+    .then(s => {
+      s.docs.forEach(d => cache.set(d.id, {...d.data(), id: d.id}));
+      return [...cache.values()].sort((a,b) => a.name.localeCompare(b.name, "de"));
+    })
     .catch(e => { indexP = null; throw e; });
   return indexP;
 }
-function loadRecipe(id){
-  if(!cache.has(id)) cache.set(id, getJSON("rezepte/" + id + ".json").catch(e => { cache.delete(id); throw e; }));
+async function loadRecipe(id){
+  await loadIndex();
+  if(!cache.has(id)) throw 404;
   return cache.get(id);
 }
 
@@ -625,7 +631,7 @@ async function showRules(){
 
 /* ---------- Vorladen: Rezeptliste, sobald die Seite fertig ist ----------
    Wartet auf das load-Ereignis und dann auf eine ruhige Lücke, damit der Wochenplan zuerst steht.
-   Danach öffnet „Rezepte“ ohne Wartezeit. Die einzelnen Rezepte (je ~4 KB) laden weiter erst beim Antippen. */
+   Danach öffnen „Rezepte“ und jedes Rezept ohne Wartezeit (alle Rezepte kommen mit einer Abfrage). */
 function preload(){
   loadIndex().then(list => {
     all = list;

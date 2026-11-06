@@ -16,8 +16,8 @@
   darf Claude jederzeit pushen (Sicherung), er wird beim Codewort mit gemergt;
   „passt“ bestätigt nur eine Änderung und ist **kein** Codewort.
 - **Vorschau vor dem Push:** Patrick prüft Änderungen in einer klickbaren Vorschau im Chat, bevor sie live gehen.
-  `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau` baut die Seite mit `shared/demo-backend.js`
-  (Beispieldaten, keine Anmeldung, nichts geht an Supabase) und gibt die Dateiliste aus. Veröffentlichen mit dem
+  `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau <scratchpad>/rezepte` baut die Seite mit `shared/demo-backend.js`
+  (Beispieldaten, keine Anmeldung, nichts geht an Supabase; Rezepte als `<id>.json` aus dem Ordner im Scratchpad, da Inhalte nicht im Repo liegen) und gibt die Dateiliste aus. Veröffentlichen mit dem
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
   aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner); in einer neuen Sitzung erst mit
   `action: "read"` lesen, dann mit `url` veröffentlichen.
@@ -34,6 +34,7 @@
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
   Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
   und zusätzlich unter `supabase/migrations/` ablegen; danach den Sicherheitscheck (Advisors) laufen lassen.
+- **Auf GitHub nur Code, keine Inhalte.** Rezepte, Fotos und alle anderen Inhalte liegen nur in Supabase.
 - Zugriff nur für Adressen in `public.allowed_users`. Nie Daten oder geheime Schlüssel ins öffentliche Repo legen.
 - Sicherung auf Zuruf: Dokumente aus `public.docs` (und Fotos) ins private Repo `seinengel885/backups`
   im Format von `tools/backup.mjs`.

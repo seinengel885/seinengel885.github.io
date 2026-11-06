@@ -2,8 +2,11 @@
    Die Seite läuft mit shared/demo-backend.js statt Supabase: keine Anmeldung, Beispieldaten,
    Änderungen bleiben im Browser.
 
-     node tools/vorschau.mjs [ordner] [app] [ziel]
-     node tools/vorschau.mjs einkaufsplaner einkaufsplan /tmp/vorschau
+     node tools/vorschau.mjs [ordner] [app] [ziel] [rezepte-ordner]
+     node tools/vorschau.mjs einkaufsplaner einkaufsplan /tmp/vorschau /tmp/rezepte
+
+   Inhalte liegen nicht im Repo: Rezepte kommen als <id>.json aus [rezepte-ordner] (z. B. ein Abzug aus
+   Supabase im Scratchpad) und werden Startdaten der Sammlung rezepte. Ohne Ordner bleibt die Rezeptliste leer.
 
    Gibt am Ende die Dateiliste für den Artefakt-Aufruf (files) als JSON aus.
    Die Beispieldaten sind erfunden und werden bei jedem Bau passend zum heutigen Datum erzeugt. */
@@ -11,7 +14,7 @@ import { cpSync, mkdirSync, readFileSync, writeFileSync, rmSync, readdirSync, st
 import { join, relative } from "node:path";
 import { createHash } from "node:crypto";
 
-const [ordner = "einkaufsplaner", app = "einkaufsplan", ziel = "vorschau-build"] = process.argv.slice(2);
+const [ordner = "einkaufsplaner", app = "einkaufsplan", ziel = "vorschau-build", rezOrdner = ""] = process.argv.slice(2);
 const root = new URL("..", import.meta.url).pathname;
 const src = join(root, ordner);
 rmSync(ziel, { recursive: true, force: true });
@@ -27,8 +30,9 @@ const iso = d => d.toISOString().slice(0, 10);
 const tag = n => { const d = new Date(heute); d.setDate(d.getDate() + n); return iso(d); };
 function beispiel(){
   if(app !== "einkaufsplan") return {};
-  let rez = [];
-  try{ rez = JSON.parse(readFileSync(join(src, "rezepte/index.json"), "utf8")).rezepte || []; }catch(e){}
+  const rez = rezOrdner ? readdirSync(rezOrdner).filter(n => n.endsWith(".json"))
+    .map(n => ({ id: n.slice(0, -5), ...JSON.parse(readFileSync(join(rezOrdner, n), "utf8")) })) : [];
+  const rezepte = Object.fromEntries(rez.map(({ id, ...d }) => [id, d]));
   const r = i => rez[i % Math.max(rez.length, 1)];
   const days = {};
   const plan = [
@@ -58,7 +62,7 @@ function beispiel(){
   };
   /* Jedes Rezept bekommt ein Platzhalterfoto (echte Fotos liegen im privaten Speicher) */
   const bilder = Object.fromEntries(rez.map(x => [x.id, { asset: "platzhalter/" + x.id, quelle: "Platzhalter in der Vorschau" }]));
-  return { days, shopping, erfahrungen, bilder };
+  return { days, shopping, erfahrungen, bilder, rezepte };
 }
 
 /* Neue Startdaten → neuer Speicherschlüssel, damit alte Änderungen im Browser sie nicht verdecken */
