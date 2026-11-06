@@ -27,6 +27,7 @@ function loadIndex(){
 }
 async function loadRecipe(id){
   await loadIndex();
+  if(!cache.has(id)){ indexP = null; await loadIndex(); }   /* seit dem Laden neu geschrieben */
   if(!cache.has(id)) throw 404;
   return cache.get(id);
 }
@@ -443,13 +444,23 @@ document.addEventListener("change", e => { if(e.target.id === "sp-in"){ spDue = 
 document.addEventListener("pointerdown", e => { if(sp && !sp.contains(e.target) && !e.target.closest("#toshop")) closeShopPop(); }, true);
 addEventListener("scroll", () => closeShopPop(), {passive:true});
 
+/* Einträge für die Einkaufsliste: Mengen für p Personen, optionale Zutaten bleiben weg. Den Rest macht window.Einkauf */
+function addToShop(r, p, due){
+  const k = p / (r.portionen || p);
+  const entries = (r.zutaten || []).filter(z => !z.optional)
+    .map(z => ({qty: scaleStr(z.menge || "", k).trim(), name: cleanName(scaleText(z.text, k)), hint: [scaleStr(z.menge || "", k), z.text].filter(Boolean).join(" ")})).filter(z => z.name);
+  return window.Einkauf.addRecipe({id: r.id, name: r.name, pers: p, entries, due});
+}
+/* Auftrag von Claude (Sammlung auftraege, siehe index.html) */
+async function orderToShop({rezept, pers: p, due}){
+  const r = await loadRecipe(rezept);
+  return addToShop(r, p || r.portionen, due || "");
+}
+
 async function toShop(due){
   const b = $("toshop"); if(!b || b.disabled || !window.Einkauf) return;
-  const k = factor();
-  const entries = (recipe.zutaten || []).filter(z => !z.optional)
-    .map(z => ({qty: scaleStr(z.menge || "", k).trim(), name: cleanName(scaleText(z.text, k)), hint: [scaleStr(z.menge || "", k), z.text].filter(Boolean).join(" ")})).filter(z => z.name);
   b.disabled = true;
-  try{ await window.Einkauf.addRecipe({id: recipe.id, name: recipe.name, pers, entries, due}); }
+  try{ await addToShop(recipe, pers, due); }
   finally{ b.disabled = false; shopBtn(); }
 }
 
@@ -647,5 +658,5 @@ const whenIdle = cb => ("requestIdleCallback" in window) ? requestIdleCallback(c
 if(document.readyState === "complete") whenIdle(preload);
 else addEventListener("load", () => whenIdle(preload), {once:true});
 
-window.Rezepte = { showList, showRecipe, showRules, closeCook, isCooking: () => !cook.hidden, shopChanged: shopBtn, current: () => recipe && !$("v-detail").hidden ? {id: recipe.id, name: recipe.name} : null };
+window.Rezepte = { showList, showRecipe, showRules, closeCook, isCooking: () => !cook.hidden, shopChanged: shopBtn, orderToShop, current: () => recipe && !$("v-detail").hidden ? {id: recipe.id, name: recipe.name} : null };
 })();

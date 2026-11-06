@@ -5,7 +5,7 @@
      backend.ready            Promise, erfüllt sobald jemand angemeldet ist (vorher erscheint die Anmeldung)
      backend.use("db")        Datenbank mit derselben Schnittstelle wie im Claude-Artefakt:
                               db.collection(name).orderBy(feld).onSnapshot(cb, err) / .get() / .doc(id)
-                              db.doc("sammlung/id").set(daten) / .update(teil) / .delete() / .get()
+                              db.doc("sammlung/id").set(daten) / .update(teil) / .delete() → gelöscht? / .get()
      backend.use("user")      { id, email, name, can() }
      backend.use("assets")    Fotospeicher: upload(blob) → {id, sizeBytes}, delete(id)
      backend.blobUrl(id)      Bild-URL (vorher mit prefetchBlobs geholt), sonst ""
@@ -233,8 +233,9 @@
       delete(){
         local(coll, id, undefined);
         return guarded(coll, async () => {
-          const { error } = await sb.from(T).delete().eq("app", APP).eq("collection", coll).eq("id", id);
+          const { data, error } = await sb.from(T).delete().eq("app", APP).eq("collection", coll).eq("id", id).select("id");
           if(error) throw error;
+          return data.length > 0;
         });
       }
     };

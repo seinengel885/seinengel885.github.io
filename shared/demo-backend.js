@@ -42,7 +42,7 @@
         coll(c)[id] = opts?.merge ? { ...(coll(c)[id] || {}), ...clone(data) } : clone(data); changed(c);
       },
       async update(patch){ coll(c)[id] = { ...(coll(c)[id] || {}), ...clone(patch) }; changed(c); },
-      async delete(){ delete coll(c)[id]; changed(c); }
+      async delete(){ const had = id in coll(c); delete coll(c)[id]; changed(c); return had; }
     };
   }
   function query(c, order){

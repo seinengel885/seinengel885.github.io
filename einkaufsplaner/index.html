@@ -1776,6 +1776,24 @@ window.Einkauf={
   }
 };
 
+/* Aufträge von Claude (Sammlung auftraege), z. B. {typ:"einkauf", rezept, pers?, due?}: Rezept auf die Einkaufsliste,
+   genau wie der Einkaufswagen im Rezept. Erst wenn Einkaufsliste und Zuordnungen geladen sind. Ausgeführt wird nur,
+   was dieses Gerät selbst löschen konnte – so erledigt ihn bei zwei offenen Geräten nur eines. */
+const orders={list:[],shop:false,cfg:false,busy:false};
+async function runOrders(){
+  if(orders.busy||!orders.shop||!orders.cfg||!canWrite) return;
+  orders.busy=true;
+  try{
+    for(let o;(o=orders.list.shift());){
+      try{
+        if(!await db.doc("auftraege/"+o.id).delete()) continue;
+        if(o.typ==="einkauf") await window.Rezepte.orderToShop(o);
+        else toast(`Unbekannter Auftrag „${o.typ}“`);
+      }catch(err){ toast(err===404?`Rezept „${o.rezept}“ nicht gefunden`:"Auftrag fehlgeschlagen: "+(err?.message||err)) }
+    }
+  }finally{orders.busy=false}
+}
+
 {
   let tab="week"; try{ tab=localStorage.getItem("tab")||"week" }catch(e){}
   const p = parseHash(location.hash) || [tab, null];
@@ -1813,11 +1831,12 @@ window.Einkauf={
     s=>{gotDays=true;clearTimeout(t0);applySnap(s.docs.map(x=>({id:x.id,...x.data()})))},
     err=>{clearTimeout(t0);status("Fehler beim Laden der Tage: "+(err?.code||"")+" "+(err?.message||err))});
   live(db.collection("shopping"),
-    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.()},
+    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.();orders.shop=true;runOrders()},
     err=>{$("#shop").innerHTML=`<div class="state"><strong>Einkaufsliste nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
   live(db.collection("einstellungen"),
-    s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo()},
+    s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo(); orders.cfg=true;runOrders()},
     ()=>{});
+  live(db.collection("auftraege"),s=>{orders.list=s.docs.map(x=>({id:x.id,...x.data()}));runOrders()},()=>{});
   live(db.collection("erfahrungen"),
     s=>{exps=s.docs.map(x=>({id:x.id,...x.data()}));if(view==="exp")renderExp()},
     err=>{$("#exp-body").innerHTML=`<div class="state"><strong>Erfahrungen nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
