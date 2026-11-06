@@ -22,9 +22,14 @@
   });
 
   /* ---------- Anmeldung ---------- */
-  let session = null, resolveReady;
-  const ready = new Promise(r => resolveReady = r);
-  const nameOf = email => cfg.names?.[String(email||"").toLowerCase()] || String(email||"").split("@")[0];
+  let session = null, resolveAuth, myName = "";
+  const authed = new Promise(r => resolveAuth = r);
+  /* Der Anzeigename steht in public.allowed_users (Funktion mein_name), nicht im öffentlichen Code */
+  const ready = authed.then(async s => {
+    try{ myName = (await sb.rpc("mein_name")).data || ""; }catch(e){}
+    if(!myName) myName = String(s.user.email || "").split("@")[0];
+    return s;
+  });
 
   const CSS = `
   #auth{position:fixed;inset:0;z-index:100;display:flex;align-items:flex-start;justify-content:center;
@@ -117,11 +122,11 @@
 
   sb.auth.onAuthStateChange((ev, s) => {
     session = s;
-    if(s){ hideLogin(); resolveReady(s); }
+    if(s){ hideLogin(); resolveAuth(s); }
     else if(ev === "SIGNED_OUT"){ location.reload(); }
   });
   sb.auth.getSession().then(({ data, error }) => {
-    if(data?.session){ session = data.session; hideLogin(); resolveReady(data.session); }
+    if(data?.session){ session = data.session; hideLogin(); resolveAuth(data.session); }
     else {
       const p = new URLSearchParams(location.search);
       const err = p.get("error_description");
@@ -284,14 +289,14 @@
     const s = await ready;
     if(name === "db") return db;
     if(name === "assets") return assets;
-    if(name === "user") return { id: s.user.id, email: s.user.email, name: nameOf(s.user.email), can: async () => true };
+    if(name === "user") return { id: s.user.id, email: s.user.email, name: myName, can: async () => true };
     return null;
   }
 
   window.backend = {
     app: APP, client: sb, ready, use, prefetchBlobs,
     blobUrl: id => urls.get(id) || "",
-    get userName(){ return session ? nameOf(session.user.email) : ""; },
+    get userName(){ return session ? myName : ""; },
     signOut: () => sb.auth.signOut()
   };
 })();

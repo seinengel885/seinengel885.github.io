@@ -10,9 +10,8 @@
   `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
   (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
 - **Ablauf:** Claude arbeitet lokal, testet selbst (Playwright) und aktualisiert die Vorschau. Ist eine Änderung fertig und getestet,
-  pusht Claude sie **ohne Rückfrage** direkt auf `main` (GitHub Pages liefert von `main` aus) – ohne Pull Request, ohne weitere Branches.
-  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Nicht nach einem Codewort fragen.
-  Nur wenn Patrick ausdrücklich erst prüfen will oder eine Änderung riskant ist (z. B. Datenformat, Löschen), vorher fragen.
+  fragt Claude, ob sie live gehen soll. Nach Patricks Zustimmung pusht Claude direkt auf `main` (GitHub Pages liefert von `main` aus) –
+  ohne Pull Request, ohne weitere Branches. Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen.
   Den eigenen Arbeitsbranch darf Claude jederzeit pushen (Sicherung).
 - **Vorschau:** Patrick kann Änderungen in einer klickbaren Vorschau im Chat ansehen.
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau <scratchpad>/rezepte` baut die Seite mit `shared/demo-backend.js`

@@ -4,9 +4,7 @@ create table public.allowed_users (
   name  text not null
 );
 alter table public.allowed_users enable row level security;
-insert into public.allowed_users (email, name) values
-  ('[Adresse entfernt]', 'Patrick'),
-  ('[Adresse entfernt]', 'Kerstin');
+-- Die Einträge (Adresse, Name) stehen nur in der Datenbank, nicht im öffentlichen Repo.
 
 create or replace function public.is_allowed()
 returns boolean language sql stable security definer set search_path = '' as $$

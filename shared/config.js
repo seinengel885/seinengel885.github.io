@@ -3,6 +3,5 @@
 window.BACKEND_CONFIG = {
   url: "https://ilozkxfqiqdyeejcddes.supabase.co",
   key: "sb_publishable_n8_Wqz5NlyJW1nTVW_6Vbw_dpiGmWIu",
-  bucket: "bilder",
-  names: { "[Adresse entfernt]": "Patrick", "[Adresse entfernt]": "Kerstin" }
+  bucket: "bilder"
 };
