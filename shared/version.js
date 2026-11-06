@@ -2,6 +2,7 @@
    Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
    Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
 window.SITE_VERSIONEN = [
+  { nr: 13, stand: "2026-11-07 00:43", was: "Claude kann Rezepte per Auftrag auf die Einkaufsliste setzen (läuft beim Öffnen der App); Rezept-Regeln: Gramm und Nährwerte je Zutat" },
   { nr: 12, stand: "2026-11-07 00:13", was: "Anzeigename direkt aus der eigenen Zeile der Zugangsliste" },
   { nr: 11, stand: "2026-11-06 23:58", was: "Anzeigename kommt aus der Datenbank; keine E-Mail-Adressen mehr im Code" },
   { nr: 10, stand: "2026-11-06 23:45", was: "Rezepte: Abschnitt Original (z. B. Papas Rezept, antippen öffnet groß); Links in Tipps und Quelle anklickbar; 40 Rezepte aus Notion übernommen" },
