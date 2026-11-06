@@ -65,6 +65,8 @@ button:focus-visible,a:focus-visible{outline:2px solid var(--accent);outline-off
 .tips li{padding:10px 14px}
 .tips li+li{border-top:1px solid var(--line)}
 .src{font-size:.82rem;color:var(--muted);margin-top:22px}
+.rz-original{margin:0;padding:12px}.rz-original+.rz-original{border-top:1px solid var(--line)}.rz-original img{display:block;width:100%;height:auto;border-radius:10px;background:var(--line);min-height:120px}.rz-original img[src]{min-height:0}.rz-original figcaption{font-size:.82rem;color:var(--muted);margin-top:6px}
+.tips a,.src a{color:inherit;overflow-wrap:anywhere}
 
 /* Rezeptliste */
 /* Suche: 16px Schrift, damit iOS beim Antippen nicht zoomt */

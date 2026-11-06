@@ -4,7 +4,8 @@
    Navigation läuft über window.nav(view, arg) aus index.html. */
 (() => {
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
-const md = s => esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>");   /* **fett** für Mengen im Schritt */
+const link = h => h.replace(/https?:\/\/[^\s<]*[^\s<.,;:!?)]/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);   /* Adressen in Tipps und Quelle anklickbar (h ist schon escaped) */
+const md = s => link(esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"));   /* **fett** für Mengen im Schritt */
 const MEAT = /fleisch/i;
 const $ = id => document.getElementById(id);
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
@@ -331,7 +332,7 @@ function render(r, id){
 
   <nav class="jump" id="jump" aria-label="Abschnitte">
     <div class="jt" id="jt" aria-hidden="true">${esc(r.name)}</div>
-    <div class="jrow">${(r.beilagen || []).length ? `<button data-to="s-beilage">Beilage</button>` : ""}<button data-to="s-zutaten">Zutaten</button><button data-to="s-zubereitung">Zubereitung</button>${(r.tipps || []).length ? `<button data-to="s-tipps">Tipps</button>` : ""}</div>
+    <div class="jrow">${(r.beilagen || []).length ? `<button data-to="s-beilage">Beilage</button>` : ""}<button data-to="s-zutaten">Zutaten</button><button data-to="s-zubereitung">Zubereitung</button>${(r.tipps || []).length ? `<button data-to="s-tipps">Tipps</button>` : ""}${(r.originale || []).length ? `<button data-to="s-original">Original</button>` : ""}</div>
   </nav>
 
   ${(r.beilagen || []).length ? `<section id="s-beilage"><h2>Beilage</h2>${r.beilageHinweis ? `<p class="hint" style="margin:-2px 2px 8px">${md(r.beilageHinweis)}</p>` : ""}
@@ -347,7 +348,11 @@ function render(r, id){
   </section>
 
   ${(r.tipps || []).length ? `<section id="s-tipps"><h2>Tipps</h2><div class="box"><ul class="tips">${r.tipps.map(t => `<li><b>${esc(t.titel)}:</b> ${md(t.text)}</li>`).join("")}</ul></div></section>` : ""}
-  ${r.quelle ? `<p class="src">${esc(r.quelle)}</p>` : ""}`;
+  ${(r.originale || []).length ? `<section id="s-original"><h2>Original</h2><div class="box">${r.originale.map(o => `<figure class="rz-original"><a target="_blank" rel="noopener"><img data-asset="${esc(o.asset)}" alt="${esc(o.titel)}"></a><figcaption>${esc(o.titel)}</figcaption></figure>`).join("")}</div></section>` : ""}
+  ${r.quelle ? `<p class="src">${link(esc(r.quelle))}</p>` : ""}`;
+  /* Originale (z. B. Papas handgeschriebenes Rezept) liegen im privaten Fotospeicher wie die Rezeptfotos; antippen öffnet sie groß */
+  const orig = [...main.querySelectorAll("img[data-asset]")];
+  if(orig.length) window.backend?.prefetchBlobs(orig.map(i => i.dataset.asset)).then(() => orig.forEach(i => { i.src = i.parentNode.href = blobSrc(i.dataset.asset); })).catch(() => {});
 
   /* Sprungleiste klebt unter der Kopfleiste; der kleine Titel steht von Anfang an darin (29.10.) */
   const off = topBar().offsetHeight;

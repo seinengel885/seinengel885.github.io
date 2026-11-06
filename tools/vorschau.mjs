@@ -32,7 +32,9 @@ function beispiel(){
   if(app !== "einkaufsplan") return {};
   const rez = rezOrdner ? readdirSync(rezOrdner).filter(n => n.endsWith(".json"))
     .map(n => ({ id: n.slice(0, -5), ...JSON.parse(readFileSync(join(rezOrdner, n), "utf8")) })) : [];
-  const rezepte = Object.fromEntries(rez.map(({ id, ...d }) => [id, d]));
+  /* Originale (z. B. Papas Rezeptfoto) zeigen in der Vorschau ebenfalls Platzhalter */
+  const rezepte = Object.fromEntries(rez.map(({ id, ...d }) => [id, d.originale
+    ? { ...d, originale: d.originale.map((o, i) => ({ ...o, asset: `platzhalter/${id}-original-${i}` })) } : d]));
   const r = i => rez[i % Math.max(rez.length, 1)];
   const days = {};
   const plan = [
