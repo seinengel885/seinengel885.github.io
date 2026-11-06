@@ -33,7 +33,8 @@ const BUCKET = "bilder";
 if (!KEY) { console.error("SUPABASE_SECRET_KEY fehlt (siehe Kopf dieser Datei)."); process.exit(1); }
 if (!existsSync(join(DIR, ".git"))) { console.error(`Kein git-Repo unter ${DIR}. Erst klonen: git clone https://github.com/seinengel885/backups ${DIR}`); process.exit(1); }
 
-const H = { apikey: KEY, Authorization: `Bearer ${KEY}` };
+/* Secret Keys (sb_secret_…) gehen nur in den Header apikey; als Bearer-Token lehnt Supabase sie ab (kein JWT). */
+const H = { apikey: KEY };
 async function rest(path, headers = {}) {
   const r = await fetch(`${URL_}/rest/v1/${path}`, { headers: { ...H, ...headers } });
   if (!r.ok) throw new Error(`${path}: ${r.status} ${await r.text()}`);

@@ -9,13 +9,12 @@
   mit eigenem `data-app`. Der Einkaufsplaner liegt in `einkaufsplaner/`, seine Daten aber unter
   `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
   (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
-- **Ablauf:** Claude arbeitet lokal, aktualisiert die Vorschau, Patrick testet. Sagt Patrick eines der Codewörter **„live“, „Freigabe“, „ausrollen“ oder
-  „veröffentlichen“**, pusht Claude
-  sofort direkt auf `main` (GitHub Pages liefert von `main` aus) – ohne Pull Request, ohne Rückfrage, ohne weitere Branches.
-  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Ohne Codewort geht nichts auf `main`; den eigenen Arbeitsbranch
-  darf Claude jederzeit pushen (Sicherung), er wird beim Codewort mit gemergt;
-  „passt“ bestätigt nur eine Änderung und ist **kein** Codewort.
-- **Vorschau vor dem Push:** Patrick prüft Änderungen in einer klickbaren Vorschau im Chat, bevor sie live gehen.
+- **Ablauf:** Claude arbeitet lokal, testet selbst (Playwright) und aktualisiert die Vorschau. Ist eine Änderung fertig und getestet,
+  pusht Claude sie **ohne Rückfrage** direkt auf `main` (GitHub Pages liefert von `main` aus) – ohne Pull Request, ohne weitere Branches.
+  Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen. Nicht nach einem Codewort fragen.
+  Nur wenn Patrick ausdrücklich erst prüfen will oder eine Änderung riskant ist (z. B. Datenformat, Löschen), vorher fragen.
+  Den eigenen Arbeitsbranch darf Claude jederzeit pushen (Sicherung).
+- **Vorschau:** Patrick kann Änderungen in einer klickbaren Vorschau im Chat ansehen.
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau <scratchpad>/rezepte` baut die Seite mit `shared/demo-backend.js`
   (Beispieldaten, keine Anmeldung, nichts geht an Supabase; Rezepte als `<id>.json` aus dem Ordner im Scratchpad, da Inhalte nicht im Repo liegen) und gibt die Dateiliste aus. Veröffentlichen mit dem
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
@@ -25,7 +24,7 @@
   Link in der ersten Antwort jeder Sitzung nennen. Patrick kommentiert direkt in der Vorschau; diese Kommentare kommen als
   „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
   Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
-- **Bei jedem Push auf `main`, der live gehen soll: `shared/version.js` ergänzen**: oben in `SITE_VERSIONEN` einen
+- **Bei jedem Push auf `main`: `shared/version.js` ergänzen**: oben in `SITE_VERSIONEN` einen
   Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
   „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt Patrick, ob GitHub Pages schon
   ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
