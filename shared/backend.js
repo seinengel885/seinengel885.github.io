@@ -24,9 +24,9 @@
   /* ---------- Anmeldung ---------- */
   let session = null, resolveAuth, myName = "";
   const authed = new Promise(r => resolveAuth = r);
-  /* Der Anzeigename steht in public.allowed_users (Funktion mein_name), nicht im öffentlichen Code */
+  /* Der Anzeigename steht in public.allowed_users (jede Person sieht nur ihre eigene Zeile), nicht im öffentlichen Code */
   const ready = authed.then(async s => {
-    try{ myName = (await sb.rpc("mein_name")).data || ""; }catch(e){}
+    try{ myName = (await sb.from("allowed_users").select("name").maybeSingle()).data?.name || ""; }catch(e){}
     if(!myName) myName = String(s.user.email || "").split("@")[0];
     return s;
   });
