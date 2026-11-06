@@ -41,6 +41,8 @@ def pruefen(rid, r):
     fehler = [f for f in PFLICHT if f not in r]
     if not isinstance(r.get("kcal"), (int, float)): fehler.append("kcal keine Zahl")
     if any(not z.get("text") for z in r.get("zutaten", [])): fehler.append("Zutat ohne Text")
+    if any("g" in z and (not isinstance(z["g"], (int, float)) or not z.get("nw")) for z in r.get("zutaten", [])):
+        fehler.append("Zutat mit g ohne Zahl oder ohne nw")
     if fehler: raise SystemExit(f"{rid}: {', '.join(fehler)}")
 
 
