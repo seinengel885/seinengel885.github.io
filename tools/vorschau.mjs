@@ -82,7 +82,9 @@ html = html.replace(/<script src="\.\.\/shared\/vendor\/[^"]*"><\/script>\s*/g, 
              `<script src="shared/demo-backend.js"`)
            .replace(/\.\.\/shared\//g, "shared/");
 if(/backend\.js"/.test(html) && !/demo-backend\.js/.test(html)) throw new Error("backend.js nicht ersetzt");
-html = `<title>${titel} Vorschau</title>\n` + html;
+/* Zeichensatz bleibt stehen: Das Gerüst (mit <meta charset>) fällt oben weg. Ohne diese Angabe liest jeder
+   Testserver, der keinen charset im Header schickt, Seite und Skripte als Windows-1252 (ä, Regex-Bereiche kaputt). */
+html = `<meta charset="utf-8">\n<title>${titel} Vorschau</title>\n` + html;
 writeFileSync(join(ziel, "index.html"), html);
 
 /* Dateiliste für das Artefakt */

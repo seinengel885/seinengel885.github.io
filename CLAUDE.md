@@ -23,6 +23,7 @@
   **Ungefragt:** Vor jeder Antwort, die eine Änderung am Code meldet, die Vorschau neu bauen und veröffentlichen, und den
   Link in der ersten Antwort jeder Sitzung nennen. Patrick kommentiert direkt in der Vorschau; diese Kommentare kommen als
   „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
+  Testen über HTTP: `python3 -m http.server` im Vorschau-Ordner, keinen eigenen Testserver schreiben (die Vorschau trägt `<meta charset>`).
   Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
 - **Bei jedem Push auf `main`: `shared/version.js` ergänzen**: oben in `SITE_VERSIONEN` einen
   Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
