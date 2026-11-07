@@ -36,7 +36,13 @@
 - Zugriff nur für Adressen in `public.allowed_users`. Nie Daten oder geheime Schlüssel ins öffentliche Repo legen.
 - Sicherung auf Zuruf: Dokumente aus `public.docs` (und Fotos) ins private Repo `seinengel885/backups`
   im Format von `tools/backup.mjs`.
-- Rezept-Regeln stehen in `einkaufsplaner/regeln.html`.
+- Rezept-Regeln stehen in `einkaufsplaner/regeln.html` (dort unter „Technik für Claude“ auch Felder und Abläufe).
+- **Rezept auf die Einkaufsliste:** nicht selbst in `shopping` schreiben, sondern einen Auftrag anlegen:
+  `auftraege/<id>` = `{typ:"einkauf", rezept:"<rezept-id>", pers?, due?}`. Die App führt ihn beim nächsten Öffnen aus
+  (Kategorien, Logos, „Immer im Haus“ wie beim Einkaufswagen) und löscht ihn. Steht er noch da, war die App noch nicht offen.
+- **kcal prüfen:** Zutaten tragen `g` (Gramm fürs ganze Rezept) und `nw` (id in Sammlung `naehrwerte`, `{name, kcal}` pro 100 g).
+  kcal pro Portion = Σ(g × kcal/100) / portionen, ohne optionale Zutaten. Lesen per SQL nur mit den nötigen Feldern
+  (kein `jsonb_pretty`), Ändern gezielt mit `jsonb_set`.
 - **Begriffe im Einkaufsplaner** (mit Patrick so sprechen): *Logos* = Bio, Angebot und die Geschäfte (im Code `LABELS`,
   Feld `labels` am Eintrag). *Vorschläge* = Chips der Merkliste unter dem Listen-Symbol einer Kategorie in der
   Einkaufsliste (`cfg.merk`, Logos je Kategorie und Vorschlag in `cfg.merkLb[Kategorie][Name]`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
