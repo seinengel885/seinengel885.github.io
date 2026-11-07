@@ -64,7 +64,10 @@ function beispiel(){
   };
   /* Jedes Rezept bekommt ein Platzhalterfoto (echte Fotos liegen im privaten Speicher) */
   const bilder = Object.fromEntries(rez.map(x => [x.id, { asset: "platzhalter/" + x.id, quelle: "Platzhalter in der Vorschau" }]));
-  return { days, shopping, erfahrungen, bilder, rezepte };
+  /* Herzen: erfundene Beispiele (die echten setzen Patrick und Kerstin in der App) */
+  const lieblinge = Object.fromEntries([[0, { Patrick: true }], [2, { Patrick: true, Kerstin: true }], [4, { Kerstin: true }]]
+    .filter(([i]) => rez[i]).map(([i, v]) => [rez[i].id, v]));
+  return { days, shopping, erfahrungen, bilder, rezepte, lieblinge };
 }
 
 /* Neue Startdaten → neuer Speicherschlüssel, damit alte Änderungen im Browser sie nicht verdecken */

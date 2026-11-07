@@ -6,7 +6,6 @@
 const esc = s => String(s ?? "").replace(/[&<>"]/g, c => ({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const link = h => h.replace(/https?:\/\/[^\s<]*[^\s<.,;:!?)]/g, u => `<a href="${u}" target="_blank" rel="noopener">${u}</a>`);   /* Adressen in Tipps und Quelle anklickbar (h ist schon escaped) */
 const md = s => link(esc(s).replace(/\*\*(.+?)\*\*/g, "<strong>$1</strong>"));   /* **fett** für Mengen im Schritt */
-const MEAT = /fleisch/i;
 const $ = id => document.getElementById(id);
 const reduceMotion = () => matchMedia("(prefers-reduced-motion: reduce)").matches;
 const state = (title, text) => `<div class="state"><strong>${esc(title)}</strong>${text}</div>`;
@@ -187,9 +186,92 @@ Promise.all([use("db"), use("assets")]).then(async ([db, a]) => {
   if(recipe && !$("v-detail").hidden) ctlRefresh();
 });
 
+/* ---------- Art, Mahlzeit, Kapha und Herzen (7.11.) ----------
+   Statt freier Tags trägt jedes Rezept feste Felder: art (vegetarisch / fleisch = Fleisch oder Fisch / flexibel = mit oder
+   ohne, durch eine Variante im Rezept), gang (fruehstueck / snack / suess; fehlt = Hauptgericht) und kapha: true.
+   Auf der Karte stehen dafür Symbole, im Rezept Symbol und Wort. Herzen setzen Patrick (blau) und Kerstin (lila) selbst in
+   der App; sie liegen in der Sammlung lieblinge (id = Rezept-id, {Patrick: true, Kerstin: true}), nicht im Rezept. */
+const ART = {vegetarisch: {sym: "🌱", name: "Vegetarisch"}, fleisch: {sym: "🍖", name: "Fleisch & Fisch"},
+             flexibel: {sym: "🌱🍖", name: "Mit oder ohne Fleisch"}};
+const GANG = {haupt: {sym: "🍽️", name: "Hauptgericht"}, fruehstueck: {sym: "🥣", name: "Frühstück"},
+              snack: {sym: "🥨", name: "Snack"}, suess: {sym: "🧁", name: "Süßes & Backen"}};
+const gangOf = r => GANG[r.gang] ? r.gang : "haupt";
+const PERSONEN = ["Patrick", "Kerstin"];   /* Name wie in allowed_users; Reihenfolge = Reihenfolge der Herzen */
+/* Das eigene Herz gehört der angemeldeten Person; in der Vorschau (dort heißt sie „Vorschau“) Patrick */
+const ich = () => PERSONEN.includes(window.backend?.userName) ? window.backend.userName : PERSONEN[0];
+const HERZ = '<svg viewBox="0 0 24 24" aria-hidden="true"><path d="M12 20.5s-7.5-4.6-9.2-9.4C1.6 7.7 3.8 4.5 7.1 4.5c2 0 3.5 1.1 4.9 2.8 1.4-1.7 2.9-2.8 4.9-2.8 3.3 0 5.5 3.2 4.3 6.6-1.7 4.8-9.2 9.4-9.2 9.4z"/></svg>';
+const favs = new Map();   /* rezept-id → Set der Namen */
+const herzen = id => PERSONEN.filter(n => favs.get(id)?.has(n));
+const herzHTML = n => `<span class="herz herz-${PERSONEN.indexOf(n)}" title="${esc(n)}">${HERZ}</span>`;
+/* Merkmale eines Rezepts: auf der Karte nur Symbole, im Rezept mit Wort */
+function merkmale(r, lang){
+  const out = [], a = ART[r.art], g = gangOf(r);
+  if(a) out.push(lang ? `<span class="tag${r.art === "fleisch" ? " fleisch" : ""}">${a.sym} ${a.name}</span>` : `<span class="sym" title="${a.name}">${a.sym}</span>`);
+  if(lang || g !== "haupt") out.push(lang ? `<span class="tag">${GANG[g].sym} ${GANG[g].name}</span>` : `<span class="sym" title="${GANG[g].name}">${GANG[g].sym}</span>`);
+  if(r.kapha) out.push(`<span class="tag kapha">Kapha</span>`);
+  return out.join("");
+}
+let favDB = null;
+use("db").then(db => {
+  if(!db) return;
+  favDB = db.collection("lieblinge");
+  favDB.onSnapshot(s => {
+    favs.clear();
+    s.docs.forEach(d => { const v = d.data() || {}; favs.set(d.id, new Set(PERSONEN.filter(n => v[n]))); });
+    showHerzen();
+  }, () => {});
+});
+/* Herzen an allen sichtbaren Stellen neu setzen; filtert die Liste nach Herzen, wird sie neu gezeichnet */
+function showHerzen(){
+  document.querySelectorAll("[data-herz]").forEach(el => {
+    const h = herzen(el.dataset.herz);
+    el.innerHTML = h.map(herzHTML).join("") || (el.tagName === "BUTTON" ? `<span class="herz leer">${HERZ}</span>` : "");
+    if(el.tagName === "BUTTON") el.setAttribute("aria-label", h.length ? `Herz von ${h.join(" und ")}` : "Kein Herz");
+  });
+  if(filter.herz && !$("v-list").hidden && $("cards")) drawCards();
+}
+async function toggleHerz(id, name){
+  const s = new Set(favs.get(id)); s.has(name) ? s.delete(name) : s.add(name);
+  favs.set(id, s); showHerzen();
+  try{ s.size ? await favDB.doc(id).set(Object.fromEntries([...s].map(n => [n, true]))) : await favDB.doc(id).delete(); }
+  catch(e){ window.toast?.("Herz konnte nicht gespeichert werden."); }
+}
+/* Tippen setzt oder entfernt das eigene Herz, langer Druck (oder Rechtsklick) das der anderen Person */
+let herzPress = null;
+const other = () => PERSONEN.find(n => n !== ich());
+document.addEventListener("pointerdown", e => {
+  const b = e.target.closest("button[data-herz]"); if(!b || e.button > 0 || !favDB) return;
+  herzPress = {b, x: e.clientX, y: e.clientY, lang: false,
+    t: setTimeout(() => { herzPress.lang = true; navigator.vibrate?.(12); toggleHerz(b.dataset.herz, other()); }, 450)};
+});
+const herzEnde = () => { if(herzPress) clearTimeout(herzPress.t); };
+document.addEventListener("pointermove", e => { if(herzPress && Math.hypot(e.clientX - herzPress.x, e.clientY - herzPress.y) > 8){ herzEnde(); herzPress = null; } }, {passive: true});
+document.addEventListener("pointercancel", () => { herzEnde(); herzPress = null; });
+document.addEventListener("click", e => {
+  const b = e.target.closest("button[data-herz]"); if(!b || !favDB) return;
+  const lang = herzPress?.b === b && herzPress.lang; herzEnde(); herzPress = null;
+  if(!lang) toggleHerz(b.dataset.herz, ich());
+});
+document.addEventListener("contextmenu", e => {
+  const b = e.target.closest("button[data-herz]"); if(!b) return;
+  e.preventDefault();
+  const lang = herzPress?.lang; herzEnde(); herzPress = null;
+  if(!lang && favDB) toggleHerz(b.dataset.herz, other());   /* Rechtsklick; Android meldet den langen Druck auch so */
+});
+
 /* ---------- Rezeptliste ---------- */
-let all = [], filter = null, query = "";
-try{ filter = localStorage.getItem("rezeptfilter") || null }catch(e){}
+/* Filter: je Gruppe eine Wahl, Gruppen werden kombiniert. Vegetarisch und Fleisch & Fisch zeigen auch die flexiblen Rezepte. */
+const FILTER = [
+  ["art", "vegetarisch"], ["art", "fleisch"],
+  ...Object.keys(GANG).map(g => ["gang", g]),
+  ...PERSONEN.map(n => ["herz", n]), ["kapha", "ja"]];
+const filterLabel = (g, v) => g === "art" ? `${ART[v].sym} ${ART[v].name}` : g === "gang" ? `${GANG[v].sym} ${GANG[v].name}`
+  : g === "herz" ? herzHTML(v) : "Kapha";
+const passt = r => (!filter.art || r.art === filter.art || r.art === "flexibel") && (!filter.gang || gangOf(r) === filter.gang)
+  && (!filter.herz || favs.get(r.id)?.has(filter.herz)) && (!filter.kapha || r.kapha);
+let all = [], filter = {}, query = "";
+try{ const f = JSON.parse(localStorage.getItem("rezeptfilter")); if(f && typeof f === "object") filter = f; }catch(e){}
+const filterAktiv = () => Object.values(filter).some(Boolean);
 
 /* Suche: Name, Tags und Zutaten. Groß/klein, Akzente und ä/ae egal; mehrere Wörter müssen alle passen.
    Die Zutaten stehen nur in den einzelnen Rezeptdateien – sie werden beim ersten Suchwort nachgeladen. */
@@ -208,7 +290,7 @@ function loadIngredients(){
 }
 /* Treffer: null = passt nicht; sonst die Zutaten, über die es (auch) passt */
 function match(r, words){
-  const head = norm([r.name, ...(r.tags || [])].join(" "));
+  const head = norm([r.name, ART[r.art]?.name, GANG[gangOf(r)].name, r.kapha ? "Kapha" : ""].join(" "));
   const zs = ingr.get(r.id) || [], hits = new Set();
   for(const w of words){
     if(head.includes(w)) continue;
@@ -225,7 +307,7 @@ function cardHTML(r, hits){
       <div><div class="n">${esc(r.name)}</div>
       <div class="k">~${esc(r.kcal)} kcal · ${esc(r.portionen)} Portionen</div>
       ${hits.length ? `<div class="hit">Mit ${esc(hits.slice(0,3).join(", "))}${hits.length > 3 ? " …" : ""}</div>` : ""}
-      <div class="tags"><span class="tag">${esc(r.minuten)}'</span>${(r.tags || []).map(t => `<span class="tag${MEAT.test(t) ? " fleisch" : ""}">${esc(t)}</span>`).join("")}</div></div>
+      <div class="tags"><span class="tag">${esc(r.minuten)}'</span>${merkmale(r)}<span class="herzen" data-herz="${esc(r.id)}">${herzen(r.id).map(herzHTML).join("")}</span></div></div>
       <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.4" aria-hidden="true"><path d="M9 6l6 6-6 6"/></svg></a>`;
 }
 /* Nur die Karten neu zeichnen – das Suchfeld bleibt stehen und behält Fokus und Tastatur */
@@ -233,23 +315,21 @@ function drawCards(){
   const words = norm(query).split(/\s+/).filter(Boolean);
   const list = [];
   for(const r of all){
-    if(filter && !(r.tags || []).includes(filter)) continue;
+    if(!passt(r)) continue;
     const hits = words.length ? match(r, words) : [];
     if(hits) list.push(cardHTML(r, hits));
   }
-  const why = words.length ? (filter ? `Kein Rezept mit „${esc(query.trim())}“ unter „${esc(filter)}“.` : `Kein Rezept mit „${esc(query.trim())}“ im Namen oder in den Zutaten.`)
+  const why = words.length ? (filterAktiv() ? `Kein Rezept mit „${esc(query.trim())}“ unter diesem Filter.` : `Kein Rezept mit „${esc(query.trim())}“ im Namen oder in den Zutaten.`)
                            : "Für diesen Filter gibt es noch kein Rezept.";
   $("cards").innerHTML = list.join("") || state("Keine Treffer", why);
   $("q-clear").hidden = !query;
   /* Beim Suchen oder Filtern: wie viele von allen Rezepten zu sehen sind */
   const n = all.length;
-  $("r-count").textContent = (filter || words.length) ? `${list.length} von ${n} ${n === 1 ? "Rezept" : "Rezepten"}`
+  $("r-count").textContent = (filterAktiv() || words.length) ? `${list.length} von ${n} ${n === 1 ? "Rezept" : "Rezepten"}`
                                                       : `${n} ${n === 1 ? "Rezept" : "Rezepte"}`;
   showBilder();
 }
 function drawList(){
-  const tags = [...new Set(all.flatMap(r => r.tags || []))];
-  if(filter && !tags.includes(filter)) filter = null;
   $("v-list").innerHTML = `
     <div class="lhead"><p class="sub" id="r-count" aria-live="polite"></p><button class="linkbtn" data-nav="rules">Regeln</button></div>
     <div class="search" role="search">
@@ -257,7 +337,8 @@ function drawList(){
       <input type="search" id="q" placeholder="Rezept oder Zutat suchen" aria-label="Rezepte durchsuchen" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" value="${esc(query)}">
       <button type="button" id="q-clear" aria-label="Suche leeren" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    ${tags.length ? `<div class="filters" id="filters"><button data-t="" aria-pressed="${!filter}">Alle</button>${tags.map(t => `<button data-t="${esc(t)}" aria-pressed="${filter === t}">${esc(t)}</button>`).join("")}</div>` : ""}
+    <div class="filters" id="filters"><button data-g="" aria-pressed="${!filterAktiv()}">Alle</button>${FILTER.map(([g, v], i) =>
+      `${i && FILTER[i-1][0] !== g ? `<span class="fsep"></span>` : ""}<button data-g="${g}" data-v="${esc(v)}" aria-pressed="${filter[g] === v}"${g === "herz" ? ` aria-label="Herz von ${esc(v)}" style="--c:var(--herz-${PERSONEN.indexOf(v)})"` : ""}>${filterLabel(g, v)}</button>`).join("")}</div>
     <div class="cards" id="cards"></div>`;
   drawCards();
 }
@@ -269,9 +350,10 @@ async function showList(){
 $("v-list").addEventListener("click", e => {
   if(e.target.closest("#q-clear")){ query = ""; $("q").value = ""; drawCards(); $("q").focus(); return; }
   const b = e.target.closest("#filters button"); if(!b) return;
-  filter = b.dataset.t || null;
-  try{ filter ? localStorage.setItem("rezeptfilter", filter) : localStorage.removeItem("rezeptfilter") }catch(err){}
-  for(const x of $("filters").children) x.setAttribute("aria-pressed", (x.dataset.t || null) === filter);
+  const {g, v} = b.dataset;
+  if(!g) filter = {}; else filter[g] = filter[g] === v ? null : v;   /* nochmal tippen hebt die Wahl auf */
+  try{ localStorage.setItem("rezeptfilter", JSON.stringify(filter)) }catch(err){}
+  for(const x of $("filters").querySelectorAll("button")) x.setAttribute("aria-pressed", x.dataset.g ? filter[x.dataset.g] === x.dataset.v : !filterAktiv());
   drawCards();
 });
 $("v-list").addEventListener("input", e => {
@@ -350,7 +432,7 @@ function render(r, id){
   <h1 id="rtitle">${esc(r.name)}</h1>
   <div class="facts"><span class="fact">~${esc(r.kcal)} kcal / Portion</span><span class="fact">${esc(r.portionen)} Portionen</span><span class="fact">${esc(r.minuten)} Min.</span></div>
   <p class="sub">${esc(r.kurz)}</p>
-  ${(r.tags || []).length ? `<div class="tags" style="margin-top:10px">${r.tags.map(t => `<span class="tag${MEAT.test(t) ? " fleisch" : ""}">${esc(t)}</span>`).join("")}</div>` : ""}
+  <div class="tags rmerk">${merkmale(r, true)}<button type="button" class="herzbtn" data-herz="${esc(id)}"></button></div>
 
   <nav class="jump" id="jump" aria-label="Abschnitte">
     <div class="jt" id="jt" aria-hidden="true">${esc(r.name)}</div>
@@ -379,7 +461,7 @@ function render(r, id){
   /* Sprungleiste klebt unter der Kopfleiste; der kleine Titel steht von Anfang an darin (29.10.) */
   const off = topBar().offsetHeight;
   document.documentElement.style.setProperty("--toph", off + "px");
-  drawPers(); shopBtn(); showBild(id, true);
+  drawPers(); shopBtn(); showBild(id, true); showHerzen();
 }
 function zutatenHTML(){
   const k = factor();

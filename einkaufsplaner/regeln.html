@@ -32,13 +32,16 @@
     <li>Fehlen Angaben aus der Quelle (Mengen, Schritte), <b>erst nachfragen</b> statt selbst zu ergänzen</li>
   </ul></div></section>
 
-  <section id="tags"><h2>Tags</h2><div class="box"><ul class="rules">
-    <li><b>Art:</b> Vegetarisch · Mit Fleisch · Mit/ohne Fleisch · Kapha-Dosha · Nachtisch · Backen</li>
-    <li><b>Kerstins Lieblinge</b> nur, wenn Kerstin das Gericht kennt und für gut befunden hat, nie bei neuen Vorschlägen</li>  </ul></div></section>
+  <section id="tags"><h2>Art, Mahlzeit, Kapha</h2><div class="box"><ul class="rules">
+    <li>Keine freien Tags mehr, jedes Rezept trägt feste Felder:</li>
+    <li><b>Art</b> (<code>art</code>, Pflicht): 🌱 <code>vegetarisch</code> · 🍖 <code>fleisch</code> (Fleisch oder Fisch) · 🌱🍖 <code>flexibel</code> (mit oder ohne, nur wenn das Rezept eine Variante beschreibt)</li>
+    <li><b>Mahlzeit</b> (<code>gang</code>): 🥣 <code>fruehstueck</code> · 🥨 <code>snack</code> (herzhaft zum Knabbern) · 🧁 <code>suess</code> (Süßes &amp; Backen); fehlt das Feld, ist es ein 🍽️ Hauptgericht</li>
+    <li><b>Kapha</b> (<code>kapha: true</code>), wenn das Gericht Kapha ausgleicht</li>
+    <li><b>Herzen</b> setzen Patrick (blau) und Kerstin (lila) selbst in der App (Sammlung <code>lieblinge</code>), Claude nie</li>  </ul></div></section>
 
   <section id="technik"><h2>Technik für Claude</h2><div class="box"><ul class="rules">
     <li>Rezepte sind Inhalte und liegen <b>nur in Supabase</b>, nie im Repo: Tabelle <code>public.docs</code>, <code>app = 'einkaufsplan'</code>, <code>collection = 'rezepte'</code>, ein Dokument je Rezept. Die <code>id</code> ist die Dokument-id, klein mit Bindestrich, z. B. <code>chili-con-carne</code></li>
-    <li>Felder: name, tags, kcal (pro Portion), portionen, minuten, kurz, beilageHinweis, beilagen [{name, text}], zutaten [{menge, text, optional?, g?, nw?}], phasen [{titel, schritte [{text}]}], tipps [{titel, text}], quelle. Vorlage: das Dokument <code>rezepte/shakshuka</code>. Mengen im Schritt mit <code>**fett**</code> markieren</li>
+    <li>Felder: name, art, gang?, kapha?, kcal (pro Portion), portionen, minuten, kurz, beilageHinweis, beilagen [{name, text}], zutaten [{menge, text, optional?, g?, nw?}], phasen [{titel, schritte [{text}]}], tipps [{titel, text}], quelle. Vorlage: das Dokument <code>rezepte/shakshuka</code>. Mengen im Schritt mit <code>**fett**</code> markieren</li>
     <li>Nährwerte: Jede Zutat mit nennenswerten kcal bekommt <code>g</code> (Gramm für das ganze Rezept, so wie es dasteht; ml ≈ g, Stückzahl mit typischem Gewicht, „ca. … g“ im Text hat Vorrang) und <code>nw</code> (id eines Dokuments der Sammlung <code>naehrwerte</code>: <code>{name, kcal}</code> mit kcal pro 100 g, roh). Salz, Wasser und Prisen Gewürz bleiben ohne. Fehlt eine Grundzutat in <code>naehrwerte</code>, neu anlegen; gleiche Zutat, gleiches Dokument. Die Anzeige nutzt die Felder nicht. Prüfrechnung: kcal pro Portion = Σ(g × kcal/100) / portionen, ohne optionale Zutaten; über 15 % Abweichung zur Angabe nachsehen</li>
     <li>Ein neues Rezept erscheint, sobald sein Dokument geschrieben ist; die Seiten bleiben unverändert</li>
     <li>Rezept auf die Einkaufsliste: ein Auftrag in der Sammlung <code>auftraege</code>, z. B. <code>{"typ": "einkauf", "rezept": "bauerntopf", "pers": 4, "due": "2026-11-08"}</code> (<code>pers</code> und <code>due</code> optional; ohne <code>pers</code> gelten die Portionen des Rezepts). Die App erledigt ihn, sobald sie bei Patrick oder Kerstin geöffnet ist, genau wie der Einkaufswagen im Rezept, und löscht ihn danach. Steht der Auftrag noch da, hat ihn noch niemand geöffnet</li>
