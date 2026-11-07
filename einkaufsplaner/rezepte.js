@@ -52,18 +52,39 @@ const fokusCSS = id => { const f = own.get(id)?.fokus; return f ? `object-positi
 /* Ein Bearbeiten-Knopf; im Bearbeiten-Modus stehen dort Kamera und Fertig, und das Foto lässt sich verschieben */
 const adjHTML = () => bilderDB && recipe ? `<button type="button" class="edb" aria-label="Foto bearbeiten">${PEN}</button><button type="button" class="adjb" aria-label="Fertig">${OK}</button>` : "";
 
-/* Bild an allen sichtbaren Stellen dieses Rezepts tauschen, ohne die Ansicht neu zu zeichnen */
-function showBild(id){
-  const b = own.get(id); if(!b) return;
-  const src = blobSrc(b.asset); if(!src) return;
-  document.querySelectorAll(`[data-bild="${CSS.escape(id)}"]`).forEach(box => {
-    let img = box.querySelector("img");
-    if(!img){ img = document.createElement("img"); img.alt = ""; img.onerror = () => img.remove(); box.querySelector(".ph").after(img); }
-    if(box.classList.contains("hero")){ img.alt = recipe?.name || ""; b.quelle ? img.title = "Foto: " + b.quelle : img.removeAttribute("title"); }
-    if(img.getAttribute("src") !== src) img.src = src;
-    img.style.cssText = fokusCSS(id);
-  });
+/* Bild an allen sichtbaren Stellen dieses Rezepts tauschen, ohne die Ansicht neu zu zeichnen.
+   Ein neues Bild wird erst eingesetzt, wenn es ganz geladen und dekodiert ist: Es erscheint in einem Schritt,
+   nicht Stück für Stück. Fertige Bilder (fertig) setzen Liste und Rezept gleich beim Zeichnen ein. */
+const fertig = new Set();
+function showBild(id, prio){
+  const b = own.get(id); if(!b) return Promise.resolve();
+  const src = blobSrc(b.asset); if(!src) return Promise.resolve();
+  return Promise.all([...document.querySelectorAll(`[data-bild="${CSS.escape(id)}"]`)].map(box => {
+    const hero = box.classList.contains("hero");
+    const set = img => {
+      img.style.cssText = fokusCSS(id);
+      if(hero){ img.alt = recipe?.name || ""; b.quelle ? img.title = "Foto: " + b.quelle : img.removeAttribute("title"); }
+    };
+    const alt = box.querySelector("img");
+    if(alt?.getAttribute("src") === src){ set(alt); return; }
+    const img = new Image(); img.alt = "";
+    if(prio) img.fetchPriority = "high";
+    img.src = src;
+    return img.decode().then(() => {
+      fertig.add(src); set(img);
+      const jetzt = box.querySelector("img");
+      jetzt ? jetzt.replaceWith(img) : box.querySelector(".ph").after(img);
+    }, () => {});
+  }));
 }
+/* Sichtbare Bilder holen: das geöffnete Rezept und die ersten 4 Karten zuerst, die übrigen danach */
+async function showBilder(){
+  const ids = [...new Set([...document.querySelectorAll("#v-detail:not([hidden]) .hero[data-bild], #cards [data-bild]")].map(b => b.dataset.bild))]
+    .filter(id => own.has(id));
+  await Promise.all(ids.slice(0, 4).map(id => showBild(id, true)));
+  ids.slice(4).forEach(id => showBild(id));
+}
+const bildTag = (id, alt, extra = "") => { const src = bildOf({id}); return fertig.has(src) ? `<img src="${esc(src)}" alt="${esc(alt)}"${extra} style="${fokusCSS(id)}">` : ""; };
 /* Knöpfe im Rezeptbild nachziehen, wenn Speicher oder Foto erst später da sind */
 function ctlRefresh(){
   const h = document.querySelector("#r-main .hero"); if(!h) return;
@@ -160,8 +181,7 @@ Promise.all([use("db"), use("assets")]).then(async ([db, a]) => {
     const s = await bilderDB.get();
     s.docs.forEach(d => { const v = d.data(); if(v?.asset) own.set(d.id, {asset: v.asset, quelle: v.quelle || "", fokus: v.fokus}); });
     await window.backend?.prefetchBlobs([...own.values()].map(b => b.asset)).catch(() => {});
-    own.forEach((_, id) => showBild(id));
-    whenIdle(() => own.forEach(b => { const img = new Image(); img.decoding = "async"; img.src = blobSrc(b.asset); }));   /* Vorladen für die Rezeptliste */
+    showBilder();
   }catch(e){}
   assets = a;
   if(recipe && !$("v-detail").hidden) ctlRefresh();
@@ -201,7 +221,7 @@ function match(r, words){
 
 function cardHTML(r, hits){
   return `<a class="card" href="#rezept-${esc(r.id)}" data-nav="detail" data-arg="${esc(r.id)}">
-      <span class="thumb" data-bild="${esc(r.id)}"><span class="ph">${esc(r.name.slice(0,1))}</span>${bildOf(r) ? `<img src="${esc(bildOf(r))}" alt="" loading="lazy" style="${fokusCSS(r.id)}" onerror="this.remove()">` : ""}</span>
+      <span class="thumb" data-bild="${esc(r.id)}"><span class="ph">${esc(r.name.slice(0,1))}</span>${bildTag(r.id, "")}</span>
       <div><div class="n">${esc(r.name)}</div>
       <div class="k">~${esc(r.kcal)} kcal · ${esc(r.portionen)} Portionen</div>
       ${hits.length ? `<div class="hit">Mit ${esc(hits.slice(0,3).join(", "))}${hits.length > 3 ? " …" : ""}</div>` : ""}
@@ -225,6 +245,7 @@ function drawCards(){
   const n = all.length;
   $("r-count").textContent = (filter || words.length) ? `${list.length} von ${n} ${n === 1 ? "Rezept" : "Rezepten"}`
                                                       : `${n} ${n === 1 ? "Rezept" : "Rezepte"}`;
+  showBilder();
 }
 function drawList(){
   const tags = [...new Set(all.flatMap(r => r.tags || []))];
@@ -325,7 +346,7 @@ function render(r, id){
   /* Personen-Wähler steht bei Zutaten und bei Zubereitung, beide zeigen dieselbe Zahl */
   const persHTML = `<div class="pers" role="group" aria-label="Personen"><button type="button" class="pb" data-p="-1" aria-label="Eine Person weniger">−</button><span class="pn" role="status"></span><button type="button" class="pb" data-p="1" aria-label="Eine Person mehr">+</button></div>`;
   main.innerHTML = `
-  <div class="hero" data-bild="${esc(id)}"><span class="ph">${esc(r.name)}</span>${bildOf(recipe) ? `<img src="${esc(bildOf(recipe))}" alt="${esc(r.name)}"${own.get(id)?.quelle ? ` title="Foto: ${esc(own.get(id).quelle)}"` : ""} style="${fokusCSS(id)}" onerror="this.remove()">` : ""}${uploadHTML()}${adjHTML()}</div>
+  <div class="hero" data-bild="${esc(id)}"><span class="ph">${esc(r.name)}</span>${bildTag(id, r.name, own.get(id)?.quelle ? ` title="Foto: ${esc(own.get(id).quelle)}"` : "")}${uploadHTML()}${adjHTML()}</div>
   <h1 id="rtitle">${esc(r.name)}</h1>
   <div class="facts"><span class="fact">~${esc(r.kcal)} kcal / Portion</span><span class="fact">${esc(r.portionen)} Portionen</span><span class="fact">${esc(r.minuten)} Min.</span></div>
   <p class="sub">${esc(r.kurz)}</p>
@@ -358,7 +379,7 @@ function render(r, id){
   /* Sprungleiste klebt unter der Kopfleiste; der kleine Titel steht von Anfang an darin (29.10.) */
   const off = topBar().offsetHeight;
   document.documentElement.style.setProperty("--toph", off + "px");
-  drawPers(); shopBtn();
+  drawPers(); shopBtn(); showBild(id, true);
 }
 function zutatenHTML(){
   const k = factor();

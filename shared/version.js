@@ -2,6 +2,7 @@
    Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
    Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
 window.SITE_VERSIONEN = [
+  { nr: 16, stand: "2026-11-07 10:00", was: "Schnellerer Start (Daten warten nicht mehr auf den Namen, Vorverbindung zu Supabase); Rezeptbilder: erste 4 zuerst, jedes Bild erscheint fertig statt Stück für Stück" },
   { nr: 15, stand: "2026-11-07 09:53", was: "Einkauf kompakter; leere Kategorien nur beim Ziehen; zugeklappte Kategorie in Bernstein mit Anzahl; Pfeil zur Projektübersicht an der Überschrift" },
   { nr: 14, stand: "2026-11-07 01:08", was: "Nur Hinweise für Claude: Aufträge und kcal-Prüfung im Projektleitfaden" },
   { nr: 13, stand: "2026-11-07 00:43", was: "Claude kann Rezepte per Auftrag auf die Einkaufsliste setzen (läuft beim Öffnen der App); Rezept-Regeln: Gramm und Nährwerte je Zutat" },
