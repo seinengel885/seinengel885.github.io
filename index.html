@@ -3,6 +3,7 @@
 <head>
 <meta charset="utf-8">
 <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+<link rel="preconnect" href="https://ilozkxfqiqdyeejcddes.supabase.co" crossorigin>
 <title>Unsere Projekte</title>
 <meta name="robots" content="noindex">
 <meta name="theme-color" content="#f6f8f6">
@@ -48,8 +49,8 @@ a.card svg{color:var(--muted);flex:none}
 <script src="shared/footer.js"></script>
 <script>
 /* Projekte erst nach der Anmeldung zeigen */
+backend.named.then(n => document.getElementById("who").textContent = "Angemeldet: " + n);
 backend.ready.then(() => {
-  document.getElementById("who").textContent = "Angemeldet: " + backend.userName;
   document.getElementById("out").onclick = () => backend.signOut();
   document.getElementById("apps").hidden = false;
 });

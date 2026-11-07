@@ -3,6 +3,7 @@
      <script src="../shared/backend.js" data-app="einkaufsplan"></script>
    Stellt window.backend bereit:
      backend.ready            Promise, erfüllt sobald jemand angemeldet ist (vorher erscheint die Anmeldung)
+     backend.named            Promise mit dem Anzeigenamen (kommt nebenher, blockiert die Daten nicht)
      backend.use("db")        Datenbank mit derselben Schnittstelle wie im Claude-Artefakt:
                               db.collection(name).orderBy(feld).onSnapshot(cb, err) / .get() / .doc(id)
                               db.doc("sammlung/id").set(daten) / .update(teil) / .delete() → gelöscht? / .get()
@@ -24,11 +25,13 @@
   /* ---------- Anmeldung ---------- */
   let session = null, resolveAuth, myName = "";
   const authed = new Promise(r => resolveAuth = r);
-  /* Der Anzeigename steht in public.allowed_users (jede Person sieht nur ihre eigene Zeile), nicht im öffentlichen Code */
-  const ready = authed.then(async s => {
+  const ready = authed;
+  /* Der Anzeigename steht in public.allowed_users (jede Person sieht nur ihre eigene Zeile), nicht im öffentlichen Code.
+     Er wird nebenher geholt; das Laden der Daten wartet nicht darauf. */
+  const named = authed.then(async s => {
     try{ myName = (await sb.from("allowed_users").select("name").maybeSingle()).data?.name || ""; }catch(e){}
     if(!myName) myName = String(s.user.email || "").split("@")[0];
-    return s;
+    return myName;
   });
 
   const CSS = `
@@ -290,12 +293,12 @@
     const s = await ready;
     if(name === "db") return db;
     if(name === "assets") return assets;
-    if(name === "user") return { id: s.user.id, email: s.user.email, name: myName, can: async () => true };
+    if(name === "user") return { id: s.user.id, email: s.user.email, name: await named, can: async () => true };
     return null;
   }
 
   window.backend = {
-    app: APP, client: sb, ready, use, prefetchBlobs,
+    app: APP, client: sb, ready, named, use, prefetchBlobs,
     blobUrl: id => urls.get(id) || "",
     get userName(){ return session ? myName : ""; },
     signOut: () => sb.auth.signOut()

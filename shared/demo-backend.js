@@ -94,7 +94,7 @@
     return null;
   }
   window.backend = {
-    app: APP, ready, use, demo: true,
+    app: APP, ready, named: Promise.resolve(NAME), use, demo: true,
     prefetchBlobs: async () => {},
     blobUrl: id => urls.get(id) || (String(id).startsWith("platzhalter/") ? platzhalter(id) : ""),
     userName: NAME,
