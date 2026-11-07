@@ -11,7 +11,7 @@ body{background:var(--bg);color:var(--ink);font-family:var(--body);font-size:16p
   padding-left:max(16px,env(safe-area-inset-left,0px));padding-right:max(16px,env(safe-area-inset-right,0px));padding-block:0 32px}
 body::before{content:"";position:fixed;inset:0 0 auto;height:env(safe-area-inset-top,0px);z-index:10;background:var(--bg)}
 .wrap{max-width:560px;margin:0 auto}
-header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:16px 10px;display:flex;flex-direction:column;gap:12px;box-shadow:0 0 0 100vmax var(--bg);clip-path:inset(0 -100vmax)}
+header{position:sticky;top:env(safe-area-inset-top,0px);z-index:5;background:var(--bg);padding-block:16px 5px;display:flex;flex-direction:column;gap:6px;box-shadow:0 0 0 100vmax var(--bg);clip-path:inset(0 -100vmax)}
 h1{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;margin:0;letter-spacing:-.01em;text-wrap:balance}
 .sub{color:var(--muted);font-size:.9rem;margin:0}
 .tabs{display:grid;grid-template-columns:1fr 1fr 1fr;background:var(--line);border-radius:12px;padding:3px;gap:3px}
@@ -21,7 +21,7 @@ h1{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;m
 .chip.rec{background:transparent;border:1px solid var(--accent);color:var(--accent)}
 .tabs button[aria-selected="true"]{background:var(--surface);color:var(--ink);box-shadow:0 1px 2px rgba(0,0,0,.08)}
 
-.days{display:flex;flex-direction:column;gap:8px;margin-top:6px}
+.days{display:flex;flex-direction:column;gap:8px;margin-top:3px}
 .day{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .day.newday{border-style:dashed;background:transparent}
@@ -56,6 +56,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 
 /* Listen-Look wie in den ToDos: Kopfzeile zum Auf-/Zuklappen, eine Karte je Abschnitt, flache 38-px-Zeilen, kaum Rahmen */
 .group{margin-top:18px}
+#shop .group:first-child{margin-top:0}
 .lh{display:flex;align-items:baseline;gap:8px;flex-wrap:wrap}
 .lh h2,.group h2{font-family:var(--display);font-weight:700;font-size:1.15rem;margin:0}
 .lh .gsub,.group .gsub{color:var(--muted);font-size:.85rem;margin:0}
