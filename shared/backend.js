@@ -1,10 +1,13 @@
 /* Gemeinsame Anbindung an Supabase für alle Projekte in diesem Repo.
    Einbinden (nach vendor/supabase-js-*.js und config.js):
-     <script src="../shared/backend.js" data-app="einkaufsplan"></script>
+     <script src="../shared/backend.js" data-app="einkaufsplan" data-merken="shopping"></script>
+   data-merken: Diese Sammlungen merkt sich der Browser; beim Öffnen erscheinen sie sofort im letzten Stand
+   (Snapshot mit fromCache: true), danach kommt der frische Stand.
    Stellt window.backend bereit:
      backend.ready            Promise, erfüllt sobald jemand angemeldet ist (vorher erscheint die Anmeldung)
      backend.named            Promise mit dem Anzeigenamen (kommt nebenher, blockiert die Daten nicht)
-     backend.use("db")        Datenbank mit derselben Schnittstelle wie im Claude-Artefakt:
+     backend.use("db")        Datenbank (sofort verfügbar; Lesen und Schreiben warten intern auf die Anmeldung)
+                              mit derselben Schnittstelle wie im Claude-Artefakt:
                               db.collection(name).orderBy(feld).onSnapshot(cb, err) / .get() / .doc(id)
                               db.doc("sammlung/id").set(daten) / .update(teil) / .delete() → gelöscht? / .get()
      backend.use("user")      { id, email, name, can() }
@@ -126,7 +129,10 @@
   sb.auth.onAuthStateChange((ev, s) => {
     session = s;
     if(s){ hideLogin(); resolveAuth(s); }
-    else if(ev === "SIGNED_OUT"){ try{ localStorage.removeItem(URL_KEY) }catch(e){} location.reload(); }
+    else if(ev === "SIGNED_OUT"){
+      try{ Object.keys(localStorage).filter(k => k === URL_KEY || k.startsWith(STAND)).forEach(k => localStorage.removeItem(k)) }catch(e){}
+      location.reload();
+    }
   });
   sb.auth.getSession().then(({ data, error }) => {
     if(data?.session){ session = data.session; hideLogin(); resolveAuth(data.session); }
@@ -142,6 +148,17 @@
   const T = "docs";
   const cache = new Map();          /* sammlung → Map(id → {data, version}) */
   const watchers = new Map();       /* sammlung → Set(watcher) */
+  /* Gemerkte Sammlungen: letzter Stand im localStorage, beim Abmelden gelöscht */
+  const MERKEN = new Set((me?.dataset.merken || "").split(/\s+/).filter(Boolean));
+  const STAND = "haus-stand-" + APP + "-", stale = new Set();
+  function merke(coll){
+    if(MERKEN.has(coll) && cache.has(coll)) try{ localStorage.setItem(STAND + coll, JSON.stringify([...cache.get(coll)])) }catch(e){}
+  }
+  function gemerkt(coll){
+    if(!MERKEN.has(coll)) return false;
+    try{ const v = JSON.parse(localStorage.getItem(STAND + coll)); if(!Array.isArray(v)) return false; cache.set(coll, new Map(v)); stale.add(coll); return true; }
+    catch(e){ return false; }
+  }
   let channel = null;
   const clone = v => v == null ? v : JSON.parse(JSON.stringify(v));
   const docObj = (id, r) => ({ id, exists: !!r, version: r?.version, data: () => clone(r?.data) });
@@ -159,14 +176,16 @@
     const m = cache.get(coll) || new Map();
     const docs = [...m].map(([id, r]) => docObj(id, r));
     if(order) docs.sort(cmp(order.field, order.dir));
-    return { docs, size: docs.length, empty: !docs.length, forEach: f => docs.forEach(f) };
+    return { docs, size: docs.length, empty: !docs.length, fromCache: stale.has(coll), forEach: f => docs.forEach(f) };
   }
   async function pull(coll){
+    await ready;
     const { data, error } = await sb.from(T).select("id,data,version").eq("app", APP).eq("collection", coll);
     if(error) throw error;
     cache.set(coll, new Map(data.map(r => [r.id, { data: r.data, version: r.version }])));
+    stale.delete(coll); merke(coll);
   }
-  function notify(coll){ for(const w of watchers.get(coll) || []) w.fire(); }
+  function notify(coll){ merke(coll); for(const w of watchers.get(coll) || []) w.fire(); }
   async function resyncAll(){
     for(const coll of watchers.keys()){
       try{ await pull(coll); notify(coll); }catch(e){ for(const w of watchers.get(coll) || []) w.err?.(e); }
@@ -203,7 +222,7 @@
     notify(coll);
   }
   async function guarded(coll, fn){
-    try{ return await fn(); }
+    try{ await ready; return await fn(); }
     catch(e){ try{ await pull(coll); notify(coll); }catch(_){} throw e; }
   }
 
@@ -211,6 +230,7 @@
     return {
       id, path: coll + "/" + id,
       async get(){
+        await ready;
         const { data, error } = await sb.from(T).select("id,data,version").eq("app", APP).eq("collection", coll).eq("id", id).maybeSingle();
         if(error) throw error;
         return docObj(id, data);
@@ -252,8 +272,9 @@
         const w = { fire: () => { try{ cb(snapOf(coll, order)); }catch(e){ console.error(e); } }, err };
         if(!watchers.has(coll)) watchers.set(coll, new Set());
         watchers.get(coll).add(w);
-        ensureChannel();
-        (cache.has(coll) ? Promise.resolve() : pull(coll)).then(() => w.fire(), e => err?.(e));
+        ready.then(ensureChannel);
+        if(!cache.has(coll) && gemerkt(coll)){ Promise.resolve().then(w.fire); pull(coll).then(() => notify(coll), e => err?.(e)); }
+        else (cache.has(coll) ? Promise.resolve() : pull(coll)).then(() => w.fire(), e => err?.(e));
         return () => watchers.get(coll)?.delete(w);
       }
     };
@@ -296,8 +317,8 @@
   };
 
   async function use(name){
-    const s = await ready;
     if(name === "db") return db;
+    const s = await ready;
     if(name === "assets") return assets;
     if(name === "user") return { id: s.user.id, email: s.user.email, name: await named, can: async () => true };
     return null;

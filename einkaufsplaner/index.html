@@ -320,7 +320,7 @@ body.dragmode #v-week{padding-bottom:110px}
 
 <script src="../shared/vendor/supabase-js-2.117.3.js"></script>
 <script src="../shared/config.js"></script>
-<script src="../shared/backend.js" data-app="einkaufsplan"></script>
+<script src="../shared/backend.js" data-app="einkaufsplan" data-merken="shopping einstellungen"></script>
 <script src="../shared/version.js"></script>
 <script src="../shared/footer.js"></script>
 <script src="rezepte.js"></script>
@@ -1826,13 +1826,15 @@ async function runOrders(){
   const status=t=>{const el=$("#days"); if(!days.length) el.innerHTML=`<div class="state"><strong>Plan wird geladen …</strong>${esc(t)}</div>`};
   const use=n=>window.backend?.use?window.backend.use(n):Promise.resolve(null);
   status(window.backend?.use?"Anmeldung …":"Die Verbindung zu Supabase fehlt (backend.js nicht geladen).");
-  if(window.backend) await window.backend.ready;
-  status("Verbinde mit der Datenbank …");
-  let gotDays=false;
-  const t0=setTimeout(()=>{if(!gotDays) status("Die Datenbank antwortet nicht. Bitte Seite neu laden; hilft das nicht, Claude Bescheid geben.")},12000);
+  let gotDays=false,t0=0;
+  /* Die Datenbank ist sofort da: Einkaufsliste und Einstellungen erscheinen aus dem letzten Stand im Browser,
+     alles andere kommt nach der Anmeldung */
   db=await use("db");
-  if(!db){clearTimeout(t0);$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Bitte neu anmelden und die Seite neu laden.</div>`;$("#shop").innerHTML="";return}
-  status("Datenbank verbunden, lade die Tage …");
+  if(!db){$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Bitte neu anmelden und die Seite neu laden.</div>`;$("#shop").innerHTML="";return}
+  window.backend?.ready.then(()=>{
+    status("Lade die Tage …");
+    t0=setTimeout(()=>{if(!gotDays) status("Die Datenbank antwortet nicht. Bitte Seite neu laden; hilft das nicht, Claude Bescheid geben.")},12000);
+  });
   /* Live-Abo; lehnt die Plattform es ab (passiert nach dem Zurückkommen von einer Unterseite:
      „Invalid subscription id“), direkt laden und regelmäßig nachladen */
   const live=(q,apply,onErr)=>{
@@ -1850,10 +1852,10 @@ async function runOrders(){
     s=>{gotDays=true;clearTimeout(t0);applySnap(s.docs.map(x=>({id:x.id,...x.data()})))},
     err=>{clearTimeout(t0);status("Fehler beim Laden der Tage: "+(err?.code||"")+" "+(err?.message||err))});
   live(db.collection("shopping"),
-    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.();orders.shop=true;runOrders()},
+    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.();orders.shop=!s.fromCache;runOrders()},
     err=>{$("#shop").innerHTML=`<div class="state"><strong>Einkaufsliste nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
   live(db.collection("einstellungen"),
-    s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo(); orders.cfg=true;runOrders()},
+    s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo(); orders.cfg=!s.fromCache;runOrders()},
     ()=>{});
   live(db.collection("auftraege"),s=>{orders.list=s.docs.map(x=>({id:x.id,...x.data()}));runOrders()},()=>{});
   live(db.collection("erfahrungen"),
