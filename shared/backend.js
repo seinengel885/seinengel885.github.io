@@ -126,7 +126,7 @@
   sb.auth.onAuthStateChange((ev, s) => {
     session = s;
     if(s){ hideLogin(); resolveAuth(s); }
-    else if(ev === "SIGNED_OUT"){ location.reload(); }
+    else if(ev === "SIGNED_OUT"){ try{ localStorage.removeItem(URL_KEY) }catch(e){} location.reload(); }
   });
   sb.auth.getSession().then(({ data, error }) => {
     if(data?.session){ session = data.session; hideLogin(); resolveAuth(data.session); }
@@ -264,14 +264,20 @@
   };
 
   /* ---------- Fotos (privater Speicher, Zugriff über zeitlich begrenzte Links) ---------- */
-  const urls = new Map();
-  const URL_TTL = 60 * 60 * 24 * 7;
+  /* Links bleiben über App-Starts gleich (localStorage), damit der Browser die Fotos aus seinem Speicher nimmt;
+     erneuert wird ein Link erst, wenn er in weniger als einem Tag abläuft */
+  const URL_TTL = 60 * 60 * 24 * 7, URL_KEY = "haus-fotolinks-" + APP, TAG = 864e5;
+  const urls = new Map();   /* asset-id → {u: Link, x: Ablauf in ms} */
+  try{ for(const [id, v] of Object.entries(JSON.parse(localStorage.getItem(URL_KEY) || "{}"))) if(v.x - Date.now() > TAG) urls.set(id, v); }catch(e){}
+  const saveUrls = () => { try{ localStorage.setItem(URL_KEY, JSON.stringify(Object.fromEntries(urls))) }catch(e){} };
   async function prefetchBlobs(ids){
-    const need = [...new Set(ids)].filter(id => id && !urls.has(id));
+    const need = [...new Set(ids)].filter(id => id && !(urls.get(id)?.x - Date.now() > TAG));
     if(!need.length) return;
     const { data, error } = await sb.storage.from(cfg.bucket).createSignedUrls(need, URL_TTL);
     if(error) throw error;
-    for(const r of data || []) if(r.signedUrl) urls.set(r.path, r.signedUrl);
+    const x = Date.now() + URL_TTL * 1000;
+    for(const r of data || []) if(r.signedUrl) urls.set(r.path, {u: r.signedUrl, x});
+    saveUrls();
   }
   const assets = {
     async upload(blob){
@@ -285,7 +291,7 @@
     async delete(id){
       const { error } = await sb.storage.from(cfg.bucket).remove([id]);
       if(error) throw error;
-      urls.delete(id);
+      urls.delete(id); saveUrls();
     }
   };
 
@@ -299,7 +305,7 @@
 
   window.backend = {
     app: APP, client: sb, ready, named, use, prefetchBlobs,
-    blobUrl: id => urls.get(id) || "",
+    blobUrl: id => urls.get(id)?.u || "",
     get userName(){ return session ? myName : ""; },
     signOut: () => sb.auth.signOut()
   };
