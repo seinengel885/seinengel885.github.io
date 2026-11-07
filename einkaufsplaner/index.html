@@ -61,7 +61,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .lh .gsub,.group .gsub{color:var(--muted);font-size:.85rem;margin:0}
 .sec{font-size:.74rem;font-weight:600;letter-spacing:.07em;text-transform:uppercase;color:var(--muted);margin:14px 0 6px}
 /* Abschnittsüberschrift wie bisher, nur zum Auf-/Zuklappen (▶ davor) */
-.sh{margin:14px 0 6px}
+.sh{margin:10px 0 4px}
 .sh .tg{display:flex;align-items:center;gap:4px;width:100%;background:none;border:0;padding:2px 0;margin:0;color:var(--muted);font:600 .74rem var(--body);letter-spacing:.07em;text-transform:uppercase;cursor:pointer;text-align:left}
 .sh .tg::before{content:"\25B6\FE0E";display:inline-flex;align-items:center;justify-content:center;width:1.1em;font-size:.85em;transition:transform .15s}
 .drop:not(.shut) .sh .tg::before{transform:rotate(90deg)}
@@ -109,7 +109,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .doneblk .items{opacity:.85}
 .items{background:var(--surface);border:1px solid var(--line);border-radius:10px;list-style:none;margin:0;padding:0;overflow:hidden}
 .items li+li{border-top:1px solid var(--line)}
-.item{display:flex;align-items:center;gap:10px;height:38px;padding:0 12px 0 10px}
+.item{display:flex;align-items:center;gap:10px;height:32px;padding:0 12px 0 10px}
 .item input[type=checkbox],.edit.ex input[type=checkbox]{-webkit-appearance:none;appearance:none;width:20px;height:20px;flex:none;margin:0;border-radius:50%;border:1.8px solid var(--muted);position:relative;cursor:pointer;background:none}
 .item input[type=checkbox]:checked,.edit.ex input[type=checkbox]:checked{background:var(--accent);border-color:var(--accent)}
 .item input[type=checkbox]:checked::after,.edit.ex input[type=checkbox]:checked::after{content:"";position:absolute;left:5.5px;top:2px;width:5px;height:10px;border:solid var(--surface);border-width:0 2px 2px 0;transform:rotate(45deg)}
@@ -141,7 +141,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .state strong{display:block;color:var(--ink);font-family:var(--display);font-size:1.1rem;margin-bottom:4px}
 .toast{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));background:var(--ink);color:var(--bg);padding:9px 14px;border-radius:10px;font-size:.9rem;z-index:20}
 /* Eingaben in Zeilen ohne Feldrahmen, nur Cursor – Zeile bleibt gleich hoch */
-.edit{display:flex;align-items:center;gap:6px;height:38px;padding:0 12px 0 40px;position:relative}
+.edit{display:flex;align-items:center;gap:6px;height:32px;padding:0 12px 0 40px;position:relative}
 .edit.new::before,.add::before{content:"＋";color:var(--muted);flex:none;width:20px;text-align:center}
 .edit.new::before{position:absolute;left:10px}
 .edit input,.add input{background:transparent;border:0;border-radius:0;padding:0;height:36px;font:inherit;font-size:16px;color:var(--ink);outline:0}
@@ -156,7 +156,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 /* Ziehen wie in den ToDos (SortableJS-Look, 1.11.): Kopie mit Schatten am Finger, der Eintrag selbst steht blass
    schon an seinem künftigen Platz, die anderen rücken in 150 ms nach. Keine Rahmen um Ziel-Kategorien. */
 .row.ghost{position:fixed;left:0;top:0;z-index:30;list-style:none;pointer-events:none;background:var(--surface);border-radius:10px;box-shadow:0 6px 18px rgba(0,0,0,.2)}
-.items .ph{padding:0 12px;line-height:38px;color:var(--muted);font-size:.88rem;font-style:italic}
+.items .ph{padding:0 12px;line-height:32px;color:var(--muted);font-size:.88rem;font-style:italic}
 .drop.emptysec .sec{opacity:.7}
 /* Leere Kategorien stehen immer da, ihre Karte erscheint erst, wenn der gezogene Eintrag hineinrückt;
    eine beim Ziehen leer gewordene Karte verschwindet (29.10., 1.11.) */
@@ -193,7 +193,7 @@ body.dragmode .drop.shut .items:has(>.row.dragging)>li:not(.dragging){display:no
 .lbb.lg{background:none}
 .lbb.lg svg{width:100%;height:100%;display:block}
 .item.done .lbset{opacity:.55}
-.edit.ex.lbon{flex-wrap:wrap;height:auto;min-height:38px;align-content:flex-start}
+.edit.ex.lbon{flex-wrap:wrap;height:auto;min-height:32px;align-content:flex-start}
 .edit.ex.lbon>input[type=checkbox]{margin-block:9px}
 .lbpick{flex-basis:100%;display:flex;flex-wrap:wrap;gap:7px;padding:0 0 10px 30px}
 .lbpick .lbb{width:28px;height:28px;font-size:11px;cursor:pointer;opacity:.3;-webkit-tap-highlight-color:transparent;touch-action:manipulation;transition:opacity .12s}
