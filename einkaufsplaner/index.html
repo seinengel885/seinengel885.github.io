@@ -163,6 +163,9 @@ body:not(.dragmode) .drop.emptysec{display:none}
 .row{-webkit-user-select:none;user-select:none;-webkit-touch-callout:none}
 .item .nm{cursor:text}
 .toast{width:max-content;max-width:calc(100vw - 32px)}
+#aktualisiert{position:fixed;left:50%;transform:translateX(-50%);bottom:calc(16px + env(safe-area-inset-bottom,0px));z-index:19;display:flex;align-items:center;gap:7px;padding:6px 12px;border-radius:999px;background:var(--surface);color:var(--muted);font-size:.82rem;box-shadow:0 2px 10px rgba(0,0,0,.12);pointer-events:none}
+#aktualisiert::before{content:"";width:10px;height:10px;border-radius:50%;border:2px solid currentColor;border-right-color:transparent;animation:aktdreh .8s linear infinite}
+@keyframes aktdreh{to{transform:rotate(360deg)}}
 .item{cursor:default}
 .row.dragging{opacity:.35;background:var(--accent-soft)}
 /* Ziehen wie in den ToDos (SortableJS-Look, 1.11.): Kopie mit Schatten am Finger, der Eintrag selbst steht blass
@@ -317,6 +320,7 @@ body.dragmode #v-week{padding-bottom:110px}
   </div>
 </div>
 <div class="toast" id="toast" hidden></div>
+<div id="aktualisiert" role="status" hidden>Wird aktualisiert …</div>
 
 <script src="../shared/vendor/supabase-js-2.117.3.js"></script>
 <script src="../shared/config.js"></script>
@@ -1852,8 +1856,8 @@ async function runOrders(){
     s=>{gotDays=true;clearTimeout(t0);applySnap(s.docs.map(x=>({id:x.id,...x.data()})))},
     err=>{clearTimeout(t0);status("Fehler beim Laden der Tage: "+(err?.code||"")+" "+(err?.message||err))});
   live(db.collection("shopping"),
-    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.();orders.shop=!s.fromCache;runOrders()},
-    err=>{$("#shop").innerHTML=`<div class="state"><strong>Einkaufsliste nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
+    s=>{items=s.docs.map(x=>({id:x.id,...x.data()}));renderShop();window.Rezepte?.shopChanged?.();orders.shop=!s.fromCache;$("#aktualisiert").hidden=!s.fromCache;runOrders()},
+    err=>{$("#aktualisiert").hidden=true;$("#shop").innerHTML=`<div class="state"><strong>Einkaufsliste nicht geladen</strong>${esc((err?.code||"")+" "+(err?.message||err))}</div>`});
   live(db.collection("einstellungen"),
     s=>{const d=s.docs.find(x=>x.id==="einkauf"); setCfg(d?d.data():null); if(view==="zuo") renderZuo(); orders.cfg=!s.fromCache;runOrders()},
     ()=>{});
