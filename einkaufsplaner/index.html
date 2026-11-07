@@ -80,7 +80,6 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 #foldpad{height:100vh;pointer-events:none}
 .drop.emptysec .sh{opacity:.7}
 /* Leere Kategorien nur beim Ziehen als Ziel sichtbar (7.11.) */
-#shop{overflow-anchor:none}   /* Die Stelle beim Ziehen hält keepRowAt selbst; der Browser-Anker (iOS) würde doppelt verschieben */
 body:not(.dragmode) .drop.emptysec{display:none}
 .drop.shut .items{display:none}
 .doneblk{margin-top:18px}
@@ -1535,7 +1534,7 @@ function autoScroll(){
 function keepRowAt(id,change){
   const at=()=>$("#shop").querySelector(`.row[data-id="${CSS.escape(id)}"]:not(.ghost)`)?.getBoundingClientRect().top;
   const t0=at(); change(); const t1=at();
-  if(t0!=null&&t1!=null&&t1!==t0) scrollBy(0,t1-t0);
+  if(t0!=null&&t1!=null&&t1!==t0) scrollTo(0,scrollY+t1-t0);   /* fester Wert: scrollBy rechnet Safari während der Berührung doppelt */
 }
 function endDrag(){ let p; keepRowAt(drag.id,()=>{ p=finishDrag() }); return p }
 async function finishDrag(){

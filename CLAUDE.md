@@ -1,6 +1,7 @@
 # Hinweise für Claude
 
 - Sprache mit Patrick: Deutsch. Kerstin ist die zweite Nutzerin.
+- **Antworten kurz und stichpunktartig.** Keine langen Erklärungen, keine Wiederholung des Bisherigen.
 - **Vor jeder Arbeit an der Oberfläche** den Skill `artefakt-bau` laden und die passenden Bausteine lesen (z. B. `eingabe-ios.md`:
   Bearbeiten ohne Rahmen und ohne Größenänderung, 16px; `ios-viewport.md`: Tastatur, kein `preventScroll` beim Fokussieren).
 - **Sauberer Code:** Bei einem Fehler die Ursache beheben, nicht drumherum bauen. Erst prüfen, ob die native
@@ -15,7 +16,7 @@
   Den eigenen Arbeitsbranch darf Claude jederzeit pushen (Sicherung).
 - **Vorschau:** Patrick kann Änderungen in einer klickbaren Vorschau im Chat ansehen.
   `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau <scratchpad>/rezepte` baut die Seite mit `shared/demo-backend.js`
-  (Beispieldaten, keine Anmeldung, nichts geht an Supabase; Rezepte als `<id>.json` aus dem Ordner im Scratchpad, da Inhalte nicht im Repo liegen) und gibt die Dateiliste aus. Veröffentlichen mit dem
+  (Beispieldaten, keine Anmeldung, nichts geht an Supabase; Rezepte als `<id>.json` aus dem Ordner im Scratchpad, da Inhalte nicht im Repo liegen) und gibt die Dateiliste aus. Den Rezeptordner vorher füllen (z. B. aus der zuletzt veröffentlichten Vorschau: `DEMO_DATA.rezepte` als `<id>.json`), sonst ist die Rezeptliste leer. Veröffentlichen mit dem
   Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
   aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner); in einer neuen Sitzung erst mit
   `action: "read"` lesen, dann mit `url` veröffentlichen.
@@ -27,6 +28,7 @@
   Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
   „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt Patrick, ob GitHub Pages schon
   ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
+- **Scrollen auf dem iPhone:** Während einer Berührung führt Safari `scrollBy` doppelt aus; Position mit `scrollTo(0, Zielwert)` setzen. Safari kennt keinen Scroll-Anker (Chrome schon) – Tests in Chromium täuschen hier, ggf. Messzeile in der Vorschau.
 - **Tastatur:** Das Feld über die iOS-Tastatur schiebt iOS selbst. Eigene Scrollgrenzen (z. B. Nachfedern) rechnen
   mit `visualViewport.height`, nicht mit `innerHeight` (bleibt auf dem iPhone bei offener Tastatur gleich).
 - Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
