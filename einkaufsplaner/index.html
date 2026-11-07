@@ -69,6 +69,8 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .sh .tg:focus:not(:focus-visible){outline:0}
 #foldpad{height:100vh;pointer-events:none}
 .drop.emptysec .sh{opacity:.7}
+/* Leere Kategorien nur beim Ziehen als Ziel sichtbar (7.11.) */
+body:not(.dragmode) .drop.emptysec{display:none}
 .drop.shut .items{display:none}
 .doneblk{margin-top:18px}
 .quiet{text-align:center;margin:28px 0 0}
@@ -1434,10 +1436,9 @@ function startDrag(row,x,y){
   const mouse=press?.mouse;
   drag={id:it.id,row,ghost,dx:x-r.left,dy:y-r.top,x,y,from:{ul:row.parentNode,next:row.nextSibling},target:null,raf:0};
   press=null; if(!mouse) navigator.vibrate?.(12);
-  addEmptyDrops();
   row.classList.add("dragging");
   row.addEventListener("touchmove",ev=>{ if(drag) ev.preventDefault() },{passive:false});
-  document.body.classList.add("dragmode"); bin.hidden=false;
+  keepRowAt(it.id,()=>{ addEmptyDrops(); document.body.classList.add("dragmode") }); bin.hidden=false;
   moveDrag(x,y); autoScroll();
 }
 /* Eintrag löschen (geleerte Zeile per Zurück-Taste), mit Rückgängig */
@@ -1517,7 +1518,14 @@ function autoScroll(){
   if(v){ const s0=scrollY; scrollBy(0,v); if(scrollY!==s0) moveDrag(drag.x,drag.y) }
   drag.raf=requestAnimationFrame(autoScroll);
 }
-async function endDrag(){
+/* Leere Kategorien tauchen beim Ziehen auf und verschwinden danach: die Zeile bleibt dabei an ihrer Stelle im Fenster */
+function keepRowAt(id,change){
+  const at=()=>$("#shop").querySelector(`.row[data-id="${CSS.escape(id)}"]:not(.ghost)`)?.getBoundingClientRect().top;
+  const t0=at(); change(); const t1=at();
+  if(t0!=null&&t1!=null&&t1!==t0) scrollBy(0,t1-t0);
+}
+function endDrag(){ let p; keepRowAt(drag.id,()=>{ p=finishDrag() }); return p }
+async function finishDrag(){
   const d=drag; drag=null; endedAt=Date.now(); cancelAnimationFrame(d.raf);
   d.ghost.remove(); bin.hidden=true; bin.classList.remove("over"); document.body.classList.remove("dragmode");
   const it=items.find(i=>i.id===d.id), row=d.row;
