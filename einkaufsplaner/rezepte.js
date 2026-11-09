@@ -195,7 +195,7 @@ const ART = {vegetarisch: {sym: "🌱", name: "Vegetarisch"}, fleisch: {sym: "�
              flexibel: {sym: "🌱🍖", name: "Mit oder ohne Fleisch"}};
 const GANG = {haupt: {sym: "🍽️", name: "Hauptgericht"}, fruehstueck: {sym: "🥣", name: "Frühstück"},
               snack: {sym: "🥨", name: "Snack"}, suess: {sym: "🧁", name: "Süßes & Backen"}};
-const KAPHA = "🐘";   /* Kapha-Typ wird im Ayurveda mit dem Elefanten verglichen: kräftig, ruhig, beständig */
+const KAPHA = "🪨";   /* Kapha steht für Erde und Wasser: schwer, stabil (Patrick, 9.11.) */
 const gangOf = r => GANG[r.gang] ? r.gang : "haupt";
 const PERSONEN = ["Patrick", "Kerstin"];   /* Name wie in allowed_users; Reihenfolge = Reihenfolge der Herzen */
 /* Das eigene Herz gehört der angemeldeten Person; in der Vorschau (dort heißt sie „Vorschau“) Patrick */

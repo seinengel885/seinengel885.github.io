@@ -2,6 +2,7 @@
    Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
    Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
 window.SITE_VERSIONEN = [
+  { nr: 21, stand: "2026-11-09 19:00", was: "Kapha als 🪨" },
   { nr: 20, stand: "2026-11-09 18:59", was: "Rezeptfilter brechen um statt seitlich zu wischen; Kapha als 🐘" },
   { nr: 19, stand: "2026-11-09 18:43", was: "Rezepte: Symbole für Art und Mahlzeit statt Tags, Herzen für Patrick (blau) und Kerstin (lila), geordnete Filter" },
   { nr: 18, stand: "2026-11-07 10:19", was: "Einkaufsliste erscheint beim Öffnen sofort im letzten Stand; unten „Wird aktualisiert …“, bis der frische Stand da ist" },
