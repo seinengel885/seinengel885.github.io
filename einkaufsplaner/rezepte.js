@@ -189,12 +189,13 @@ Promise.all([use("db"), use("assets")]).then(async ([db, a]) => {
 /* ---------- Art, Mahlzeit, Kapha und Herzen (7.11.) ----------
    Statt freier Tags trägt jedes Rezept feste Felder: art (vegetarisch / fleisch = Fleisch oder Fisch / flexibel = mit oder
    ohne, durch eine Variante im Rezept), gang (fruehstueck / snack / suess; fehlt = Hauptgericht) und kapha: true.
-   Auf der Karte stehen dafür Symbole, im Rezept Symbol und Wort. Herzen setzen Patrick (blau) und Kerstin (lila) selbst in
+   Auf der Karte stehen dafür Symbole, im Rezept und im Filter Symbol und Wort. Herzen setzen Patrick (blau) und Kerstin (lila) selbst in
    der App; sie liegen in der Sammlung lieblinge (id = Rezept-id, {Patrick: true, Kerstin: true}), nicht im Rezept. */
 const ART = {vegetarisch: {sym: "🌱", name: "Vegetarisch"}, fleisch: {sym: "🍖", name: "Fleisch & Fisch"},
              flexibel: {sym: "🌱🍖", name: "Mit oder ohne Fleisch"}};
 const GANG = {haupt: {sym: "🍽️", name: "Hauptgericht"}, fruehstueck: {sym: "🥣", name: "Frühstück"},
               snack: {sym: "🥨", name: "Snack"}, suess: {sym: "🧁", name: "Süßes & Backen"}};
+const KAPHA = "🐘";   /* Kapha-Typ wird im Ayurveda mit dem Elefanten verglichen: kräftig, ruhig, beständig */
 const gangOf = r => GANG[r.gang] ? r.gang : "haupt";
 const PERSONEN = ["Patrick", "Kerstin"];   /* Name wie in allowed_users; Reihenfolge = Reihenfolge der Herzen */
 /* Das eigene Herz gehört der angemeldeten Person; in der Vorschau (dort heißt sie „Vorschau“) Patrick */
@@ -208,7 +209,7 @@ function merkmale(r, lang){
   const out = [], a = ART[r.art], g = gangOf(r);
   if(a) out.push(lang ? `<span class="tag${r.art === "fleisch" ? " fleisch" : ""}">${a.sym} ${a.name}</span>` : `<span class="sym" title="${a.name}">${a.sym}</span>`);
   if(lang || g !== "haupt") out.push(lang ? `<span class="tag">${GANG[g].sym} ${GANG[g].name}</span>` : `<span class="sym" title="${GANG[g].name}">${GANG[g].sym}</span>`);
-  if(r.kapha) out.push(`<span class="tag kapha">Kapha</span>`);
+  if(r.kapha) out.push(lang ? `<span class="tag">${KAPHA} Kapha</span>` : `<span class="sym" title="Kapha">${KAPHA}</span>`);
   return out.join("");
 }
 let favDB = null;
@@ -266,7 +267,7 @@ const FILTER = [
   ...Object.keys(GANG).map(g => ["gang", g]),
   ...PERSONEN.map(n => ["herz", n]), ["kapha", "ja"]];
 const filterLabel = (g, v) => g === "art" ? `${ART[v].sym} ${ART[v].name}` : g === "gang" ? `${GANG[v].sym} ${GANG[v].name}`
-  : g === "herz" ? herzHTML(v) : "Kapha";
+  : g === "herz" ? herzHTML(v) : `${KAPHA} Kapha`;
 const passt = r => (!filter.art || r.art === filter.art || r.art === "flexibel") && (!filter.gang || gangOf(r) === filter.gang)
   && (!filter.herz || favs.get(r.id)?.has(filter.herz)) && (!filter.kapha || r.kapha);
 let all = [], filter = {}, query = "";
