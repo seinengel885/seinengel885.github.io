@@ -337,8 +337,8 @@ function drawList(){
       <input type="search" id="q" placeholder="Rezept oder Zutat suchen" aria-label="Rezepte durchsuchen" autocomplete="off" autocorrect="off" spellcheck="false" enterkeyhint="search" value="${esc(query)}">
       <button type="button" id="q-clear" aria-label="Suche leeren" hidden><svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.6" aria-hidden="true"><path d="M6 6l12 12M18 6L6 18"/></svg></button>
     </div>
-    <div class="filters" id="filters"><button data-g="" aria-pressed="${!filterAktiv()}">Alle</button>${FILTER.map(([g, v], i) =>
-      `${i && FILTER[i-1][0] !== g ? `<span class="fsep"></span>` : ""}<button data-g="${g}" data-v="${esc(v)}" aria-pressed="${filter[g] === v}"${g === "herz" ? ` aria-label="Herz von ${esc(v)}" style="--c:var(--herz-${PERSONEN.indexOf(v)})"` : ""}>${filterLabel(g, v)}</button>`).join("")}</div>
+    <div class="filters" id="filters"><button data-g="" aria-pressed="${!filterAktiv()}">Alle</button>${FILTER.map(([g, v]) =>
+      `<button data-g="${g}" data-v="${esc(v)}" aria-pressed="${filter[g] === v}"${g === "herz" ? ` aria-label="Herz von ${esc(v)}" style="--c:var(--herz-${PERSONEN.indexOf(v)})"` : ""}>${filterLabel(g, v)}</button>`).join("")}</div>
     <div class="cards" id="cards"></div>`;
   drawCards();
 }
