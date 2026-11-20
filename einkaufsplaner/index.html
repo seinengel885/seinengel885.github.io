@@ -1066,8 +1066,9 @@ function holdY(y=scrollY){ keepY=Math.max(keepY,y); foldpad.style.height="100vh"
 /* Schließt die Tastatur, bleibt die Stelle stehen wie nach einem Zuklappen, statt zurückzuspringen */
 document.addEventListener("focusout",()=>holdY(),true);
 /* Selbst an eine Stelle rollen, auch unterhalb des Inhaltsendes (z. B. Gestern unter den Kopf) */
-function holdTo(y){ keepY=Math.max(keepY,y); fitPad(); scrollTo(0,y) }
-addEventListener("scroll",()=>{ if(scrollY<keepY){ keepY=Math.max(0,scrollY); if(!holdT) fitPad() } },{passive:true});
+function holdTo(y){ keepY=Math.max(keepY,y); if(!holdT) fitPad(); scrollTo(0,y) }
+/* Hochscrollen gibt den Freiraum frei – nicht während des Haltens: iOS kappt dort kurz, bevor der Freiraum wirkt (ToDos, 20.11.) */
+addEventListener("scroll",()=>{ if(!holdT&&scrollY<keepY){ keepY=Math.max(0,scrollY); fitPad() } },{passive:true});
 addEventListener("touchstart",()=>{touching=true},{passive:true});
 const touchOff=()=>{touching=false};
 addEventListener("touchend",touchOff,{passive:true}); addEventListener("touchcancel",touchOff,{passive:true});
