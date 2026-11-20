@@ -78,7 +78,7 @@ textarea{min-height:calc(3 * 1.45em + 16px);resize:vertical}   /* drei Zeilen + 
 .drop.shut:not(.doneblk) .sh .tg{color:var(--warn)}
 .sh .zu-n{display:none;margin-left:4px;padding:0 6px;border-radius:999px;background:color-mix(in srgb,var(--warn) 16%,transparent);letter-spacing:0;font-variant-numeric:tabular-nums}
 .drop.shut:not(.doneblk) .sh .zu-n{display:inline-block}
-#foldpad{height:100vh;pointer-events:none}
+#foldpad{height:0;pointer-events:none}
 .drop.emptysec .sh{opacity:.7}
 /* Leere Kategorien nur beim Ziehen als Ziel sichtbar (7.11.) */
 body:not(.dragmode) .drop.emptysec{display:none}
@@ -391,7 +391,9 @@ function nav(v, a=null, {push=true, restore=false, from=null}={}){
   if(v==="exp") renderExp();
   if(v==="zuo") renderZuo();
   if(v==="week"&&!restore){ histBack=3; anchorPending=true; if(days.length) renderDays() }
-  requestAnimationFrame(() => { if(v==="week"&&!restore&&!anchorPending) return; scrollTo(0, restore ? (scrollPos[v+(a||"")]||0) : 0) });
+  /* Neue Ansicht: Freiraum nur für die gemerkte Position (zurück) bzw. keinen */
+  requestAnimationFrame(() => { if(v==="week"&&!restore&&!anchorPending) return; const y=restore ? (scrollPos[v+(a||"")]||0) : 0;
+    keepY=y; fitPad(); scrollTo(0, y) });
 }
 window.nav = nav;
 document.addEventListener("click", e => {
@@ -431,14 +433,14 @@ const dayById=id=>days.find(d=>d.id===id)||shownDays().find(d=>d.id===id);
 /* Virtuelle Tage gibt es noch nicht in der Datenbank: dort anlegen statt ändern */
 const saveDay=(d,patch,msg)=>d.virtual?save("days/"+d.id,{date:d.date,...patch},msg,true):save("days/"+d.id,patch,msg);
 /* Gestern (bzw. den ersten Tag ab gestern) direkt unter den Kopf rollen. keepY erlaubt die Position,
-   auch wenn darunter weniger als eine Bildschirmhöhe Inhalt steht (foldpad gibt den Platz). */
+   auch wenn darunter weniger als eine Bildschirmhöhe Inhalt steht (holdTo: foldpad gibt den Platz). */
 function anchorYesterday(){
   const y=addDays(todayStr(),-1);
   const art=[...$("#days").querySelectorAll(".day:not(.spare)")].find(a=>(a.dataset.date||"")>=y);
   if(!art){scrollTo(0,0);return}
   const head=$("#mainhead").getBoundingClientRect().bottom;
   const top=Math.max(0,Math.round(art.getBoundingClientRect().top+scrollY-head-8));
-  keepY=Math.max(keepY,top); scrollTo(0,top);
+  holdTo(top);
 }
 /* Nahe am oberen Rand: 7 ältere Tage davor hängen und die Sicht stehen lassen.
    Erst wenn das Scrollen steht (kein Finger, kein Schwung, kein Gummiband): Ein scrollTo mitten im iOS-Schwung
@@ -453,7 +455,7 @@ function loadOlder(){
   const first=$("#days .day:not(.spare)"), before=first?first.getBoundingClientRect().top:0, oldFirst=first?.dataset.id;
   histBack+=7; renderDays();
   const same=oldFirst&&$(`#days .day[data-id="${CSS.escape(oldFirst)}"]`);
-  if(same){ const d=same.getBoundingClientRect().top-before; if(d) scrollTo(0,scrollY+d) }
+  if(same){ const d=same.getBoundingClientRect().top-before; if(d) holdTo(scrollY+d) }
   if(!reducedMotion()) for(const a of $("#days").querySelectorAll(".day:not(.spare)")){ if(a===same) break; a.animate([{opacity:0},{opacity:1}],{duration:220,easing:"ease-out"}) }
 }
 addEventListener("scroll",scheduleOlder,{passive:true});
@@ -568,7 +570,7 @@ const setExp=(art,on)=>{art.classList.toggle("open",on);art.querySelector(".dayh
 function track(a,done){ rolling++; const end=ok=>{rolling--;done?.(ok);flushDays()}; if(a) a.finished.then(()=>end(true),()=>end(false)); else end(true) }
 function closePanel(art){
   const p=art.querySelector(".panel:not(.closing)"); setExp(art,false); if(!p) return;
-  p.classList.add("closing"); keepY=Math.max(keepY,scrollY);
+  p.classList.add("closing"); holdY();
   track(roll(p,true),ok=>{ if(ok&&p.classList.contains("closing")) p.remove() });
 }
 function openPanel(art){
@@ -1050,56 +1052,28 @@ function renderShop(force){
 }
 /* Auf-/Zurollen: kurz (180 ms) Höhe und Deckkraft gleiten lassen, damit die Richtung sichtbar wird.
    Danach gilt nur die Klasse .shut (display:none); ein laufendes Rollen wird beim erneuten Tippen abgelöst. */
-/* Ankerpunkt halten (Patricks Lösung, 26.10.): fester Freiraum von einer Bildschirmhöhe am Seitenende,
-   damit Zuklappen die Seite nie kürzer macht als den sichtbaren Bereich. Normales Scrollen stoppt trotzdem
-   am Inhaltsende; nur nach einem Zuklappen bleibt die Position erlaubt, bis man wieder nach oben scrollt. */
+/* Ankerpunkt halten (Patricks Lösung, 26.10.): Freiraum am Seitenende, damit Zuklappen die Seite nie kürzer macht
+   als den sichtbaren Bereich. Seit 20.11. wächst er nur so weit wie nötig (keepY) und schrumpft beim Hochscrollen
+   wieder. So ist das Seitenende immer das echte Dokumentende und iOS federt dort selbst (natives Gummiband).
+   Die frühere eigene Grenze (scrollTo bei jedem scroll + nachgebaute Feder) kämpfte gegen den iOS-Schwung → Zittern. */
 const foldpad=document.createElement("div"); foldpad.id="foldpad"; foldpad.setAttribute("aria-hidden","true"); document.body.appendChild(foldpad);
-let keepY=0;
-/* Sichtbare Höhe aus visualViewport: Auf dem iPhone bleibt innerHeight bei offener Tastatur gleich, die Grenze
-   läge sonst eine Tastaturhöhe zu tief und das Feld hinter der Tastatur. */
-const sichtH=()=>window.visualViewport?.height??innerHeight;
-const normalMax=()=>Math.max(0,foldpad.getBoundingClientRect().top+scrollY+32-sichtH());   /* 32 = unterer Seitenabstand */
-/* Nachfedern an der eigenen Grenze, wie in den ToDos (dort für das Pop-up erprobt):
-   Schwung trifft die Grenze → gedämpfte Feder x = v0·t·e^(−W·t) mit dem Scrolltempo als Start;
-   mit dem Finger weiterziehen → Inhalt folgt dem Finger und federt beim Loslassen zurück.
-   Bewegt wird nur die sichtbare Ansicht, die klebende Kopfleiste bleibt stehen. */
-const W=0.0085;   /* Spitze nach ~120 ms, nach ~800 ms zurück */
-let touching=false, samples=[], spr=0, wobY=null, wob=false;
-const viewEl=()=>document.querySelector(VIEWS[view]||"#v-week");
-const setY=(y,tr)=>{const el=viewEl(); if(!el) return; el.style.transition=tr||"none"; el.style.transform=y?`translateY(${y.toFixed(1)}px)`:"";};
-const stopSpr=()=>{ if(spr){cancelAnimationFrame(spr);spr=0;setY(0)} };
-function spring(v0){ stopSpr(); const t0=performance.now();
-  const step=()=>{const t=performance.now()-t0; if(t>900||touching){setY(0);spr=0;return}
-    setY(-v0*t*Math.exp(-W*t)); spr=requestAnimationFrame(step)};
-  spr=requestAnimationFrame(step); }
-const limY=()=>Math.max(normalMax(),keepY);
+let keepY=0, holdT=0, touching=false;
+/* Scrollende ohne Freiraum → Freiraum = was keepY darüber hinaus braucht */
+const fitPad=()=>{ const end=Math.max(0,document.documentElement.scrollHeight-innerHeight-foldpad.offsetHeight);
+  foldpad.style.height=Math.max(0,Math.ceil(keepY-end))+"px" };
+/* Vor dem Zuklappen: Position merken, Freiraum für die Dauer des Rollens großzügig, danach passend */
+function holdY(y=scrollY){ keepY=Math.max(keepY,y); foldpad.style.height="100vh"; clearTimeout(holdT); holdT=setTimeout(()=>{holdT=0;fitPad()},300) }
 /* Schließt die Tastatur, bleibt die Stelle stehen wie nach einem Zuklappen, statt zurückzuspringen */
-document.addEventListener("focusout",()=>{ keepY=Math.max(keepY,scrollY) },true);
-addEventListener("scroll",()=>{
-  const now=performance.now(), y=scrollY, lim=limY();
-  samples.push([now,y]); samples=samples.filter(([t])=>now-t<120);
-  if(y>lim+1){
-    scrollTo(0,lim);
-    if(!touching&&samples.length>=3){ const pr=samples.slice(0,-1), [t1,y1]=pr[0], [t2,y2]=pr[pr.length-1];
-      const v=t2>t1?(y2-y1)/(t2-t1):0; if(v>0.2) spring(Math.min(v,3.5)); }
-    samples=[];
-  } else if(y<keepY) keepY=y;
-},{passive:true});
-addEventListener("touchstart",()=>{touching=true; stopSpr(); wobY=null; wob=false},{passive:true});
-addEventListener("touchmove",e=>{
-  if(e.touches.length!==1||drag||dDrag) return;   /* beim Ziehen (Einkauf oder Woche) nicht nachfedern */
-  const y0=e.touches[0].clientY;
-  if(scrollY>=limY()-1){ if(wobY===null) wobY=y0; const d=y0-wobY;
-    if(d<0){ e.preventDefault(); wob=true; setY(d); }
-    else if(wob){ setY(0); wob=false; wobY=null; } }
-  else wobY=null;
-},{passive:false});
-const wobEnd=()=>{ touching=false; samples=[]; if(!wob) return; wob=false; wobY=null;
-  setY(0,"transform .4s cubic-bezier(.2,.8,.3,1)"); setTimeout(()=>{ if(!wob){const el=viewEl(); if(el) el.style.transition=""} },420); };
-addEventListener("touchend",wobEnd,{passive:true}); addEventListener("touchcancel",wobEnd,{passive:true});
+document.addEventListener("focusout",()=>holdY(),true);
+/* Selbst an eine Stelle rollen, auch unterhalb des Inhaltsendes (z. B. Gestern unter den Kopf) */
+function holdTo(y){ keepY=Math.max(keepY,y); fitPad(); scrollTo(0,y) }
+addEventListener("scroll",()=>{ if(scrollY<keepY){ keepY=Math.max(0,scrollY); if(!holdT) fitPad() } },{passive:true});
+addEventListener("touchstart",()=>{touching=true},{passive:true});
+const touchOff=()=>{touching=false};
+addEventListener("touchend",touchOff,{passive:true}); addEventListener("touchcancel",touchOff,{passive:true});
 function foldAnim(d,close){
   const ul=d.querySelector(".items"); ul.getAnimations().forEach(a=>a.cancel());
-  if(close) keepY=Math.max(keepY,scrollY);
+  if(close) holdY();
   if(matchMedia("(prefers-reduced-motion: reduce)").matches){d.classList.toggle("shut",close);return}
   if(close){
     const h=ul.offsetHeight;
@@ -1135,7 +1109,7 @@ function mkRoll(el,open){
   const run=el.getAnimations(); if(!open&&el.hidden) return;
   if(open&&el._closing){ run.forEach(a=>a.cancel()); el._closing=false; return }
   run.forEach(a=>a.cancel());
-  if(!open) keepY=Math.max(keepY,scrollY);
+  if(!open) holdY();
   if(reducedMotion()){ el.hidden=!open; return }
   el.hidden=false;
   const c=getComputedStyle(el);
@@ -1565,7 +1539,7 @@ function autoScroll(){
 function keepRowAt(id,change){
   const at=()=>$("#shop").querySelector(`.row[data-id="${CSS.escape(id)}"]:not(.ghost)`)?.getBoundingClientRect().top;
   const t0=at(); change(); const t1=at();
-  if(t0!=null&&t1!=null&&t1!==t0) scrollTo(0,scrollY+t1-t0);   /* fester Wert: scrollBy rechnet Safari während der Berührung doppelt */
+  if(t0!=null&&t1!=null&&t1!==t0) holdTo(scrollY+t1-t0);   /* fester Wert: scrollBy rechnet Safari während der Berührung doppelt */
 }
 function endDrag(){ let p; keepRowAt(drag.id,()=>{ p=finishDrag() }); return p }
 async function finishDrag(){
