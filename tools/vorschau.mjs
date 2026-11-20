@@ -38,9 +38,10 @@ function beispiel(){
   const r = i => rez[i % Math.max(rez.length, 1)];
   const days = {};
   const plan = [
-    [-3, 0, { rating: "gut", comment: "Kinder haben nachgenommen." }],
-    [-2, 1, { rating: "ok" }],
-    [-1, null, { dish: "Vesper", note: "Brot, Käse, Gemüse" }],
+    /* vor den letzten 6 Tagen eine Pause: zeigt die zusammengefasste Lücke „… · nichts geplant“ */
+    [-9, 0, { rating: "gut", comment: "Kinder haben nachgenommen." }],
+    [-8, 1, { rating: "ok" }],
+    [-7, null, { dish: "Vesper", note: "Brot, Käse, Gemüse" }],
     [0, 2, {}], [1, 3, { note: "Kerstin kocht" }], [2, null, { dish: "Reste" }], [3, 4, { tags: ["Gäste"] }]
   ];
   plan.forEach(([n, ri, extra], k) => {

@@ -31,6 +31,7 @@ h1{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;m
 .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .day.newday{border-style:dashed;background:transparent}
 .day.jfree .dayhead{cursor:default}
+.gapline{display:block;width:100%;background:none;border:1px dashed var(--line);border-radius:14px;padding:10px 12px;color:var(--muted);font:inherit;font-size:.88rem;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #days{overflow-anchor:none}   /* Sicht beim Nachladen hält loadOlder selbst; Browser-Anker würde doppelt verschieben */
 .day.fresh{animation:fresh 1.6s ease-out}
 .dayhead{display:grid;grid-template-columns:4rem 1fr auto;gap:12px;align-items:center;width:100%;min-height:4.25rem;text-align:left;background:none;border:0;padding:8px 12px;color:inherit;font:inherit;cursor:pointer}
@@ -408,12 +409,32 @@ addEventListener("popstate", e => {
    die man durch Hochscrollen sieht (erst 3, beim weiteren Hochscrollen je 7 mehr). Alte Tage bleiben in der Datenbank. */
 let histBack=3, anchorPending=true;
 const histFrom=()=>addDays(todayStr(),-1-histBack);
-function shownDays(){ const from=histFrom(); return days.filter(d=>!d.joker&&d.date>=from) }
+/* Kalender (20.11.): jedes Datum von histFrom bis heute+6 (bzw. bis zum letzten geplanten Tag) steht da, auch ohne Dokument.
+   Fehlende Tage sind virtuell ({virtual:true}) und werden erst gespeichert, wenn etwas hineinkommt.
+   Mehr als GAP_MAX leere Tage am Stück vor heute werden zu einer Zeile „… · nichts geplant“; ein Tipp klappt sie auf (gapOpen, Schlüssel = letzter leerer Tag, bleibt beim Nachladen älterer Tage gleich). */
+const GAP_MAX=3, gapOpen=new Set();
+const blankDay=d=>!hasMeal(d)&&!d.shift;
+function calendar(){
+  const from=histFrom(), today=todayStr(), real=days.filter(d=>!d.joker&&d.date>=from);
+  const last=real.length?real[real.length-1].date:"", end=last>addDays(today,6)?last:addDays(today,6);
+  const out=[]; let run=[];
+  const flush=()=>{ if(run.length>GAP_MAX&&!gapOpen.has(run[run.length-1].date)) out.push({gap:true,from:run[0].date,to:run[run.length-1].date}); else out.push(...run); run=[] };
+  for(let t=from,i=0;t<=end;t=addDays(t,1)){
+    const own=[]; while(i<real.length&&real[i].date===t) own.push(real[i++]);
+    const list=own.length?own:[{id:t,date:t,virtual:true}];
+    if(t<today&&list.every(blankDay)) run.push(...list); else { flush(); out.push(...list) }
+  }
+  flush(); return out;
+}
+function shownDays(){ return calendar().filter(x=>!x.gap) }
+const dayById=id=>days.find(d=>d.id===id)||shownDays().find(d=>d.id===id);
+/* Virtuelle Tage gibt es noch nicht in der Datenbank: dort anlegen statt ändern */
+const saveDay=(d,patch,msg)=>d.virtual?save("days/"+d.id,{date:d.date,...patch},msg,true):save("days/"+d.id,patch,msg);
 /* Gestern (bzw. den ersten Tag ab gestern) direkt unter den Kopf rollen. keepY erlaubt die Position,
    auch wenn darunter weniger als eine Bildschirmhöhe Inhalt steht (foldpad gibt den Platz). */
 function anchorYesterday(){
   const y=addDays(todayStr(),-1);
-  const art=[...$("#days").querySelectorAll(".day:not(.spare)")].find(a=>a.dataset.id&&(days.find(d=>d.id===a.dataset.id)?.date||"")>=y);
+  const art=[...$("#days").querySelectorAll(".day:not(.spare)")].find(a=>(a.dataset.date||"")>=y);
   if(!art){scrollTo(0,0);return}
   const head=$("#mainhead").getBoundingClientRect().bottom;
   const top=Math.max(0,Math.round(art.getBoundingClientRect().top+scrollY-head-8));
@@ -445,17 +466,15 @@ function jokerList(){
 function renderDays(){
   if(dDrag||rolling){dPending=true;return}   /* Neu-Rendern beim Ziehen/Rollen würde Karte bzw. Animation zerstören; danach nachholen */
   const el=$("#days");
-  if(!days.length){el.innerHTML=`<div class="state"><strong>Noch kein Plan</strong>Sagt Claude im Chat „Plane die nächste Woche“, dann erscheinen die Tage hier.</div>`;return}
   const today=todayStr();
   /* Joker: Gerichte ohne festen Tag (Feld joker:true, Datum 2099-… nur zum Sortieren), stehen unten in eigener Gruppe */
-  const reg=shownDays(), jok=jokerList();
-  if(!reg.length){el.innerHTML=`<div class="state"><strong>Noch kein Plan</strong>Sagt Claude im Chat „Plane die nächste Woche“, dann erscheinen die Tage hier.</div>`;return}
+  const cal=calendar(), jok=jokerList();
   const card=d=>{
     const dt=parse(d.date);
     const cls=["day", d.date<today?"past":"", d.date===today?"today":"", openDay===d.id?"open":""].join(" ");
     /* Kerstins Schicht gehört zum Tag, nicht zum Gericht → links unter dem Datum */
     const ks=d.shift?`<span class="ks">${esc(d.shift)}${SHIFT[d.shift]?" "+esc(SHIFT[d.shift]):""}</span>`:"";
-    return `<article class="${cls}${d.joker?" spare":""}" data-id="${esc(d.id)}"${d.joker?` data-key="${esc(d.id)}"`:""}>
+    return `<article class="${cls}${d.joker?" spare":""}" data-id="${esc(d.id)}"${d.joker?` data-key="${esc(d.id)}"`:` data-date="${esc(d.date)}"`}>
       <button class="dayhead" aria-expanded="${openDay===d.id}">
         <span class="date">${d.joker?`<span class="wd jk"></span>`:`<span class="wd">${dt.toLocaleDateString("de-DE",{weekday:"short"}).replace(".","")}</span><span class="dm">${dt.toLocaleDateString("de-DE",{day:"2-digit",month:"2-digit"})}</span>${ks}`}</span>
         <span class="slot">${hasMeal(d)?mealHTML(d):emptyHTML(d.id)}</span>
@@ -464,7 +483,9 @@ function renderDays(){
       ${openDay===d.id?panel(d):""}
     </article>`};
   /* „Ohne Tag“ steht immer da und endet mit einem freien Platz – Ablageziel, auch wenn das letzte Gericht herausgezogen wird */
-  el.innerHTML=reg.map(card).join("")+`<div class="sec">Ohne Tag</div>`+jok.map(card).join("")+freeRowHTML();
+  const gapHTML=g=>{ const a=parse(g.from), b=parse(g.to), dm=x=>`${x.getDate()}.${x.getMonth()+1}.`;
+    return `<button class="gapline" type="button" data-gap="${esc(g.from)}" data-to="${esc(g.to)}">${a.getMonth()===b.getMonth()?a.getDate()+".":dm(a)}–${dm(b)} · nichts geplant</button>` };
+  el.innerHTML=cal.map(x=>x.gap?gapHTML(x):card(x)).join("")+`<div class="sec">Ohne Tag</div>`+jok.map(card).join("")+freeRowHTML();
   if(anchorPending&&view==="week"){anchorPending=false;anchorYesterday();scheduleOlder()}
 }
 const JFREE="__frei";
@@ -492,17 +513,23 @@ function panel(d){
 $("#days").addEventListener("click",e=>{
   if(e.target.closest(".reclink")) return;   /* Navigation übernimmt nav() */
   if(Date.now()-dEnded<400) return;          /* Klick direkt nach dem Ablegen nicht als Aufklappen werten */
+  const gl=e.target.closest(".gapline"); if(gl){openGap(gl);return}
   const art=e.target.closest(".day"); if(!art||art.classList.contains("jfree")) return;
   const id=art.dataset.id;
   if(e.target.closest(".dayhead")){toggleDay(art);return}
   const r=e.target.closest(".rate button");
-  if(r){const d=days.find(x=>x.id===id);const v=d.rating===r.dataset.v?null:r.dataset.v;save("days/"+id,{rating:v},"Bewertung gespeichert")}
+  if(r){const d=dayById(id);const v=d.rating===r.dataset.v?null:r.dataset.v;saveDay(d,{rating:v},"Bewertung gespeichert")}
 });
+/* Lücke aufklappen: die leeren Tage erscheinen an ihrer Stelle und rollen auf */
+function openGap(gl){
+  const {gap:from,to}=gl.dataset; gapOpen.add(to); renderDays();
+  for(const a of $("#days").querySelectorAll(".day:not(.spare)")) if(a.dataset.date>=from&&a.dataset.date<=to) track(roll(a,false));
+}
 $("#days").addEventListener("change",e=>{
   const f=e.target.dataset.f; if(!f) return;
   const id=e.target.closest(".day").dataset.id;
-  const d=days.find(x=>x.id===id); const val=e.target.value.trim();
-  if((d[f]||"")!==val) save("days/"+id,{[f]:val},"Gespeichert");
+  const d=dayById(id); const val=e.target.value.trim();
+  if((d[f]||"")!==val) saveDay(d,{[f]:val},"Gespeichert");
 });
 
 /* ---------- Umplanen: Gericht auf einen anderen Tag ziehen ----------
@@ -545,7 +572,7 @@ function closePanel(art){
   track(roll(p,true),ok=>{ if(ok&&p.classList.contains("closing")) p.remove() });
 }
 function openPanel(art){
-  const d=days.find(x=>x.id===art.dataset.id); if(!d) return;
+  const d=dayById(art.dataset.id); if(!d) return;
   setExp(art,true); art.insertAdjacentHTML("beforeend",panel(d));
   track(roll(art.lastElementChild,false));
 }
@@ -740,7 +767,7 @@ async function dEnd(cancel){
     dDrag=null; rolling--; dPending=true; flushDays() };
   if(fly) fly.finished.then(done,done); else done();
   if(cancel||sameLayout(g.L,g.base)) return;
-  const tg=g.tg, ch=changesFor(g.L), target=tg.type==="day"?(tg.id===NEWDAY?{date:nextPlanDate()}:days.find(v=>v.id===tg.id)):null;
+  const tg=g.tg, ch=changesFor(g.L), target=tg.type==="day"?(tg.id===NEWDAY?{date:nextPlanDate()}:dayById(tg.id)):null;
   const msg=target?`Auf ${dayName(target)} verschoben`+(g.L.pushed?` · ${g.L.pushed===1?"1 Gericht rutscht":g.L.pushed+" Gerichte rutschen"} nach hinten`:"")
     :g.src.joker?"Reihenfolge geändert":`${g.src.dish} ohne Tag abgelegt`;
   await applyDays(ch,"next");
@@ -749,11 +776,11 @@ async function dEnd(cancel){
 /* Aus der Belegung die Schreibungen ableiten: je Dokument neuer Inhalt (null = löschen) und alter fürs Rückgängigmachen.
    Am Tag bleiben Datum und Schicht; Joker bekommen eine Reihenfolge (order), neue Joker eine neue id. */
 function changesFor(L){
-  const strip=({id,...rest})=>rest, byId=new Map(days.map(d=>[d.id,d])), ch=[];
+  const strip=({id,virtual,...rest})=>rest, byId=new Map([...shownDays(),...days].map(d=>[d.id,d])), ch=[];
   for(const id of L.reg){
     if(id===NEWDAY){ const k=L.day.get(id); if(k){ const nd=nextPlanDate(); ch.push({id:nd,prev:null,next:{date:nd,...mealOf(byId.get(k))}}) } continue }
     const d=byId.get(id), k=L.day.get(id), m=k?mealOf(byId.get(k)):EMPTY_MEAL;
-    if(JSON.stringify(m)!==JSON.stringify(mealOf(d))) ch.push({id,prev:strip(d),next:{...strip(d),...m}});
+    if(JSON.stringify(m)!==JSON.stringify(mealOf(d))) ch.push({id,prev:d.virtual?null:strip(d),next:{...strip(d),...m}});
   }
   const keepJ=new Set(L.jok);
   for(const j of days.filter(d=>d.joker)) if(!keepJ.has(j.id)) ch.push({id:j.id,prev:strip(j),next:null});
@@ -1570,9 +1597,9 @@ async function finishDrag(){
   await save("shopping/"+it.id,patch,msg);
 }
 /* Speicher */
-async function save(path,data,msg){
+async function save(path,data,msg,create){
   if(!db) return toast("Speichern geht hier gerade nicht.");
-  try{await db.doc(path).update(data); refreshers.forEach(f=>f()); if(msg) toast(msg)}catch(err){fail(err)}
+  try{await (create?db.doc(path).set(data):db.doc(path).update(data)); refreshers.forEach(f=>f()); if(msg) toast(msg)}catch(err){fail(err)}
 }
 function fail(err){
   if(err?.code==="invalid_argument"){canWrite=false;renderDays();renderShop();toast("Du kannst diesen Plan nur ansehen.")}
