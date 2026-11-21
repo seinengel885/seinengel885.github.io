@@ -30,7 +30,6 @@ h1{font-family:var(--display);font-weight:700;font-size:1.7rem;line-height:1.1;m
 .day{background:var(--surface);border:1px solid var(--line);border-radius:14px;overflow:hidden}
 .day.today{border-color:var(--accent);box-shadow:0 0 0 1px var(--accent)}
 .day.newday{border-style:dashed;background:transparent}
-.day.jfree .dayhead{cursor:default}
 .gapline{display:block;width:100%;background:none;border:1px dashed var(--line);border-radius:14px;padding:10px 12px;color:var(--muted);font:inherit;font-size:.88rem;text-align:left;cursor:pointer;-webkit-tap-highlight-color:transparent}
 #days{overflow-anchor:none}   /* Sicht beim Nachladen hält loadOlder selbst; Browser-Anker würde doppelt verschieben */
 .day.fresh{animation:fresh 1.6s ease-out}
@@ -484,14 +483,12 @@ function renderDays(){
       </button>
       ${openDay===d.id?panel(d):""}
     </article>`};
-  /* „Ohne Tag“ steht immer da und endet mit einem freien Platz – Ablageziel, auch wenn das letzte Gericht herausgezogen wird */
+  /* „Ohne Tag“ nur mit Gerichten; Ablegen ohne Tag geht beim Ziehen über „Ohne Tag ablegen“ */
   const gapHTML=g=>{ const a=parse(g.from), b=parse(g.to), dm=x=>`${x.getDate()}.${x.getMonth()+1}.`;
     return `<button class="gapline" type="button" data-gap="${esc(g.from)}" data-to="${esc(g.to)}">${a.getMonth()===b.getMonth()?a.getDate()+".":dm(a)}–${dm(b)} · nichts geplant</button>` };
-  el.innerHTML=cal.map(x=>x.gap?gapHTML(x):card(x)).join("")+`<div class="sec">Ohne Tag</div>`+jok.map(card).join("")+freeRowHTML();
+  el.innerHTML=cal.map(x=>x.gap?gapHTML(x):card(x)).join("")+(jok.length?`<div class="sec">Ohne Tag</div>`+jok.map(card).join(""):"");
   if(anchorPending&&view==="week"){anchorPending=false;anchorYesterday();scheduleOlder()}
 }
-const JFREE="__frei";
-const freeRowHTML=()=>`<article class="day spare jfree" data-key="${JFREE}"><button class="dayhead" tabindex="-1"><span class="date"><span class="wd jk"></span></span><span class="slot">${emptyHTML(JFREE)}</span><span></span></button></article>`;
 /* Rechter Teil: das Gericht (data-key = Dokument, in dem es gerade steht) */
 function mealHTML(d){
   const chips=[];
@@ -516,7 +513,7 @@ $("#days").addEventListener("click",e=>{
   if(e.target.closest(".reclink")) return;   /* Navigation übernimmt nav() */
   if(Date.now()-dEnded<400) return;          /* Klick direkt nach dem Ablegen nicht als Aufklappen werten */
   const gl=e.target.closest(".gapline"); if(gl){openGap(gl);return}
-  const art=e.target.closest(".day"); if(!art||art.classList.contains("jfree")) return;
+  const art=e.target.closest(".day"); if(!art) return;
   const id=art.dataset.id;
   if(e.target.closest(".dayhead")){toggleDay(art);return}
   const r=e.target.closest(".rate button");
@@ -688,14 +685,13 @@ function showLayout(L,animate=true){
   let sec=box.querySelector(".sec");
   if(L.jok.length&&!sec){sec=document.createElement("div");sec.className="sec";sec.textContent="Ohne Tag";box.appendChild(sec)}
   const keep=new Set(L.jok);
-  box.querySelectorAll(".day.spare:not(.jfree)").forEach(a=>{ if(!keep.has(a.dataset.key)) a.remove() });
+  box.querySelectorAll(".day.spare").forEach(a=>{ if(!keep.has(a.dataset.key)) a.remove() });
   for(const k of L.jok){
     let a=dDrag.spares.get(k); if(!a){a=jokerRow(k);dDrag.spares.set(k,a)}
     const el=dDrag.meals.get(k), slot=a.querySelector(".slot");
     if(slot.firstElementChild!==el) slot.replaceChildren(el);
     box.appendChild(a);   /* hängt in der neuen Reihenfolge an (verschiebt, erzeugt nichts neu) */
   }
-  const fr=box.querySelector(".jfree"); if(fr) box.appendChild(fr);   /* freier Platz bleibt am Ende */
   measure();
   if(before) flip(before);
 }
@@ -720,7 +716,7 @@ function dStart(m,x,y,mouse){
   dDrag={key,src,ghost,dx:x-r.left+12,dy:y-r.top+8,x,y,tg:init,changed:0,
     base:baseLayout(), meals:new Map([...box.querySelectorAll(".meal:not(.empty-m)")].map(e=>[e.dataset.key,e])),
     empties:new Map([...box.querySelectorAll(".meal.empty-m")].map(e=>[e.dataset.key.slice(6),e])),
-    spares:new Map([...box.querySelectorAll(".day.spare:not(.jfree)")].map(a=>[a.dataset.key,a]))};
+    spares:new Map([...box.querySelectorAll(".day.spare")].map(a=>[a.dataset.key,a]))};
   dDrag.L=dDrag.base;
   m.classList.add("placeholder");
   m.addEventListener("touchmove",ev=>{ if(dDrag) ev.preventDefault() },{passive:false});
