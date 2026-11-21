@@ -2,6 +2,7 @@
    Zeit (Europe/Berlin) und kurz, was neu ist. Der oberste Eintrag ist der aktuelle Stand.
    Die Fußzeile zeigt „Version nr“; ein Tipp darauf klappt die letzten Änderungen auf. */
 window.SITE_VERSIONEN = [
+  { nr: 25, stand: "2026-11-21 13:26", was: "Wochenplan: kein „Noch offen“-Feld mehr am Ende von „Ohne Tag“; die Überschrift steht nur da, wenn dort Gerichte liegen" },
   { nr: 24, stand: "2026-11-21 12:28", was: "Wochenplan, Rezepte, Fotos, Herzen und Erfahrungen erscheinen beim Öffnen sofort im letzten Stand; Rezepte und Fotos aktualisieren sich live" },
   { nr: 23, stand: "2026-11-20 10:48", was: "Seitenende federt mit dem echten iOS-Gummiband statt eigener Feder (kein Zittern mehr); Zuklappen hält die Stelle weiter" },
   { nr: 22, stand: "2026-11-20 09:08", was: "Wochenplan zeigt immer die Tage um heute, auch leere; lange Lücken als eine Zeile „… · nichts geplant“" },
