@@ -12,21 +12,29 @@ const state = (title, text) => `<div class="state"><strong>${esc(title)}</strong
 
 /* ---------- Daten ----------
    Rezepte sind Inhalte und liegen in Supabase (Sammlung rezepte, ein Dokument je Rezept, id = Rezept-id), nicht im Repo.
-   Alle Rezepte kommen mit einer Abfrage und bleiben dann im Zwischenspeicher. */
-let indexP = null; const cache = new Map();
+   Live-Abo: Der erste Stand kommt sofort aus dem Browser (data-merken), danach der frische aus der Datenbank. */
+let indexP = null, freshP = null; const cache = new Map();
+const sorted = () => [...cache.values()].sort((a,b) => a.name.localeCompare(b.name, "de"));
 function loadIndex(){
-  if(!indexP) indexP = use("db")
-    .then(db => { if(!db) throw "keine Datenbank"; return db.collection("rezepte").get(); })
-    .then(s => {
-      s.docs.forEach(d => cache.set(d.id, {...d.data(), id: d.id}));
-      return [...cache.values()].sort((a,b) => a.name.localeCompare(b.name, "de"));
-    })
-    .catch(e => { indexP = null; throw e; });
+  if(!indexP){
+    let fresh; freshP = new Promise(r => fresh = r);
+    indexP = use("db").then(db => new Promise((res, rej) => {
+      if(!db) return rej("keine Datenbank");
+      let first = true;
+      const un = db.collection("rezepte").onSnapshot(s => {
+        cache.clear(); s.docs.forEach(d => cache.set(d.id, {...d.data(), id: d.id}));
+        if(!s.fromCache) fresh();
+        if(first){ first = false; res(sorted()); return; }
+        all = sorted();
+        if(!$("v-list").hidden && $("cards")) drawCards();
+      }, e => { if(first){ un(); indexP = null; fresh(); rej(e); } else fresh(); });
+    }));
+  }
   return indexP;
 }
 async function loadRecipe(id){
   await loadIndex();
-  if(!cache.has(id)){ indexP = null; await loadIndex(); }   /* seit dem Laden neu geschrieben */
+  if(!cache.has(id)) await freshP;   /* gemerkter Stand ist älter als das Rezept */
   if(!cache.has(id)) throw 404;
   return cache.get(id);
 }
@@ -172,16 +180,18 @@ document.addEventListener("change", e => {
   if(f) upload(f);
 });
 
-/* Zuordnungen einmal laden; das Hochladen-Symbol erscheint nur, wenn der Bildspeicher erreichbar ist */
-Promise.all([use("db"), use("assets")]).then(async ([db, a]) => {
+/* Zuordnungen live (erster Stand aus dem Browser); das Hochladen-Symbol erscheint nur, wenn der Bildspeicher erreichbar ist */
+use("db").then(db => {
   if(!db) return;
   bilderDB = db.collection("bilder");
-  try{
-    const s = await bilderDB.get();
+  bilderDB.onSnapshot(async s => {
+    own.clear();
     s.docs.forEach(d => { const v = d.data(); if(v?.asset) own.set(d.id, {asset: v.asset, quelle: v.quelle || "", fokus: v.fokus}); });
     await window.backend?.prefetchBlobs([...own.values()].map(b => b.asset)).catch(() => {});
     showBilder();
-  }catch(e){}
+  }, () => {});
+});
+use("assets").then(a => {
   assets = a;
   if(recipe && !$("v-detail").hidden) ctlRefresh();
 });

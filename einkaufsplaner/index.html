@@ -325,7 +325,7 @@ body.dragmode #v-week{padding-bottom:110px}
 
 <script src="../shared/vendor/supabase-js-2.117.3.js"></script>
 <script src="../shared/config.js"></script>
-<script src="../shared/backend.js" data-app="einkaufsplan" data-merken="shopping einstellungen"></script>
+<script src="../shared/backend.js" data-app="einkaufsplan" data-merken="shopping einstellungen days erfahrungen rezepte bilder lieblinge"></script>
 <script src="../shared/version.js"></script>
 <script src="../shared/footer.js"></script>
 <script src="rezepte.js"></script>
@@ -1833,8 +1833,8 @@ async function runOrders(){
   const use=n=>window.backend?.use?window.backend.use(n):Promise.resolve(null);
   status(window.backend?.use?"Anmeldung …":"Die Verbindung zu Supabase fehlt (backend.js nicht geladen).");
   let gotDays=false,t0=0;
-  /* Die Datenbank ist sofort da: Einkaufsliste und Einstellungen erscheinen aus dem letzten Stand im Browser,
-     alles andere kommt nach der Anmeldung */
+  /* Die Datenbank ist sofort da: Wochenplan, Einkaufsliste, Einstellungen, Erfahrungen und Rezepte erscheinen aus dem
+     letzten Stand im Browser (data-merken), der frische Stand kommt nach der Anmeldung */
   db=await use("db");
   if(!db){$("#days").innerHTML=`<div class="state"><strong>Plan nicht erreichbar</strong>Bitte neu anmelden und die Seite neu laden.</div>`;$("#shop").innerHTML="";return}
   window.backend?.ready.then(()=>{
