@@ -1,0 +1,60 @@
+# Hinweise für Claude
+
+- Sprache: Deutsch. Die App nutzen zwei Personen (Namen nur in der Datenbank, z. B. `allowed_users`).
+- **Öffentliches Repo: nichts Persönliches auf GitHub.** Alles mit persönlichem Bezug – Namen, Familienbezüge, Gewohnheiten, Orte,
+  auch wenn es Steuerelemente sind (z. B. wer ein Herz setzen kann) – steht nur in der Datenbank und wird zur Laufzeit geladen.
+  Das gilt auch für Kommentare, Commit-Nachrichten, `version.js`, README und diese Datei. Vorschau und Tests nutzen erfundene Namen.
+  README nur mit dem Nötigsten.
+- **Antworten kurz und stichpunktartig.** Keine langen Erklärungen, keine Wiederholung des Bisherigen.
+- **Vor jeder Arbeit an der Oberfläche** den Skill `artefakt-bau` laden und die passenden Bausteine lesen (z. B. `eingabe-ios.md`:
+  Bearbeiten ohne Rahmen und ohne Größenänderung, 16px; `ios-viewport.md`: Tastatur, kein `preventScroll` beim Fokussieren).
+- **Sauberer Code:** Bei einem Fehler die Ursache beheben, nicht drumherum bauen. Erst prüfen, ob die native
+  Browser-Funktion reicht; keine zusätzlichen Hilfsskripte, die einen eigenen Fehler ausgleichen.
+- Jedes Projekt ist ein Ordner (`einkaufsplaner/`, später z. B. `todo/`), eingebunden über `shared/backend.js`
+  mit eigenem `data-app` (Einbindung wie in `einkaufsplaner/index.html`, Schnittstelle im Kopf von `shared/backend.js`). Der Einkaufsplaner liegt in `einkaufsplaner/`, seine Daten aber unter
+  `app = 'einkaufsplan'` (so heißt er in der Datenbank und im Fotospeicher weiter). Neue Projekte auf der Startseite `index.html` verlinken und mit eigenem Icon
+  (`<ordner>/icons/`, `apple-touch-icon.png` 180 px, `icon-192.png`, `icon-512.png`) und `manifest.webmanifest` versehen.
+- **Ablauf:** Claude arbeitet lokal, testet selbst (Playwright) und aktualisiert die Vorschau. Ist eine Änderung fertig und getestet,
+  fragt Claude, ob sie live gehen soll. Nach Zustimmung pusht Claude direkt auf `main` (GitHub Pages liefert von `main` aus) –
+  ohne Pull Request, ohne weitere Branches. Vorher `git fetch origin main` und `origin/main` mergen, nie mit Überschreiben (force) pushen.
+  Den eigenen Arbeitsbranch darf Claude jederzeit pushen (Sicherung).
+- **Vorschau:** Der Nutzer kann Änderungen in einer klickbaren Vorschau im Chat ansehen.
+  `node tools/vorschau.mjs einkaufsplaner einkaufsplan <scratchpad>/vorschau <scratchpad>/rezepte <scratchpad>/einstellungen` baut die Seite mit `shared/demo-backend.js`
+  (Beispieldaten, keine Anmeldung, nichts geht an Supabase; Rezepte und Einstellungen als `<id>.json` aus den Ordnern im Scratchpad, da Inhalte nicht im Repo liegen) und gibt die Dateiliste aus. Die Ordner vorher füllen (z. B. aus der zuletzt veröffentlichten Vorschau: `DEMO_DATA.rezepte` bzw. `DEMO_DATA.einstellungen` als `<id>.json`), sonst bleiben Rezepte, Logos, Regeln usw. leer. Veröffentlichen mit dem
+  Artifact-Tool: `file_path` = `<ziel>/index.html`, `root` = `<ziel>`, `files` = die Liste. Immer dieselbe Vorschau
+  aktualisieren: https://claude.ai/artifact/2c352bzY4g3bf9WPx6eTmG (Einkaufsplaner); in einer neuen Sitzung erst mit
+  `action: "read"` lesen, dann mit `url` veröffentlichen.
+  **Ungefragt:** Vor jeder Antwort, die eine Änderung am Code meldet, die Vorschau neu bauen und veröffentlichen, und den
+  Link in der ersten Antwort jeder Sitzung nennen. Der Nutzer kommentiert direkt in der Vorschau; diese Kommentare kommen als
+  „Artifact comment“ hier an und werden im jeweiligen Thread beantwortet.
+  Testen über HTTP: `python3 -m http.server` im Vorschau-Ordner, keinen eigenen Testserver schreiben (die Vorschau trägt `<meta charset>`).
+  Was nur in der Home-Bildschirm-App auftritt (z. B. Tastatur), zeigt die Vorschau nicht; dafür Bildschirmfotos aus Playwright.
+- **Bei jedem Push auf `main`: `shared/version.js` ergänzen**: oben in `SITE_VERSIONEN` einen
+  Eintrag mit der nächsten `nr`, `stand` (Zeit Europe/Berlin) und `was` (kurz, was neu ist). Die Fußzeile jeder Seite zeigt
+  „Version nr“; ein Tipp darauf klappt die letzten fünf Änderungen auf. Daran erkennt der Nutzer, ob GitHub Pages schon
+  ausgeliefert hat. Jede Seite bindet dafür `shared/version.js` und `shared/footer.js` ein.
+- **Scrollen auf dem iPhone:** Während einer Berührung führt Safari `scrollBy` doppelt aus; Position mit `scrollTo(0, Zielwert)` setzen. Safari kennt keinen Scroll-Anker (Chrome schon) – Tests in Chromium täuschen hier, ggf. Messzeile in der Vorschau.
+- **Tastatur:** Das Feld über die iOS-Tastatur schiebt iOS selbst. Eigene Scrollgrenzen (z. B. Nachfedern) rechnen
+  mit `visualViewport.height`, nicht mit `innerHeight` (bleibt auf dem iPhone bei offener Tastatur gleich).
+- Daten: Supabase-Projekt `ilozkxfqiqdyeejcddes`, Tabelle `public.docs` (app, collection, id, data jsonb),
+  Verlauf in `public.docs_history`, Fotos im privaten Bucket `bilder`. Schemaänderungen als Migration anwenden
+  und zusätzlich unter `supabase/migrations/` ablegen; danach den Sicherheitscheck (Advisors) laufen lassen.
+- **Auf GitHub nur Code, keine Inhalte.** Rezepte, Fotos und alle anderen Inhalte liegen nur in Supabase.
+- Zugriff nur für Adressen in `public.allowed_users`. Nie Daten oder geheime Schlüssel ins öffentliche Repo legen.
+- Sicherung auf Zuruf: Dokumente aus `public.docs` (und Fotos) ins private Repo `seinengel885/backups`
+  im Format von `tools/backup.mjs`.
+- Rezept-Regeln stehen nur in der Datenbank: `einstellungen/regeln` = `{html}` (dort unter „Technik für Claude“ auch Felder und Abläufe);
+  die App zeigt sie unter „Regeln“. Ändern gezielt per SQL. Ebenso in `einstellungen`: `einkauf`, `logos` (Geschäfte), `herzen`, `merkmale`.
+- **Rezept auf die Einkaufsliste:** nicht selbst in `shopping` schreiben, sondern einen Auftrag anlegen:
+  `auftraege/<id>` = `{typ:"einkauf", rezept:"<rezept-id>", pers?, due?}`. Die App führt ihn beim nächsten Öffnen aus
+  (Kategorien, Logos, „Immer im Haus“ wie beim Einkaufswagen) und löscht ihn. Steht er noch da, war die App noch nicht offen.
+- **kcal prüfen:** Zutaten tragen `g` (Gramm fürs ganze Rezept) und `nw` (id in Sammlung `naehrwerte`, `{name, kcal}` pro 100 g).
+  kcal pro Portion = Σ(g × kcal/100) / portionen, ohne optionale Zutaten. Lesen per SQL nur mit den nötigen Feldern
+  (kein `jsonb_pretty`), Ändern gezielt mit `jsonb_set`.
+- **Begriffe im Einkaufsplaner** (so mit dem Nutzer sprechen): *Logos* = Bio, Angebot und die Geschäfte (im Code `LABELS`,
+  Feld `labels` am Eintrag). *Vorschläge* = Chips der Merkliste unter dem Listen-Symbol einer Kategorie in der
+  Einkaufsliste (`cfg.merk`, Logos je Kategorie und Vorschlag in `cfg.merkLb[Kategorie][Name]`). Antippen legt einen Eintrag mit ihren Logos an (grüner Haken, wenn er
+  offen auf der Liste steht); ändern per langem Druck oder Rechtsklick. *Zuordnungen* = Chips auf der Seite Zuordnung
+  (Stichwörter der Kategorien, dazu „Immer im Haus“ und Mengeneinheiten). Sie wirken beim Eingeben eines Eintrags;
+  Antippen öffnet sie direkt zum Ändern. Logos sind eine Eigenschaft der einzelnen Zuordnung einer Kategorie (`cfg.zuoLb[Kategorie][Wort]`): Die Zuordnung, die
+  einen neuen Eintrag einsortiert, gibt ihm auch ihre Logos. Vorschläge stehen nicht auf der Seite Zuordnung.

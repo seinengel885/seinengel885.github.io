@@ -1,0 +1,14 @@
+{
+  "name": "Unsere Projekte",
+  "short_name": "Projekte",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#f6f8f6",
+  "theme_color": "#f6f8f6",
+  "icons": [
+    { "src": "shared/icons/icon-192.png", "sizes": "192x192", "type": "image/png" },
+    { "src": "shared/icons/icon-512.png", "sizes": "512x512", "type": "image/png" },
+    { "src": "shared/icons/icon.svg", "sizes": "any", "type": "image/svg+xml" }
+  ]
+}
